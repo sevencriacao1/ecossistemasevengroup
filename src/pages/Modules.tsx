@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Layout } from '../components/Layout';
 import { PlayCircle, CheckCircle2, Clock, Lock, ArrowRight, Layers } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
+import { fetchApi } from '../lib/api';
 import { Skeleton } from '../components/ui/Skeleton';
 
 interface Module {
@@ -24,21 +24,14 @@ export function Modules() {
     async function fetchModules() {
       if (!profile) return;
       try {
-        const { data: mods, error: modError } = await supabase
-          .from('modules')
-          .select('*')
-          .order('order_index', { ascending: true });
-        if (modError) throw modError;
-
-        const { data: prog, error: progError } = await supabase
-          .from('user_progress')
-          .select('*')
-          .eq('user_id', profile.id);
-        if (progError) throw progError;
+        const [mods, prog] = await Promise.all([
+          fetchApi<any[]>('/api/modules'),
+          fetchApi<any[]>('/api/progress'),
+        ]);
 
         let hasPending = false;
         const merged: Module[] = (mods || []).map((m) => {
-          const userProg = prog?.find(p => p.module_id === m.id);
+          const userProg = prog?.find((p) => p.module_id === m.id);
           let status = userProg?.status || 'pendente';
           if (status === 'pendente' && hasPending) status = 'bloqueado';
           if (status === 'pendente' || status === 'em_andamento') hasPending = true;
@@ -46,25 +39,16 @@ export function Modules() {
           return {
             id: m.id,
             title: m.title,
-            description: m.description || 'Aprenda os conceitos fundamentais para sua atuação.',
+            description: m.description || '',
             duration: m.duration,
-            status: status as any,
-            progress: userProg?.progress || 0
+            status: status as Module['status'],
+            progress: userProg?.progress || 0,
           };
         });
 
-        if (merged.length === 0) {
-          setModules([
-            { id: '1', title: `Bem-vindo à ${profile.company}`, description: 'Introdução ao ecossistema e cultura.', status: 'concluido', duration: '15 min', progress: 100 },
-            { id: '2', title: 'Cultura e Posicionamento', description: 'Como nos posicionamos no mercado imobiliário.', status: 'em_andamento', duration: '45 min', progress: 60 },
-            { id: '3', title: 'Operação e Processos', description: 'O dia a dia e ferramentas essenciais.', status: 'pendente', duration: '1h 20m', progress: 0 },
-            { id: '4', title: 'Atendimento Premium', description: 'Padrão de excelência no relacionamento.', status: 'bloqueado', duration: '50 min', progress: 0 },
-          ]);
-        } else {
-          setModules(merged);
-        }
+        setModules(merged);
       } catch (error) {
-        console.error('Erro ao carregar módulos:', error);
+        console.error('Erro ao carregar modulos:', error);
       } finally {
         setIsLoading(false);
       }
@@ -74,67 +58,69 @@ export function Modules() {
 
   const container = {
     hidden: { opacity: 0 },
-    show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+    show: { opacity: 1, transition: { staggerChildren: 0.1 } },
   };
 
   const item = {
     hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+    show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } },
   };
 
   return (
     <Layout>
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-16">
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }} 
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface border border-surface-border text-xs font-medium text-text-muted mb-6 shadow-glass">
             <Layers className="w-3 h-3 text-primary" />
-            Módulos
+            Modulos
           </div>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/70 mb-4">
             Trilha de Aprendizado
           </h1>
           <p className="text-lg text-text-muted font-light max-w-2xl">
-            Sua jornada de conhecimento estruturada para extrair o máximo de performance no Ecossistema Seven.
+            Sua jornada de conhecimento estruturada para extrair o maximo de performance no Ecossistema Seven Group.
           </p>
         </motion.div>
       </div>
 
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {[1, 2, 3, 4, 5, 6].map(i => (
+          {[1, 2, 3, 4, 5, 6].map((i) => (
             <Skeleton key={i} className="h-[380px] rounded-3xl" />
           ))}
         </div>
+      ) : modules.length === 0 ? (
+        <div className="border border-surface-border rounded-2xl p-8 text-center text-text-muted bg-surface/20">
+          Nenhum modulo encontrado no Supabase para este usuario.
+        </div>
       ) : (
-        <motion.div 
+        <motion.div
           variants={container}
           initial="hidden"
           animate="show"
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
         >
           {modules.map((module, index) => (
-            <motion.div 
-              key={module.id} 
+            <motion.div
+              key={module.id}
               variants={item}
               className={`relative bg-surface/20 backdrop-blur-xl border rounded-3xl overflow-hidden transition-all duration-500 group flex flex-col shadow-glass ${
-                module.status === 'bloqueado' 
-                  ? 'border-surface-border/30 opacity-50 grayscale-[0.8]' 
+                module.status === 'bloqueado'
+                  ? 'border-surface-border/30 opacity-50 grayscale-[0.8]'
                   : 'border-surface-border hover:border-surface-border/80 hover:bg-surface/40 hover:shadow-premium cursor-pointer'
               }`}
             >
-              {/* Cinematic Thumbnail */}
               <div className="h-48 w-full bg-background relative overflow-hidden border-b border-surface-border">
                 <div className={`absolute inset-0 opacity-30 transition-transform duration-1000 group-hover:scale-110 ${
                   index % 3 === 0 ? 'bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-primary/40 via-background to-background' :
                   index % 3 === 1 ? 'bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/30 via-background to-background' :
                   'bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-primary/20 via-background to-background'
                 }`} />
-                
-                {/* Abstract Geometric Shapes */}
+
                 <div className="absolute inset-0 flex items-center justify-center opacity-20 group-hover:opacity-40 transition-opacity duration-700">
                   <div className="w-24 h-24 border border-white/20 rounded-full absolute" />
                   <div className="w-32 h-32 border border-white/10 rounded-full absolute rotate-45" />
@@ -144,7 +130,7 @@ export function Modules() {
                   <Clock className="w-3.5 h-3.5 text-text-muted" />
                   {module.duration}
                 </div>
-                
+
                 {module.status === 'bloqueado' && (
                   <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center">
                     <div className="w-12 h-12 rounded-full bg-surface border border-surface-border flex items-center justify-center shadow-glass">
@@ -159,9 +145,11 @@ export function Modules() {
                   <h3 className="text-xl font-semibold text-text mb-3 tracking-tight group-hover:text-primary transition-colors">
                     {module.title}
                   </h3>
-                  <p className="text-sm text-text-muted line-clamp-2 leading-relaxed font-light">
-                    {module.description}
-                  </p>
+                  {module.description && (
+                    <p className="text-sm text-text-muted line-clamp-2 leading-relaxed font-light">
+                      {module.description}
+                    </p>
+                  )}
                 </div>
 
                 <div className="mt-8 pt-6 border-t border-surface-border/50">
@@ -180,17 +168,17 @@ export function Modules() {
                   {module.status === 'concluido' && (
                     <div className="flex items-center gap-2 text-sm text-green-500 font-medium">
                       <CheckCircle2 className="w-4 h-4" />
-                      Módulo Concluído
+                      Modulo Concluido
                     </div>
                   )}
 
                   {module.status === 'pendente' && (
                     <div className="flex items-center justify-between text-sm text-text-muted font-medium group-hover:text-text transition-colors">
-                      <span>Iniciar módulo</span>
+                      <span>Iniciar modulo</span>
                       <ArrowRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                     </div>
                   )}
-                  
+
                   {module.status === 'bloqueado' && (
                     <div className="text-sm text-text-dark font-medium flex items-center gap-2">
                       Conclua o anterior para liberar

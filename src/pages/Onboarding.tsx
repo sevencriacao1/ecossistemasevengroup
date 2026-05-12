@@ -27,7 +27,7 @@ export function Onboarding() {
         >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface border border-surface-border text-xs font-medium text-text-muted mb-4 shadow-glass">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            Ecossistema Seven
+            Ecossistema Seven Group
           </div>
 
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/60 leading-[1.1]">

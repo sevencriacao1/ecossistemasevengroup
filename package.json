@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "node server/local-api.mjs",
     "build": "vite build",
     "lint": "eslint .",
     "lint:dualite": "eslint --config eslint.dualite.config.js .",
