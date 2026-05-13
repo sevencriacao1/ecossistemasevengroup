@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Building2, LogOut, Sparkles } from 'lucide-react';
+import { ArrowRight, Building2, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface SevenEntryTransitionProps {
   onLogout: () => void;
+  initialChoices?: boolean;
 }
 
 const message = 'Aquilo que é normal para você,\né loucura para a gente.\nE aquilo que é normal para a gente,\né loucura para você.';
+const choiceTitle = 'Aqui inicia a sua jornada!';
+const choiceSubtitle = 'Selecione a empresa da qual faz parte.';
 
 const particleColors = ['#111111', '#2A211A', '#5A2A08', '#8A3A05', '#C65305', '#F26F12', '#FF8A1F', '#FFB066'];
 
@@ -195,16 +199,24 @@ function ParticleField({ isVisible }: { isVisible: boolean }) {
   );
 }
 
-export function SevenEntryTransition({ onLogout }: SevenEntryTransitionProps) {
+export function SevenEntryTransition({ onLogout, initialChoices = false }: SevenEntryTransitionProps) {
+  const navigate = useNavigate();
   const [typedText, setTypedText] = useState('');
   const [hasStarted, setHasStarted] = useState(false);
   const [isTypingDone, setIsTypingDone] = useState(false);
-  const [showChoices, setShowChoices] = useState(false);
+  const [showChoices, setShowChoices] = useState(initialChoices);
+  const [choiceText, setChoiceText] = useState(initialChoices ? `${choiceTitle}\n${choiceSubtitle}` : '');
 
   useEffect(() => {
+    if (initialChoices) {
+      setHasStarted(true);
+      setIsTypingDone(true);
+      return undefined;
+    }
+
     const startTimer = window.setTimeout(() => setHasStarted(true), 700);
     return () => window.clearTimeout(startTimer);
-  }, []);
+  }, [initialChoices]);
 
   useEffect(() => {
     if (!hasStarted) return undefined;
@@ -221,7 +233,23 @@ export function SevenEntryTransition({ onLogout }: SevenEntryTransitionProps) {
     return () => window.clearTimeout(nextTimer);
   }, [hasStarted, typedText]);
 
+  useEffect(() => {
+    if (!showChoices) return undefined;
+
+    const fullChoiceText = `${choiceTitle}\n${choiceSubtitle}`;
+
+    if (choiceText.length >= fullChoiceText.length) return undefined;
+
+    const nextTimer = window.setTimeout(() => {
+      setChoiceText(fullChoiceText.slice(0, choiceText.length + 1));
+    }, choiceText.length === 0 ? 80 : 26);
+
+    return () => window.clearTimeout(nextTimer);
+  }, [choiceText, showChoices]);
+
   const lines = typedText.split('\n');
+  const choiceLines = choiceText.split('\n');
+  const fullChoiceText = `${choiceTitle}\n${choiceSubtitle}`;
 
   return (
     <main className="seven-entry-cursor fixed inset-0 z-[100] overflow-hidden bg-[#F7F7F8] text-[#111114]">
@@ -246,20 +274,42 @@ export function SevenEntryTransition({ onLogout }: SevenEntryTransitionProps) {
             className="mx-auto rounded-[34px] border border-white/55 bg-white/[0.24] px-6 py-8 shadow-[0_26px_90px_rgba(30,30,40,0.13)] backdrop-blur-[28px] backdrop-saturate-150 sm:px-10 sm:py-12 lg:px-14"
           >
             <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/50 px-4 py-2 text-xs font-medium uppercase tracking-[0.22em] text-[#6B6B72] shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_12px_38px_rgba(30,30,40,0.08)] backdrop-blur-2xl">
-              <Sparkles className="h-3.5 w-3.5 text-[#ff6a00]" />
+              <img
+                src="/assets/seven/Logo%20Seven%20Group.webp"
+                alt=""
+                className="h-4 w-4 object-contain"
+                aria-hidden="true"
+              />
               Ecossistema Seven
             </div>
 
-            <h1 className="min-h-[11.2rem] text-balance text-3xl font-semibold leading-[1.12] tracking-[-0.04em] text-[#111114] sm:text-4xl lg:text-5xl">
-              {[0, 1, 2, 3].map((index) => (
-                <span key={index} className={index === 0 ? 'block' : 'mt-1.5 block'}>
-                  {lines[index] || ''}
-                  {index === lines.length - 1 && (
+            {!showChoices ? (
+              <h1 className="min-h-[11.2rem] text-balance text-3xl font-semibold leading-[1.12] tracking-[-0.04em] text-[#111114] sm:text-4xl lg:text-5xl">
+                {[0, 1, 2, 3].map((index) => (
+                  <span key={index} className={index === 0 ? 'block' : 'mt-1.5 block'}>
+                    {lines[index] || ''}
+                    {index === lines.length - 1 && (
+                      <span className="ml-1 inline-block h-[0.9em] w-[3px] translate-y-[0.12em] animate-pulse rounded-full bg-[#111114]" />
+                    )}
+                  </span>
+                ))}
+              </h1>
+            ) : (
+              <div className="min-h-[7.4rem]">
+                <h2 className="text-balance text-4xl font-semibold leading-[1] tracking-[-0.055em] text-[#111114] sm:text-5xl">
+                  {choiceLines[0] || ''}
+                  {choiceText.length < fullChoiceText.length && choiceLines.length === 1 && (
                     <span className="ml-1 inline-block h-[0.9em] w-[3px] translate-y-[0.12em] animate-pulse rounded-full bg-[#111114]" />
                   )}
-                </span>
-              ))}
-            </h1>
+                </h2>
+                <p className="mt-4 text-base font-medium leading-7 text-[#666670] sm:text-lg">
+                  {choiceLines[1] || ''}
+                  {choiceLines.length > 1 && choiceText.length < fullChoiceText.length && (
+                    <span className="ml-1 inline-block h-[0.9em] w-[2px] translate-y-[0.12em] animate-pulse rounded-full bg-[#666670]" />
+                  )}
+                </p>
+              </div>
+            )}
 
             <motion.div
               initial={{ opacity: 0, y: 22, filter: 'blur(14px)' }}
@@ -269,7 +319,7 @@ export function SevenEntryTransition({ onLogout }: SevenEntryTransitionProps) {
                 filter: isTypingDone ? 'blur(0px)' : 'blur(14px)',
               }}
               transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-              className="mt-9"
+              className={showChoices ? 'mt-4' : 'mt-9'}
             >
               {!showChoices ? (
                 <button
@@ -288,22 +338,35 @@ export function SevenEntryTransition({ onLogout }: SevenEntryTransitionProps) {
                   className="grid gap-4 md:grid-cols-2"
                 >
                   {[
-                    { title: 'História da Seven', subtitle: 'Em breve: a arquitetura central do grupo e sua origem.' },
-                    { title: 'História da ARQO', subtitle: 'Em breve: a operação comercial e sua lógica de mercado.' },
+                    {
+                      title: 'Seven Group 360',
+                      subtitle: 'Conheça a arquitetura central do grupo, sua mentalidade e seus pilares estratégicos.',
+                      action: () => navigate('/sevengroup'),
+                      status: 'Acessar página institucional',
+                    },
+                    {
+                      title: 'ARQO Inteligência Imobiliária',
+                      subtitle: 'Em breve: a operação comercial e sua lógica de mercado.',
+                      action: undefined,
+                      status: 'Conteúdo em preparação',
+                    },
                   ].map((option) => (
-                    <div
+                    <button
+                      type="button"
                       key={option.title}
-                      className="rounded-[28px] border border-white/70 bg-white/42 p-6 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_20px_60px_rgba(30,30,40,0.12)] backdrop-blur-3xl"
+                      onClick={option.action}
+                      disabled={!option.action}
+                      className="seven-entry-clickable group rounded-[28px] border border-white/70 bg-white/42 p-6 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_20px_60px_rgba(30,30,40,0.12)] backdrop-blur-3xl transition hover:-translate-y-1 hover:bg-white/58 disabled:cursor-default disabled:hover:translate-y-0 disabled:hover:bg-white/42"
                     >
                       <div className="mb-8 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/70 bg-white/55 text-[#ff6a00] shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
                         <Building2 className="h-5 w-5" />
                       </div>
                       <h2 className="text-2xl font-semibold tracking-[-0.035em] text-[#111114]">{option.title}</h2>
                       <p className="mt-3 max-w-sm text-sm leading-6 text-[#666670]">{option.subtitle}</p>
-                      <span className="mt-7 inline-flex items-center text-sm font-semibold text-[#8A8A92]">
-                        Conteúdo em preparação
+                      <span className="mt-7 inline-flex items-center text-sm font-semibold text-[#8A8A92] transition group-enabled:text-[#E76912]">
+                        {option.status}
                       </span>
-                    </div>
+                    </button>
                   ))}
                 </motion.div>
               )}

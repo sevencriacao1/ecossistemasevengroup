@@ -1,59 +1,42 @@
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { SevenEntryTransition } from '../components/SevenEntryTransition';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { useAuth } from '../contexts/AuthContext';
 
 export function Login() {
   const navigate = useNavigate();
-  const { session, isLoading: isAuthLoading, signIn, signOut } = useAuth();
+  const { session, isLoading: isAuthLoading, signIn } = useAuth();
 
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isEntering, setIsEntering] = useState(false);
   const [error, setError] = useState('');
-  const transitionPending = useRef(false);
 
   useEffect(() => {
-    if (session && !isEntering && !transitionPending.current) {
+    if (session) {
       navigate('/home', { replace: true });
     }
-  }, [session, navigate, isEntering]);
+  }, [session, navigate]);
 
   const handleLogin = async (event: FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
     setError('');
-    transitionPending.current = true;
 
     try {
       await signIn(login, password);
-      setIsEntering(true);
+      navigate('/home', { replace: true });
     } catch (err) {
-      transitionPending.current = false;
-      setError(err instanceof Error ? err.message : 'Credenciais invalidas. Tente novamente.');
+      setError(err instanceof Error ? err.message : 'Credenciais inválidas. Tente novamente.');
       setIsLoading(false);
     }
   };
 
-  const handleEntryLogout = async () => {
-    await signOut();
-    transitionPending.current = false;
-    setIsEntering(false);
-    setIsLoading(false);
-    navigate('/login', { replace: true });
-  };
-
   if (isAuthLoading) {
     return <div className="min-h-screen bg-background" />;
-  }
-
-  if (isEntering) {
-    return <SevenEntryTransition onLogout={handleEntryLogout} />;
   }
 
   return (

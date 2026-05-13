@@ -1,0 +1,78 @@
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { ArrowDown, ArrowRight, Sparkles } from 'lucide-react';
+import { useRef } from 'react';
+import { AnchorButton, AssetFrame } from './SevenPrimitives';
+import { sevenAssets } from './sevenContent';
+
+export function SevenHero() {
+  const ref = useRef<HTMLElement | null>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
+  const y = useTransform(scrollYProgress, [0, 1], [0, 120]);
+  const opacity = useTransform(scrollYProgress, [0, 0.78], [1, 0.18]);
+
+  return (
+    <section ref={ref} className="relative min-h-screen overflow-hidden bg-[#F7F7F8] px-5 py-24 text-[#111114] sm:px-8 lg:px-10">
+      <motion.div
+        style={{ y, opacity }}
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_24%_20%,rgba(231,105,18,0.16),transparent_26%),radial-gradient(circle_at_78%_18%,rgba(17,17,20,0.06),transparent_23%),linear-gradient(180deg,#ffffff_0%,#f6f6f7_100%)]"
+      />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-full bg-[linear-gradient(rgba(17,17,20,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(17,17,20,0.045)_1px,transparent_1px)] bg-[size:72px_72px] [mask-image:linear-gradient(180deg,black,transparent_78%)]" />
+
+      <div className="relative z-10 mx-auto grid min-h-[calc(100vh-12rem)] max-w-7xl items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
+        <motion.div
+          initial={{ opacity: 0, y: 24, filter: 'blur(12px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-black/[0.06] bg-white/60 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#686871] shadow-[0_14px_36px_rgba(17,17,20,0.06)] backdrop-blur-2xl">
+            <Sparkles className="h-3.5 w-3.5 text-[#E76912]" />
+            Estratégia • Arquitetura • Render • Marketing
+          </div>
+          <h1 className="text-balance text-6xl font-semibold leading-[0.88] tracking-[-0.075em] text-[#111114] sm:text-7xl lg:text-8xl">
+            Seven Group.
+          </h1>
+          <p className="mt-8 max-w-3xl text-balance text-2xl font-medium leading-tight tracking-[-0.035em] text-[#242428] sm:text-3xl lg:text-4xl">
+            Transformamos projetos imobiliários em movimentos de mercado.
+          </p>
+          <p className="mt-7 max-w-2xl text-base leading-8 text-[#666670] sm:text-lg">
+            A Seven Group é um ecossistema completo de inteligência imobiliária, unindo estratégia,
+            posicionamento, arquitetura, marketing, renderização e aceleração comercial.
+          </p>
+          <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+            <AnchorButton href="#ecossistema" dark>
+              Conhecer Ecossistema
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </AnchorButton>
+            <AnchorButton href="#pilares">
+              Ver Pilares
+              <ArrowDown className="ml-2 h-4 w-4" />
+            </AnchorButton>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96, y: 24 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+          className="relative min-h-[430px] lg:min-h-[560px]"
+        >
+          <div className="absolute inset-0 rounded-[42px] border border-white bg-white/42 shadow-[0_34px_100px_rgba(17,17,20,0.12)] backdrop-blur-3xl" />
+          <AssetFrame
+            src={sevenAssets.logo}
+            alt="Logo Seven Group"
+            initials="7"
+            label="Logo oficial Seven Group"
+            className="absolute inset-6"
+            fit="contain"
+          />
+          <div className="absolute bottom-10 left-10 right-10 rounded-[24px] border border-black/[0.06] bg-white/70 p-5 shadow-[0_24px_54px_rgba(17,17,20,0.10)] backdrop-blur-2xl">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#E76912]">Inteligência imobiliária</p>
+            <p className="mt-2 text-sm leading-6 text-[#62626B]">
+              Um modelo integrado para concepção, posicionamento, lançamento e performance comercial.
+            </p>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
