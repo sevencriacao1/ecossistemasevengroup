@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Loader2, ShieldCheck } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { SevenEntryTransition } from '../components/SevenEntryTransition';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -9,10 +9,9 @@ import { useAuth } from '../contexts/AuthContext';
 
 export function Login() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { session, isLoading: isAuthLoading, signIn } = useAuth();
+  const { session, isLoading: isAuthLoading, signIn, signOut } = useAuth();
 
-  const [username, setUsername] = useState('');
+  const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isEntering, setIsEntering] = useState(false);
@@ -21,10 +20,9 @@ export function Login() {
 
   useEffect(() => {
     if (session && !isEntering && !transitionPending.current) {
-      const origin = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/home';
-      navigate(origin, { replace: true });
+      navigate('/home', { replace: true });
     }
-  }, [session, navigate, location, isEntering]);
+  }, [session, navigate, isEntering]);
 
   const handleLogin = async (event: FormEvent) => {
     event.preventDefault();
@@ -33,16 +31,21 @@ export function Login() {
     transitionPending.current = true;
 
     try {
-      await signIn(username, password);
+      await signIn(login, password);
       setIsEntering(true);
-      window.setTimeout(() => {
-        navigate('/home', { replace: true });
-      }, 3200);
     } catch (err) {
       transitionPending.current = false;
-      setError(err instanceof Error ? err.message : 'Credenciais inválidas. Tente novamente.');
+      setError(err instanceof Error ? err.message : 'Credenciais invalidas. Tente novamente.');
       setIsLoading(false);
     }
+  };
+
+  const handleEntryLogout = async () => {
+    await signOut();
+    transitionPending.current = false;
+    setIsEntering(false);
+    setIsLoading(false);
+    navigate('/login', { replace: true });
   };
 
   if (isAuthLoading) {
@@ -50,97 +53,94 @@ export function Login() {
   }
 
   if (isEntering) {
-    return <SevenEntryTransition />;
+    return <SevenEntryTransition onLogout={handleEntryLogout} />;
   }
 
   return (
-    <main className="min-h-screen overflow-hidden bg-background text-text selection:bg-primary/30">
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_24%_18%,rgba(223,117,13,0.24),transparent_28%),radial-gradient(circle_at_72%_62%,rgba(255,255,255,0.06),transparent_30%),linear-gradient(120deg,#0F0F10_0%,#18181B_48%,#0F0F10_100%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:84px_84px] [mask-image:radial-gradient(ellipse_at_38%_45%,#000_0%,transparent_72%)]" />
-        <div className="absolute right-[-10rem] top-[-8rem] h-[42rem] w-[42rem] rounded-full border border-primary/20" />
-        <div className="absolute right-[-4rem] top-[5rem] h-[34rem] w-[34rem] rounded-full border border-white/10" />
-        <div className="absolute -left-28 top-0 h-[130%] w-72 rotate-12 bg-primary/20 blur-3xl" />
-      </div>
+    <main className="flex min-h-screen items-center justify-center bg-black px-5 py-10 text-[#2A2A2A] selection:bg-[#ff6a00]/25">
+      <motion.section
+        initial={{ opacity: 0, y: 18, scale: 0.985 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        className="grid w-full max-w-[970px] gap-8 rounded-[28px] bg-[#F7F7F7] p-6 shadow-[0_28px_80px_rgba(0,0,0,0.45)] sm:p-8 lg:grid-cols-[1.08fr_1fr] lg:gap-14"
+      >
+        <div className="relative min-h-[360px] overflow-hidden rounded-[22px] bg-[#050505] sm:min-h-[500px]">
+          <img
+            src="/assets/login/bg-login.webp"
+            alt=""
+            className="h-full min-h-[360px] w-full object-cover sm:min-h-[500px]"
+            aria-hidden="true"
+          />
+        </div>
 
-      <section className="relative z-10 grid min-h-screen grid-cols-1 lg:grid-cols-[1.05fr_0.95fr]">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col justify-center px-6 py-16 sm:px-10 lg:px-16"
-        >
-          <div className="max-w-3xl">
-            <div className="mb-8 inline-flex items-center gap-3 border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-medium uppercase tracking-[0.32em] text-text-muted backdrop-blur-xl">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_18px_rgba(223,117,13,0.9)]" />
-              Seven Group
-            </div>
-            <h1 className="max-w-3xl text-5xl font-semibold leading-[0.95] tracking-tight text-white sm:text-7xl lg:text-8xl">
-              Ecossistema Seven Group
-            </h1>
-            <p className="mt-8 max-w-2xl text-lg leading-8 text-[#D6D6D6] sm:text-xl">
-              Você não está entrando apenas em uma empresa. Você está entrando em uma operação premium, estratégica e organizada para gerar performance no mercado imobiliário.
-            </p>
-          </div>
-        </motion.div>
-
-        <div className="flex items-center px-6 pb-12 sm:px-10 lg:px-16 lg:pb-0">
-          <motion.div
-            initial={{ opacity: 0, x: 26 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.15, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-md border border-white/10 bg-[#18181B]/70 p-6 shadow-premium backdrop-blur-2xl sm:p-8"
-          >
-            <div className="mb-8 flex items-start justify-between gap-6">
-              <div>
-                <p className="text-sm uppercase tracking-[0.24em] text-primary">Acesso interno</p>
-                <h2 className="mt-3 text-2xl font-semibold tracking-tight">Iniciar jornada</h2>
-              </div>
-              <div className="flex h-11 w-11 items-center justify-center rounded-full border border-primary/25 bg-primary/10 text-primary shadow-glow">
-                <ShieldCheck className="h-5 w-5" />
+        <div className="flex items-center px-1 pb-2 pt-1 sm:px-4 lg:px-0">
+          <div className="w-full max-w-[360px] lg:ml-2">
+            <div className="mb-4">
+              <img
+                src="/assets/login/icon-n-laranja.webp"
+                alt="Seven Group"
+                className="mb-4 h-12 w-12 object-contain object-left"
+              />
+              <h1 className="text-[30px] font-semibold uppercase leading-[0.9] tracking-[-0.04em] text-[#25272B] sm:text-[34px]">
+                <span className="block font-medium">Ecossistema</span>
+                <span className="block font-extrabold">Seven Group 360</span>
+              </h1>
+              <div className="mt-4 flex items-center gap-2 text-sm text-[#8B8B8B]">
+                <span className="h-2 w-2 rounded-full bg-[#76dd28] shadow-[0_0_0_3px_rgba(118,221,40,0.12)]" />
+                Acesso restrito
               </div>
             </div>
 
-            <form onSubmit={handleLogin} className="space-y-5">
+            <div className="mb-4 h-px w-full bg-[#E1E1E1]" />
+
+            <form onSubmit={handleLogin} className="space-y-4">
               {error && (
-                <div className="border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                   {error}
                 </div>
               )}
 
               <div className="space-y-2">
-                <label className="text-xs font-medium uppercase tracking-[0.18em] text-text-muted">Usuário</label>
+                <label className="text-sm text-[#777777]">Usuário:</label>
                 <Input
                   type="text"
-                  value={username}
-                  onChange={(event) => setUsername(event.target.value)}
-                  placeholder="Insira seu usuário"
+                  value={login}
+                  onChange={(event) => setLogin(event.target.value)}
+                  placeholder="Insira seu usuário aqui"
                   required
-                  className="h-12 rounded-none bg-background/50"
+                  className="h-[53px] rounded-md border-[#AFAFAF] bg-white px-4 text-[14px] text-[#2A2A2A] placeholder:text-[#8A8A8A] focus:border-[#ff6a00] focus:ring-[#ff6a00]"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-medium uppercase tracking-[0.18em] text-text-muted">Senha</label>
+                <label className="text-sm text-[#777777]">Senha:</label>
                 <Input
                   type="password"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
-                  placeholder="Insira sua senha"
+                  placeholder="Insira sua senha aqui"
                   required
                   minLength={6}
-                  className="h-12 rounded-none bg-background/50"
+                  className="h-[53px] rounded-md border-[#ff6a00] bg-white px-4 text-[14px] text-[#2A2A2A] placeholder:text-[#8A8A8A] focus:border-[#ff6a00] focus:ring-[#ff6a00]"
                 />
               </div>
 
-              <Button type="submit" size="lg" className="mt-4 w-full rounded-none" disabled={isLoading}>
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Entrar no ecossistema'}
-                {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
+              <Button
+                type="submit"
+                size="lg"
+                className="mt-8 h-[52px] w-full rounded-md bg-gradient-to-r from-[#ff9b35] to-[#ff5b00] text-[17px] font-medium text-white shadow-none hover:from-[#ff9024] hover:to-[#f04f00]"
+                disabled={isLoading}
+              >
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Realizar login'}
               </Button>
+
+              <p className="pt-1 text-center text-[11px] text-[#9A9A9A]">
+                Ainda não possui uma conta? <span className="font-semibold text-[#777777]">Fale com o administrador.</span>
+              </p>
             </form>
-          </motion.div>
+          </div>
         </div>
-      </section>
+      </motion.section>
     </main>
   );
 }

@@ -1,123 +1,109 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { Session } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
 
 export type Company = 'Seven' | 'ARQO' | 'Nexa';
 export type UserRole = 'admin' | 'colaborador';
 
-export interface MockUser {
+export interface UserProfile {
   id: string;
   username: string;
-  full_name: string;
+  full_name: string | null;
   role: UserRole;
   company: Company;
-  allowedCompanies: Company[];
-}
-
-interface MockSession {
-  token: string;
-  userId: string;
 }
 
 interface AuthContextType {
-  session: MockSession | null;
-  user: MockUser | null;
-  profile: MockUser | null;
-  users: MockUser[];
+  session: Session | null;
+  user: UserProfile | null;
+  profile: UserProfile | null;
   isLoading: boolean;
-  signIn: (username: string, password: string) => Promise<MockUser>;
+  signIn: (email: string, password: string) => Promise<UserProfile | null>;
   signOut: () => Promise<void>;
-  canAccessCompany: (company: Company) => boolean;
 }
-
-const STORAGE_KEY = 'seven.mock.session';
-
-export const mockUsers: MockUser[] = [
-  {
-    id: 'user-admin-seven',
-    username: 'admin',
-    full_name: 'Admin Seven',
-    role: 'admin',
-    company: 'Seven',
-    allowedCompanies: ['Seven', 'ARQO', 'Nexa'],
-  },
-  {
-    id: 'user-gabriel-arqo',
-    username: 'gabriel',
-    full_name: 'Gabriel',
-    role: 'colaborador',
-    company: 'ARQO',
-    allowedCompanies: ['Seven', 'ARQO'],
-  },
-];
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const createSession = (userId: string): MockSession => ({
-  token: `mock-${userId}-${Date.now()}`,
-  userId,
-});
+async function loadProfile(userId: string): Promise<UserProfile | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, username, full_name, role, company')
+    .eq('id', userId)
+    .single();
+
+  if (error) {
+    console.error('Erro ao carregar perfil:', error);
+    return null;
+  }
+
+  return data as UserProfile;
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<MockSession | null>(null);
-  const [profile, setProfile] = useState<MockUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    let isMounted = true;
 
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored) as MockSession;
-        const storedUser = mockUsers.find((mockUser) => mockUser.id === parsed.userId);
+    const syncSession = async (nextSession: Session | null) => {
+      if (!isMounted) return;
 
-        if (storedUser) {
-          setSession(parsed);
-          setProfile(storedUser);
-        } else {
-          localStorage.removeItem(STORAGE_KEY);
-        }
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
+      setSession(nextSession);
+
+      if (nextSession?.user.id) {
+        const nextProfile = await loadProfile(nextSession.user.id);
+        if (isMounted) setProfile(nextProfile);
+      } else {
+        setProfile(null);
       }
-    }
+    };
 
-    setIsLoading(false);
+    supabase.auth.getSession().then(async ({ data }) => {
+      await syncSession(data.session);
+      if (isMounted) setIsLoading(false);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      void syncSession(nextSession);
+    });
+
+    return () => {
+      isMounted = false;
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
-  const signIn = async (username: string, password: string) => {
-    const normalizedUsername = username.trim().toLowerCase();
-    const foundUser = mockUsers.find((mockUser) => mockUser.username === normalizedUsername);
+  const signIn = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    });
 
-    if (!foundUser || password !== '123456') {
-      throw new Error('Credenciais inválidas. Tente novamente.');
+    if (error) {
+      throw new Error('Credenciais invalidas. Tente novamente.');
     }
 
-    const nextSession = createSession(foundUser.id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextSession));
-    setSession(nextSession);
-    setProfile(foundUser);
-    return foundUser;
+    setSession(data.session);
+    const nextProfile = data.user ? await loadProfile(data.user.id) : null;
+    setProfile(nextProfile);
+    return nextProfile;
   };
 
   const signOut = async () => {
-    localStorage.removeItem(STORAGE_KEY);
+    await supabase.auth.signOut();
     setSession(null);
     setProfile(null);
-  };
-
-  const canAccessCompany = (company: Company) => {
-    if (!profile) return false;
-    return profile.allowedCompanies.includes(company);
   };
 
   const value = useMemo<AuthContextType>(() => ({
     session,
     user: profile,
     profile,
-    users: mockUsers,
     isLoading,
     signIn,
     signOut,
-    canAccessCompany,
   }), [session, profile, isLoading]);
 
   return (

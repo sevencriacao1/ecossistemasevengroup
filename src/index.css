@@ -9,6 +9,7 @@
     scroll-behavior: smooth;
     background: #0F0F10;
     font-family: "Space Grotesk", sans-serif;
+    cursor: url("/assets/cursors/cursor-default-smaller.png") 1 1, default;
   }
 
   body {
@@ -18,16 +19,56 @@
     font-family: "Space Grotesk", sans-serif;
     font-synthesis: none;
     text-rendering: geometricPrecision;
+    cursor: url("/assets/cursors/cursor-default-smaller.png") 1 1, default;
   }
 
   * {
     box-sizing: border-box;
+  }
+
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  li,
+  blockquote,
+  td,
+  th,
+  input,
+  textarea,
+  [contenteditable="true"],
+  [contenteditable=""] {
+    cursor: url("/assets/cursors/cursor-text-smaller.png") 7 12, text;
+  }
+
+  a,
+  button,
+  [role="button"],
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  summary,
+  select,
+  label {
+    cursor: url("/assets/cursors/cursor-link-smaller.png") 5 2, pointer;
   }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  .seven-entry-cursor {
+    cursor: url("/assets/cursors/cursor-default-smaller.png") 1 1, default;
+  }
+
+  .seven-entry-clickable,
+  .seven-entry-clickable * {
+    cursor: url("/assets/cursors/cursor-link-smaller.png") 5 2, pointer;
   }
 
   .custom-scrollbar::-webkit-scrollbar {
