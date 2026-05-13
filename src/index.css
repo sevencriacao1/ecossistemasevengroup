@@ -1,8 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    background: #0F0F10;
+    font-family: "Space Grotesk", sans-serif;
+  }
+
+  body {
+    margin: 0;
+    background: #0F0F10;
+    color: #FFFFFF;
+    font-family: "Space Grotesk", sans-serif;
+    font-synthesis: none;
+    text-rendering: geometricPrecision;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+}
+
 @layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
   }

@@ -1,15 +1,16 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { Company, useAuth } from '../contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
+  company?: Company;
 }
 
-export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
-  const { session, profile, isLoading } = useAuth();
+export function ProtectedRoute({ children, requireAdmin = false, company }: ProtectedRouteProps) {
+  const { session, profile, isLoading, canAccessCompany } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -25,7 +26,11 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
   }
 
   if (requireAdmin && profile?.role !== 'admin') {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/home" replace />;
+  }
+
+  if (company && !canAccessCompany(company)) {
+    return <Navigate to="/home" replace />;
   }
 
   return <>{children}</>;

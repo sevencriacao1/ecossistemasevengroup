@@ -8,7 +8,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        sans: ['"Space Grotesk"', 'sans-serif'],
       },
       colors: {
         background: '#0F0F10',

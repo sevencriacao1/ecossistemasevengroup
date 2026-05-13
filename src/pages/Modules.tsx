@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { motion, Variants } from 'framer-motion';
 import { Layout } from '../components/Layout';
-import { PlayCircle, CheckCircle2, Clock, Lock, ArrowRight, Layers } from 'lucide-react';
+import { CheckCircle2, Clock, Lock, ArrowRight, Layers } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchApi } from '../lib/api';
 import { Skeleton } from '../components/ui/Skeleton';
@@ -15,6 +15,19 @@ interface Module {
   progress: number;
 }
 
+interface ModuleRecord {
+  id: string;
+  title: string;
+  description?: string;
+  duration: string;
+}
+
+interface ProgressRecord {
+  module_id: string;
+  status?: Module['status'];
+  progress?: number;
+}
+
 export function Modules() {
   const { profile } = useAuth();
   const [modules, setModules] = useState<Module[]>([]);
@@ -25,8 +38,8 @@ export function Modules() {
       if (!profile) return;
       try {
         const [mods, prog] = await Promise.all([
-          fetchApi<any[]>('/api/modules'),
-          fetchApi<any[]>('/api/progress'),
+          fetchApi<ModuleRecord[]>('/api/modules'),
+          fetchApi<ProgressRecord[]>('/api/progress'),
         ]);
 
         let hasPending = false;
@@ -61,7 +74,7 @@ export function Modules() {
     show: { opacity: 1, transition: { staggerChildren: 0.1 } },
   };
 
-  const item = {
+  const item: Variants = {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } },
   };

@@ -1,74 +1,127 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
-import { fetchApi } from '../lib/api';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-interface Profile {
+export type Company = 'Seven' | 'ARQO' | 'Nexa';
+export type UserRole = 'admin' | 'colaborador';
+
+export interface MockUser {
   id: string;
   username: string;
   full_name: string;
-  role: 'admin' | 'colaborador';
-  company: 'Seven' | 'ARQO' | 'Nexa';
+  role: UserRole;
+  company: Company;
+  allowedCompanies: Company[];
+}
+
+interface MockSession {
+  token: string;
+  userId: string;
 }
 
 interface AuthContextType {
-  session: Session | null;
-  user: User | null;
-  profile: Profile | null;
+  session: MockSession | null;
+  user: MockUser | null;
+  profile: MockUser | null;
+  users: MockUser[];
   isLoading: boolean;
+  signIn: (username: string, password: string) => Promise<MockUser>;
   signOut: () => Promise<void>;
+  canAccessCompany: (company: Company) => boolean;
 }
+
+const STORAGE_KEY = 'seven.mock.session';
+
+export const mockUsers: MockUser[] = [
+  {
+    id: 'user-admin-seven',
+    username: 'admin',
+    full_name: 'Admin Seven',
+    role: 'admin',
+    company: 'Seven',
+    allowedCompanies: ['Seven', 'ARQO', 'Nexa'],
+  },
+  {
+    id: 'user-gabriel-arqo',
+    username: 'gabriel',
+    full_name: 'Gabriel',
+    role: 'colaborador',
+    company: 'ARQO',
+    allowedCompanies: ['Seven', 'ARQO'],
+  },
+];
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const createSession = (userId: string): MockSession => ({
+  token: `mock-${userId}-${Date.now()}`,
+  userId,
+});
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [session, setSession] = useState<MockSession | null>(null);
+  const [profile, setProfile] = useState<MockUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Buscar sessão atual
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) fetchProfile();
-      else setIsLoading(false);
-    });
+    const stored = localStorage.getItem(STORAGE_KEY);
 
-    // Escutar mudanças de auth
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile();
-      } else {
-        setProfile(null);
-        setIsLoading(false);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as MockSession;
+        const storedUser = mockUsers.find((mockUser) => mockUser.id === parsed.userId);
+
+        if (storedUser) {
+          setSession(parsed);
+          setProfile(storedUser);
+        } else {
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      } catch {
+        localStorage.removeItem(STORAGE_KEY);
       }
-    });
+    }
 
-    return () => subscription.unsubscribe();
+    setIsLoading(false);
   }, []);
 
-  const fetchProfile = async () => {
-    try {
-      const data = await fetchApi<Profile>('/api/profile');
-      setProfile(data);
-    } catch (error) {
-      console.error('Erro ao buscar perfil:', error);
-      setProfile(null);
-    } finally {
-      setIsLoading(false);
+  const signIn = async (username: string, password: string) => {
+    const normalizedUsername = username.trim().toLowerCase();
+    const foundUser = mockUsers.find((mockUser) => mockUser.username === normalizedUsername);
+
+    if (!foundUser || password !== '123456') {
+      throw new Error('Credenciais inválidas. Tente novamente.');
     }
+
+    const nextSession = createSession(foundUser.id);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextSession));
+    setSession(nextSession);
+    setProfile(foundUser);
+    return foundUser;
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    localStorage.removeItem(STORAGE_KEY);
+    setSession(null);
+    setProfile(null);
   };
 
+  const canAccessCompany = (company: Company) => {
+    if (!profile) return false;
+    return profile.allowedCompanies.includes(company);
+  };
+
+  const value = useMemo<AuthContextType>(() => ({
+    session,
+    user: profile,
+    profile,
+    users: mockUsers,
+    isLoading,
+    signIn,
+    signOut,
+    canAccessCompany,
+  }), [session, profile, isLoading]);
+
   return (
-    <AuthContext.Provider value={{ session, user, profile, isLoading, signOut }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

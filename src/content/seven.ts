@@ -1,0 +1,125 @@
+import { Guide } from './types';
+
+export const sevenGuide: Guide = {
+  id: 'seven',
+  company: 'Seven',
+  title: 'Seven Group',
+  subtitle: 'Uma estrutura criada para transformar estratégia, arquitetura, marketing e operação em percepção de valor.',
+  sections: [
+    {
+      type: 'hero',
+      eyebrow: 'Ecossistema Seven',
+      title: 'Você não está entrando apenas em uma empresa.',
+      highlight: 'Você está entrando em um ecossistema criado para gerar performance no mercado imobiliário.',
+      subtitle: 'Sua jornada foi personalizada para que você entenda exatamente como a estrutura do grupo contribui para a sua atuação.',
+    },
+    {
+      type: 'pain-map',
+      eyebrow: 'O mercado mudou',
+      title: 'Dores do Mercado',
+      text: 'O mercado imobiliário mudou. Hoje, não basta apenas construir. Empreendimentos de alto desempenho exigem estratégia, posicionamento e execução.',
+      pains: [
+        'Decisões sem dados',
+        'Material publicitário pouco atrativo',
+        'Arquitetura pouco vendável',
+        'Render amador',
+        'Operação comercial frágil',
+        'Comunicação ineficiente',
+      ],
+    },
+    {
+      type: 'transition',
+      title: 'DA CONCEPÇÃO AO SUCESSO.',
+      text: 'Pensando nisso, estruturamos um ecossistema capaz de acompanhar o empreendimento em todas as etapas.',
+    },
+    {
+      type: 'service-grid',
+      title: 'Serviços Seven',
+      services: [
+        {
+          number: '01',
+          title: 'Estudo de Mercado',
+          highlight: 'Mercado',
+          description: 'Leitura aprofundada da região, demanda, concorrência e comportamento do comprador.',
+          bullets: [
+            'Mapeamento de concorrência direta',
+            'Análise de produto por tipologia',
+            'Estudo de elasticidade de preço',
+            'Comportamento do comprador local',
+          ],
+          variant: 'left-text',
+        },
+        {
+          number: '02',
+          title: 'Desenvolvimento Imobiliário',
+          highlight: 'Imobiliário',
+          description: 'Estruturação de oportunidades com visão de mercado.',
+          bullets: [
+            'Identificação de áreas estratégicas',
+            'Estudo de potencial construtivo',
+            'Estruturação de novos projetos',
+            'Avaliação de potencial de mercado',
+          ],
+          variant: 'glass-panel',
+        },
+        {
+          number: '03',
+          title: 'Posicionamento de Produto',
+          highlight: 'Produto',
+          description: 'Construção de percepção, valor e diferenciação no mercado.',
+          bullets: [
+            'Definição de público dominante',
+            'Ajuste de mix e tipologias',
+            'Construção de proposta de valor',
+            'Diferenciação competitiva',
+          ],
+          variant: 'center-card',
+        },
+        {
+          number: '04',
+          title: 'Projeto Arquitetônico',
+          highlight: 'Arquitetônico',
+          description: 'Construção de percepção, valor e diferenciação no mercado.',
+          bullets: [
+            'Direcionamento de layout e plantas',
+            'Otimização de áreas e tipologias',
+            'Valorização estética e funcional',
+            'Integração com estratégia comercial',
+          ],
+          variant: 'architectural-map',
+        },
+        {
+          number: '05',
+          title: 'Viabilidade',
+          highlight: 'Viabilidade',
+          description: 'Segurança estratégica para tomada de decisão.',
+          bullets: [
+            'Análise de custos e margens',
+            'Definição de ticket ideal',
+            'Estudo de rentabilidade',
+            'Simulação de cenários',
+          ],
+          variant: 'split-image',
+        },
+        {
+          number: '06',
+          title: 'Marketing e Render',
+          highlight: 'Render',
+          description: 'Estruturação de oportunidades com visão de mercado.',
+          bullets: [
+            'Desenvolvimento de imagens e perspectivas',
+            'Direcionamento criativo de campanhas',
+            'Estruturação de novos projetos',
+            'Avaliação de potencial de mercado',
+          ],
+          variant: 'full-bleed',
+        },
+      ],
+    },
+    {
+      type: 'closing',
+      title: 'A Seven existe para transformar estratégia, arquitetura, marketing e operação em percepção de valor.',
+      ctaLabel: 'Continuar para minha empresa',
+    },
+  ],
+};

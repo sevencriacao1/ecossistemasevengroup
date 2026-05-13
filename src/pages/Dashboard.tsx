@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { motion, Variants } from 'framer-motion';
 import { Layout } from '../components/Layout';
 import { PlayCircle, CheckCircle2, Clock, BookOpen, ArrowRight, TrendingUp } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -15,6 +15,18 @@ interface Module {
   progress: number;
 }
 
+interface ModuleRecord {
+  id: string;
+  title: string;
+  duration: string;
+}
+
+interface ProgressRecord {
+  module_id: string;
+  status?: Module['status'];
+  progress?: number;
+}
+
 export function Dashboard() {
   const { profile } = useAuth();
   const navigate = useNavigate();
@@ -26,8 +38,8 @@ export function Dashboard() {
       if (!profile) return;
       try {
         const [mods, prog] = await Promise.all([
-          fetchApi<any[]>('/api/modules'),
-          fetchApi<any[]>('/api/progress'),
+          fetchApi<ModuleRecord[]>('/api/modules'),
+          fetchApi<ProgressRecord[]>('/api/progress'),
         ]);
 
         const merged: Module[] = (mods || []).map((m) => {
@@ -56,7 +68,7 @@ export function Dashboard() {
     show: { opacity: 1, transition: { staggerChildren: 0.1 } },
   };
 
-  const item = {
+  const item: Variants = {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } },
   };
