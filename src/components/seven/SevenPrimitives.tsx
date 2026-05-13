@@ -60,38 +60,54 @@ export function ScrollTextReveal({ text, className }: { text: string; className?
 
   return (
     <h2 ref={ref} className={cn('text-[#111114]', className)}>
-      {words.map((word, index) => (
-        <RevealWord
-          key={`${word}-${index}`}
-          word={word}
-          index={index}
-          total={words.length}
-          progress={scrollYProgress}
-        />
-      ))}
+      {words.map((word, wordIndex) => {
+        const previousChars = words.slice(0, wordIndex).join('').length + wordIndex;
+        const totalChars = text.length;
+
+        return (
+          <span key={`${word}-${wordIndex}`} className="inline-block whitespace-nowrap">
+            {Array.from(word).map((char, charIndex) => (
+              <RevealCharacter
+                key={`${word}-${char}-${charIndex}`}
+                char={char}
+                index={previousChars + charIndex}
+                total={totalChars}
+                progress={scrollYProgress}
+              />
+            ))}
+            {wordIndex < words.length - 1 && (
+              <RevealCharacter
+                char=" "
+                index={previousChars + word.length}
+                total={totalChars}
+                progress={scrollYProgress}
+              />
+            )}
+          </span>
+        );
+      })}
     </h2>
   );
 }
 
-function RevealWord({
-  word,
+function RevealCharacter({
+  char,
   index,
   total,
   progress,
 }: {
-  word: string;
+  char: string;
   index: number;
   total: number;
   progress: ReturnType<typeof useScroll>['scrollYProgress'];
 }) {
   const start = total <= 1 ? 0 : index / total;
-  const end = total <= 1 ? 1 : (index + 1.8) / total;
+  const end = total <= 1 ? 1 : (index + 3.6) / total;
   const color = useTransform(progress, [start, end], ['rgba(17,17,20,0.16)', 'rgba(17,17,20,1)']);
-  const y = useTransform(progress, [start, end], [10, 0]);
 
   return (
-    <motion.span style={{ color, y }} className="inline-block">
-      {word}&nbsp;
+    <motion.span style={{ color }} className="inline">
+      {char === ' ' ? '\u00A0' : char}
     </motion.span>
   );
 }
@@ -148,7 +164,7 @@ export function AssetFrame({
           src={src}
           alt={alt}
           onError={() => setFailed(true)}
-          className={cn('absolute inset-0 h-full w-full', fit === 'contain' ? 'object-contain p-10' : 'object-cover')}
+          className={cn('absolute inset-0 h-full w-full', fit === 'contain' ? 'object-contain p-20' : 'object-cover')}
         />
       )}
       {failed && (

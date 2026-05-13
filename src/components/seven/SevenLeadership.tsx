@@ -34,7 +34,7 @@ function LeadershipSpread({ leader, index }: { leader: (typeof leaders)[number];
               <IconBadge icon={leader.icon} />
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#E76912]">{leader.role}</p>
             </div>
-            <h3 className="text-5xl font-semibold leading-[0.92] tracking-[-0.065em] text-[#111114] sm:text-7xl">
+            <h3 className="text-4xl font-semibold leading-[0.94] tracking-[-0.055em] text-[#111114] sm:text-5xl xl:text-6xl">
               {leader.name}
             </h3>
             <p className="mt-8 max-w-3xl text-xl font-medium leading-8 tracking-[-0.025em] text-[#2A2A30]">

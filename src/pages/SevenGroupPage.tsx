@@ -64,7 +64,11 @@ export function SevenGroupPage() {
             className="flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-[#111114] transition hover:bg-black/[0.04]"
           >
             <ArrowLeft className="h-4 w-4" />
-            Seven Group
+            <img
+              src="/assets/seven/Logo%20Seven%20Group.webp"
+              alt="Seven Group"
+              className="h-5 w-auto object-contain"
+            />
           </button>
 
           <div className="hidden items-center gap-1 lg:flex">

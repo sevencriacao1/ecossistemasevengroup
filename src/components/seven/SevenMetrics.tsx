@@ -1,5 +1,5 @@
 import { MapPinned } from 'lucide-react';
-import { addresses, metrics } from './sevenContent';
+import { addresses } from './sevenContent';
 import { IconBadge, PremiumCard, Reveal, SectionHeader } from './SevenPrimitives';
 
 function splitAddress(address: string) {
@@ -19,17 +19,7 @@ export function SevenMetrics() {
           title="Presença em mais de 30 cidades e 9 estados brasileiros."
           description="A Seven atua no Sul, Sudeste, Centro-Oeste e Nordeste, com operação física em Dourados/MS e Santa Maria/RS."
         />
-        <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {metrics.map((metric, index) => (
-            <Reveal key={metric.label} delay={index * 0.04}>
-              <PremiumCard className="min-h-[168px]">
-                <p className="text-4xl font-semibold tracking-[-0.06em] text-[#111114] sm:text-5xl">{metric.value}</p>
-                <p className="mt-4 text-sm font-medium uppercase tracking-[0.18em] text-[#74747C]">{metric.label}</p>
-              </PremiumCard>
-            </Reveal>
-          ))}
-        </div>
-        <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        <div className="mt-14 grid gap-4 lg:grid-cols-2">
           {addresses.map((item) => {
             const address = splitAddress(item);
 

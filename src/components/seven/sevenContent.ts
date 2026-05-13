@@ -27,6 +27,7 @@ import {
 
 export const sevenAssets = {
   logo: '/assets/seven/Logo%20Seven%20Group.webp',
+  logoN: '/assets/seven/Logo%20N.webp',
   gilson: '/assets/seven/gilson.webp',
   alex: '/assets/seven/alex.webp',
   rafael: '/assets/seven/rafael.webp',
@@ -34,8 +35,6 @@ export const sevenAssets = {
   otavio: '/assets/seven/otavio.webp',
   gabriel: '/assets/seven/gabriel.webp',
   brenda: '/assets/seven/brenda.webp',
-  team: '/assets/seven/team.webp',
-  render: '/assets/seven/empreendimento.webp',
 };
 
 export interface IconItem {
@@ -65,14 +64,6 @@ export const ethics = [
   'Compromisso com a verdade',
 ];
 
-export const metrics = [
-  { value: '+30', label: 'cidades' },
-  { value: '9', label: 'estados brasileiros' },
-  { value: '+250', label: 'empreendimentos' },
-  { value: '+20 mil', label: 'unidades vendidas' },
-  { value: '+R$ 6,5 bi', label: 'em VGV' },
-];
-
 export const leaders = [
   {
     name: 'Gilson Nogueira',
@@ -96,7 +87,7 @@ export const leaders = [
     icon: ShieldCheck,
   },
   {
-    name: 'Alex',
+    name: 'Alexsander Almeida',
     role: 'Diretor Operacional',
     initials: 'AX',
     image: sevenAssets.alex,
@@ -115,9 +106,9 @@ export const leaders = [
     icon: Waypoints,
   },
   {
-    name: 'Rafael',
+    name: 'Rafael Souza',
     role: 'Arquiteto | Marketing & Render',
-    initials: 'RF',
+    initials: 'RS',
     image: sevenAssets.rafael,
     intro:
       'Responsável pela gestão dos setores de marketing e renderização da Seven Group.',

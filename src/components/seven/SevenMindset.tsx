@@ -1,7 +1,7 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef } from 'react';
 import { ethics, manifesto } from './sevenContent';
-import { Reveal } from './SevenPrimitives';
+import { Reveal, ScrollTextReveal } from './SevenPrimitives';
 
 export function SevenMindset() {
   const ref = useRef<HTMLElement | null>(null);
@@ -13,9 +13,10 @@ export function SevenMindset() {
       <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.9fr_1.1fr]">
         <motion.div style={{ opacity: quoteOpacity }} className="lg:sticky lg:top-28 lg:h-fit">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#E76912]">Nossa mentalidade</p>
-          <h2 className="mt-5 text-balance text-5xl font-semibold leading-[0.95] tracking-[-0.06em] text-[#111114] sm:text-6xl">
-            Alta performance é regra, não exceção.
-          </h2>
+          <ScrollTextReveal
+            text="Alta performance é regra, não exceção."
+            className="mt-5 text-balance text-5xl font-semibold leading-[0.95] tracking-[-0.06em] sm:text-6xl"
+          />
         </motion.div>
         <div className="space-y-5">
           <Reveal>

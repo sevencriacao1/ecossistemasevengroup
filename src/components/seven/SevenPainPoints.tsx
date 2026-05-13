@@ -7,7 +7,7 @@ export function SevenPainPoints() {
       <div className="mx-auto max-w-7xl">
         <SectionHeader
           eyebrow="Dores do mercado"
-          title="Hoje, nao basta apenas construir."
+          title="Hoje, não basta apenas construir."
           description="Empreendimentos de alta performance exigem estratégia, posicionamento e execução. A resposta da Seven nasce exatamente onde a operação tradicional perde força."
         />
         <div className="mt-14 grid gap-4 lg:grid-cols-3">

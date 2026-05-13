@@ -1,5 +1,5 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { ArrowDown, ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowDown, ArrowRight, Quote } from 'lucide-react';
 import { useRef } from 'react';
 import { AnchorButton, AssetFrame } from './SevenPrimitives';
 import { sevenAssets } from './sevenContent';
@@ -25,12 +25,14 @@ export function SevenHero() {
           transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
         >
           <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-black/[0.06] bg-white/60 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#686871] shadow-[0_14px_36px_rgba(17,17,20,0.06)] backdrop-blur-2xl">
-            <Sparkles className="h-3.5 w-3.5 text-[#E76912]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-[#E76912]" />
             Estratégia • Arquitetura • Render • Marketing
           </div>
-          <h1 className="text-balance text-6xl font-semibold leading-[0.88] tracking-[-0.075em] text-[#111114] sm:text-7xl lg:text-8xl">
-            Seven Group.
-          </h1>
+          <img
+            src={sevenAssets.logo}
+            alt="Seven Group"
+            className="h-auto w-[min(520px,86vw)] object-contain object-left"
+          />
           <p className="mt-8 max-w-3xl text-balance text-2xl font-medium leading-tight tracking-[-0.035em] text-[#242428] sm:text-3xl lg:text-4xl">
             Transformamos projetos imobiliários em movimentos de mercado.
           </p>
@@ -58,18 +60,20 @@ export function SevenHero() {
         >
           <div className="absolute inset-0 rounded-[42px] border border-white bg-white/42 shadow-[0_34px_100px_rgba(17,17,20,0.12)] backdrop-blur-3xl" />
           <AssetFrame
-            src={sevenAssets.logo}
-            alt="Logo Seven Group"
-            initials="7"
-            label="Logo oficial Seven Group"
+            src={sevenAssets.logoN}
+            alt="Logo N Seven Group"
+            initials="N"
+            label="Logo N Seven Group"
             className="absolute inset-6"
             fit="contain"
           />
-          <div className="absolute bottom-10 left-10 right-10 rounded-[24px] border border-black/[0.06] bg-white/70 p-5 shadow-[0_24px_54px_rgba(17,17,20,0.10)] backdrop-blur-2xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#E76912]">Inteligência imobiliária</p>
-            <p className="mt-2 text-sm leading-6 text-[#62626B]">
-              Um modelo integrado para concepção, posicionamento, lançamento e performance comercial.
-            </p>
+          <div className="absolute bottom-10 left-10 right-10 rounded-[24px] border border-white/55 bg-white/32 p-5 shadow-[0_24px_54px_rgba(17,17,20,0.10)] backdrop-blur-[34px] backdrop-saturate-150">
+            <Quote className="mb-3 h-4 w-4 text-[#E76912]" />
+            <blockquote className="text-sm leading-6 text-[#3D3D43]">
+              “No que diz respeito ao empenho, ao compromisso, ao esforço, à dedicação, não existe meio-termo.
+              Ou você faz uma coisa bem-feita ou não faz.”
+              <span className="mt-2 block font-semibold text-[#111114]">Ayrton Senna</span>
+            </blockquote>
           </div>
         </motion.div>
       </div>
