@@ -14,9 +14,14 @@ export function GuidePage({ guideId }: GuidePageProps) {
     return <Navigate to="/home" replace />;
   }
 
+  const screenCount = guide.sections.reduce((total, section) => {
+    if (section.type === 'service-grid') return total + (section.services?.length || 0);
+    return total + 1;
+  }, 0);
+
   return (
     <>
-      <GuideNavigation title={guide.title} sectionCount={guide.sections.length} />
+      <GuideNavigation title={guide.title} sectionCount={screenCount} />
       <GuideRenderer guide={guide} />
     </>
   );

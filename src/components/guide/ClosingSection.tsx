@@ -6,10 +6,14 @@ interface ClosingSectionProps {
   title: string;
   text?: string;
   ctaLabel?: string;
+  secondaryActions?: Array<{
+    label: string;
+    onClick: () => void;
+  }>;
   onContinue: () => void;
 }
 
-export function ClosingSection({ title, text, ctaLabel = 'Continuar', onContinue }: ClosingSectionProps) {
+export function ClosingSection({ title, text, ctaLabel = 'Continuar', secondaryActions = [], onContinue }: ClosingSectionProps) {
   return (
     <section className="relative flex min-h-screen items-center overflow-hidden px-5 py-24 sm:px-8 lg:px-12">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,rgba(223,117,13,0.24),transparent_34%),radial-gradient(circle_at_12%_82%,rgba(255,255,255,0.055),transparent_26%),linear-gradient(180deg,#0F0F10_0%,#18181B_50%,#0F0F10_100%)]" />
@@ -30,6 +34,15 @@ export function ClosingSection({ title, text, ctaLabel = 'Continuar', onContinue
           {ctaLabel}
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
+        {secondaryActions.length > 0 && (
+          <div className="mt-5 flex flex-wrap justify-center gap-3">
+            {secondaryActions.map((action) => (
+              <Button key={action.label} variant="secondary" onClick={action.onClick} className="rounded-none">
+                {action.label}
+              </Button>
+            ))}
+          </div>
+        )}
       </motion.div>
     </section>
   );

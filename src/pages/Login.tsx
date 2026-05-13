@@ -1,7 +1,8 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Loader2, ShieldCheck } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { SevenEntryTransition } from '../components/SevenEntryTransition';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,32 +15,42 @@ export function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isEntering, setIsEntering] = useState(false);
   const [error, setError] = useState('');
+  const transitionPending = useRef(false);
 
   useEffect(() => {
-    if (session) {
+    if (session && !isEntering && !transitionPending.current) {
       const origin = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/home';
       navigate(origin, { replace: true });
     }
-  }, [session, navigate, location]);
+  }, [session, navigate, location, isEntering]);
 
   const handleLogin = async (event: FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
     setError('');
+    transitionPending.current = true;
 
     try {
-      const user = await signIn(username, password);
-      navigate(user.role === 'admin' ? '/home' : '/home', { replace: true });
+      await signIn(username, password);
+      setIsEntering(true);
+      window.setTimeout(() => {
+        navigate('/home', { replace: true });
+      }, 3200);
     } catch (err) {
+      transitionPending.current = false;
       setError(err instanceof Error ? err.message : 'Credenciais inválidas. Tente novamente.');
-    } finally {
       setIsLoading(false);
     }
   };
 
   if (isAuthLoading) {
     return <div className="min-h-screen bg-background" />;
+  }
+
+  if (isEntering) {
+    return <SevenEntryTransition />;
   }
 
   return (
@@ -103,7 +114,7 @@ export function Login() {
                   type="text"
                   value={username}
                   onChange={(event) => setUsername(event.target.value)}
-                  placeholder="admin ou gabriel"
+                  placeholder="Insira seu usuário"
                   required
                   className="h-12 rounded-none bg-background/50"
                 />
@@ -115,7 +126,7 @@ export function Login() {
                   type="password"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
-                  placeholder="123456"
+                  placeholder="Insira sua senha"
                   required
                   minLength={6}
                   className="h-12 rounded-none bg-background/50"

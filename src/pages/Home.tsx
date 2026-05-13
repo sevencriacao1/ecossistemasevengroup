@@ -38,7 +38,12 @@ export function Home() {
   const availableCompanies = profile?.allowedCompanies || [];
 
   return (
-    <main className="min-h-screen overflow-hidden bg-background text-text">
+    <motion.main
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      className="min-h-screen overflow-hidden bg-background text-text"
+    >
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_20%,rgba(223,117,13,0.24),transparent_32%),radial-gradient(circle_at_82%_6%,rgba(255,255,255,0.07),transparent_24%),linear-gradient(145deg,#0F0F10_0%,#18181B_48%,#0F0F10_100%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:96px_96px] opacity-45 [mask-image:linear-gradient(180deg,#000_0%,transparent_78%)]" />
@@ -67,12 +72,12 @@ export function Home() {
         </div>
       </header>
 
-      <section className="relative z-10 px-5 pb-16 pt-12 sm:px-8 lg:px-12 lg:pb-24 lg:pt-24">
+      <section className="relative z-10 flex min-h-[calc(100vh-84px)] items-center px-5 pb-14 pt-10 sm:px-8 lg:px-12">
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-          className="mx-auto max-w-7xl"
+          initial={{ opacity: 0, y: 24, scale: 0.985 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ delay: 0.1, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+          className="mx-auto w-full max-w-7xl"
         >
           <div className="mb-8 flex flex-wrap items-center gap-3">
             <div className="inline-flex items-center gap-2 border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-medium uppercase tracking-[0.24em] text-text-muted backdrop-blur-xl">
@@ -85,21 +90,21 @@ export function Home() {
             </div>
           </div>
 
-          <div className="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+          <div className="grid gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
             <div>
               <p className="mb-5 text-sm uppercase tracking-[0.28em] text-text-muted">
-                Bem-vindo, {profile?.full_name || profile?.username}
+                {profile?.full_name || profile?.username}
               </p>
               <h1 className="max-w-5xl text-5xl font-semibold leading-[0.96] tracking-tight text-white sm:text-7xl lg:text-8xl">
-                Uma entrada guiada no Ecossistema Seven.
+                Bem-vindo ao Ecossistema Seven.
               </h1>
             </div>
             <div className="border-l border-primary/40 pl-6">
               <p className="text-lg leading-8 text-[#D6D6D6]">
-                Sua jornada foi personalizada para mostrar a estrutura institucional do grupo e os guias liberados para sua empresa.
+                Escolha o guia liberado para iniciar sua entrada institucional.
               </p>
               <Button onClick={() => navigate('/guia/seven')} size="lg" className="mt-8 rounded-none">
-                Começar pela Seven
+                Iniciar pela Seven
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
@@ -108,8 +113,8 @@ export function Home() {
           <motion.div
             initial="hidden"
             animate="show"
-            variants={{ hidden: {}, show: { transition: { staggerChildren: 0.12 } } }}
-            className="mt-20 grid gap-5 md:grid-cols-2 xl:grid-cols-3"
+            variants={{ hidden: {}, show: { transition: { delayChildren: 0.35, staggerChildren: 0.12 } } }}
+            className="mt-16 grid gap-5 md:grid-cols-2 xl:grid-cols-3"
           >
             {availableCompanies.map((company) => (
               <BranchCard
@@ -123,6 +128,6 @@ export function Home() {
           </motion.div>
         </motion.div>
       </section>
-    </main>
+    </motion.main>
   );
 }
