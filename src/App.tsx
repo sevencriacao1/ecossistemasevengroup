@@ -4,6 +4,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { Login } from './pages/Login';
 import { Home } from './pages/Home';
 import { SevenGroupPage } from './pages/SevenGroupPage';
+import { ArqoPage } from './pages/ArqoPage';
 
 function App() {
   return (
@@ -26,6 +27,15 @@ function App() {
             element={(
               <ProtectedRoute>
                 <SevenGroupPage />
+              </ProtectedRoute>
+            )}
+          />
+
+          <Route
+            path="/arqo"
+            element={(
+              <ProtectedRoute>
+                <ArqoPage />
               </ProtectedRoute>
             )}
           />

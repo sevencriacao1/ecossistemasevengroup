@@ -62,6 +62,18 @@
     text-wrap: balance;
   }
 
+  .arqo-heading,
+  .arqo-text-stable {
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
+  }
+
+  .arqo-text-stable span {
+    line-height: inherit;
+    vertical-align: baseline;
+  }
+
   .seven-entry-cursor {
     cursor: url("/assets/cursors/cursor-default-smaller.png") 1 1, default;
   }
@@ -89,4 +101,17 @@
   100% {
     transform: translateX(100%);
   }
+}
+
+@keyframes arqoDashFlow {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -72;
+  }
+}
+
+.arqo-dash-flow {
+  animation: arqoDashFlow 1.8s linear infinite;
 }
