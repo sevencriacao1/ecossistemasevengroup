@@ -7,6 +7,9 @@ const Login = lazy(() => import('./pages/Login').then((module) => ({ default: mo
 const Home = lazy(() => import('./pages/Home').then((module) => ({ default: module.Home })));
 const SevenGroupPage = lazy(() => import('./pages/SevenGroupPage').then((module) => ({ default: module.SevenGroupPage })));
 const ArqoPage = lazy(() => import('./pages/ArqoPage').then((module) => ({ default: module.ArqoPage })));
+const DashboardRouter = lazy(() => import('./pages/dashboard/DashboardRouter').then((module) => ({ default: module.DashboardRouter })));
+const AdminDashboard = lazy(() => import('./pages/dashboard/AdminDashboard').then((module) => ({ default: module.AdminDashboard })));
+const CollaboratorDashboard = lazy(() => import('./pages/dashboard/CollaboratorDashboard').then((module) => ({ default: module.CollaboratorDashboard })));
 
 function RouteFallback() {
   return (
@@ -63,7 +66,30 @@ function App() {
               )}
             />
 
-            <Route path="/dashboard" element={<Navigate to="/home" replace />} />
+            <Route
+              path="/dashboard"
+              element={(
+                <ProtectedRoute>
+                  <DashboardRouter />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/dashboard/admin/*"
+              element={(
+                <ProtectedRoute requiredRole="admin">
+                  <AdminDashboard />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/dashboard/colaborador/*"
+              element={(
+                <ProtectedRoute requiredRole="colaborador">
+                  <CollaboratorDashboard />
+                </ProtectedRoute>
+              )}
+            />
             <Route path="/modulos" element={<Navigate to="/home" replace />} />
             <Route path="/onboarding" element={<Navigate to="/home" replace />} />
             <Route path="/guia/:guideId" element={<Navigate to="/home" replace />} />

@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ArrowRight, Building2, LogOut } from 'lucide-react';
+import { ArrowRight, BookOpen, Building2, LayoutDashboard, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 interface SevenEntryTransitionProps {
   onLogout: () => void;
   initialChoices?: boolean;
+  notice?: string;
 }
 
 const message = 'Aquilo que é normal para você,\né loucura para a gente.\nE aquilo que é normal para a gente,\né loucura para você.';
@@ -34,7 +36,7 @@ function ParticleField({ isVisible }: { isVisible: boolean }) {
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    if (!isVisible || reduceMotion) return undefined;
+    if (!isVisible) return undefined;
 
     const canvas = canvasRef.current;
     const context = canvas?.getContext('2d');
@@ -71,7 +73,9 @@ function ParticleField({ isVisible }: { isVisible: boolean }) {
     const createParticles = () => {
       particles.length = 0;
       const isCompact = width < 768;
-      const spacing = Math.max(isCompact ? 34 : 26, Math.min(isCompact ? 48 : 40, width / (isCompact ? 30 : 44)));
+      const spacing = reduceMotion
+        ? Math.max(isCompact ? 52 : 44, Math.min(isCompact ? 70 : 62, width / (isCompact ? 16 : 26)))
+        : Math.max(isCompact ? 34 : 26, Math.min(isCompact ? 48 : 40, width / (isCompact ? 30 : 44)));
       const cols = Math.ceil(width / spacing) + 8;
       const rows = Math.ceil(height / spacing) + 8;
 
@@ -108,9 +112,32 @@ function ParticleField({ isVisible }: { isVisible: boolean }) {
     const onResize = () => {
       resize();
       createParticles();
+      if (reduceMotion) {
+        context.clearRect(0, 0, width, height);
+        particles.forEach((particle) => {
+          drawParticle(particle, 0, 0);
+        });
+      }
     };
 
     const drawParticle = (particle: Particle, time: number, delta: number) => {
+      if (reduceMotion) {
+        const size = particle.size * 0.9;
+        context.save();
+        context.translate(particle.originX, particle.originY);
+        context.rotate((particle.seed - 0.5) * 0.9);
+        context.strokeStyle = particle.color;
+        context.lineWidth = 1.4;
+        context.lineCap = 'round';
+        context.globalAlpha = (isVisible ? 1 : 0) * particle.opacity * 0.34;
+        context.beginPath();
+        context.moveTo(-size / 2, 0);
+        context.lineTo(size / 2, 0);
+        context.stroke();
+        context.restore();
+        return;
+      }
+
       const timeScale = time * 0.001;
       const ambientX = Math.sin(timeScale * 0.34 + particle.seed * 18.2) * 8;
       const ambientY = Math.cos(timeScale * 0.28 + particle.seed2 * 21.4) * 8;
@@ -180,20 +207,29 @@ function ParticleField({ isVisible }: { isVisible: boolean }) {
       animationFrame = window.requestAnimationFrame(animate);
     };
 
+    const drawStatic = () => {
+      context.clearRect(0, 0, width, height);
+      particles.forEach((particle) => {
+        drawParticle(particle, 0, 0);
+      });
+    };
+
     resize();
     createParticles();
     window.addEventListener('resize', onResize);
-    window.addEventListener('pointermove', onPointerMove);
-    animationFrame = window.requestAnimationFrame(animate);
+    if (reduceMotion) {
+      drawStatic();
+    } else {
+      window.addEventListener('pointermove', onPointerMove);
+      animationFrame = window.requestAnimationFrame(animate);
+    }
 
     return () => {
-      window.cancelAnimationFrame(animationFrame);
+      if (animationFrame) window.cancelAnimationFrame(animationFrame);
       window.removeEventListener('resize', onResize);
       window.removeEventListener('pointermove', onPointerMove);
     };
   }, [isVisible, reduceMotion]);
-
-  if (reduceMotion) return null;
 
   return (
     <motion.canvas
@@ -206,8 +242,9 @@ function ParticleField({ isVisible }: { isVisible: boolean }) {
   );
 }
 
-export function SevenEntryTransition({ onLogout, initialChoices = false }: SevenEntryTransitionProps) {
+export function SevenEntryTransition({ onLogout, initialChoices = false, notice }: SevenEntryTransitionProps) {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [typedText, setTypedText] = useState('');
   const [hasStarted, setHasStarted] = useState(false);
   const [isTypingDone, setIsTypingDone] = useState(false);
@@ -257,20 +294,64 @@ export function SevenEntryTransition({ onLogout, initialChoices = false }: Seven
   const lines = typedText.split('\n');
   const choiceLines = choiceText.split('\n');
   const fullChoiceText = `${choiceTitle}\n${choiceSubtitle}`;
+  const companyOptions = [
+    {
+      company: 'Seven',
+      title: 'Seven Group 360',
+      subtitle: 'Conheça a arquitetura central do grupo, sua mentalidade e seus pilares estratégicos.',
+      action: () => navigate('/sevengroup'),
+      status: 'Acessar página institucional',
+    },
+    {
+      company: 'ARQO',
+      title: 'ARQO Inteligência Imobiliária',
+      subtitle: 'Conheça a consultoria premium de clareza, curadoria e decisão estratégica.',
+      action: () => navigate('/arqo'),
+      status: 'Acessar página institucional',
+    },
+  ].filter((option) => profile?.role !== 'colaborador' || option.company === profile.company);
 
   return (
     <main className="seven-entry-cursor fixed inset-0 z-[100] overflow-hidden bg-[#F7F7F8] text-[#111114]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_18%,rgba(255,138,31,0.16),transparent_24%),radial-gradient(circle_at_78%_12%,rgba(17,17,17,0.055),transparent_20%),linear-gradient(180deg,#ffffff_0%,#f4f4f5_100%)]" />
       <ParticleField isVisible={isTypingDone} />
 
-      <button
-        type="button"
-        onClick={onLogout}
-        aria-label="Sair"
-        className="seven-entry-clickable absolute right-5 top-5 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-white/52 text-[#1D1D1F] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_12px_34px_rgba(30,30,40,0.12)] backdrop-blur-2xl transition hover:bg-white/78 sm:right-8 sm:top-8"
-      >
-        <LogOut className="h-4 w-4" />
-      </button>
+      <div className="absolute right-5 top-5 z-30 flex items-center gap-2 sm:right-8 sm:top-8">
+        {profile?.role === 'admin' && (
+          <button
+            type="button"
+            onClick={() => navigate('/dashboard/admin')}
+            className="seven-entry-clickable inline-flex h-10 items-center gap-2 rounded-full border border-white/70 bg-white/52 px-4 text-sm font-semibold text-[#1D1D1F] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_12px_34px_rgba(30,30,40,0.12)] backdrop-blur-2xl transition hover:bg-white/78"
+          >
+            <LayoutDashboard className="h-4 w-4" />
+            Dashboard
+          </button>
+        )}
+        {profile?.role === 'colaborador' && (
+          <button
+            type="button"
+            onClick={() => navigate('/dashboard')}
+            className="seven-entry-clickable inline-flex h-10 items-center gap-2 rounded-full border border-white/70 bg-white/52 px-4 text-sm font-semibold text-[#1D1D1F] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_12px_34px_rgba(30,30,40,0.12)] backdrop-blur-2xl transition hover:bg-white/78"
+          >
+            <BookOpen className="h-4 w-4" />
+            Aulas
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={onLogout}
+          aria-label="Sair"
+          className="seven-entry-clickable flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-white/52 text-[#1D1D1F] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_12px_34px_rgba(30,30,40,0.12)] backdrop-blur-2xl transition hover:bg-white/78"
+        >
+          <LogOut className="h-4 w-4" />
+        </button>
+      </div>
+
+      {notice && (
+        <div className="absolute left-5 top-5 z-30 max-w-sm rounded-md border border-amber-300/40 bg-white/70 px-4 py-3 text-sm font-medium text-[#3A2A12] shadow-[0_12px_34px_rgba(30,30,40,0.12)] backdrop-blur-2xl sm:left-8 sm:top-8">
+          {notice}
+        </div>
+      )}
 
       <section className="relative z-20 flex min-h-screen items-center justify-center px-5 py-10">
         <div className="w-full max-w-5xl">
@@ -345,20 +426,7 @@ export function SevenEntryTransition({ onLogout, initialChoices = false }: Seven
                   transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
                   className="grid gap-4 md:grid-cols-2"
                 >
-                  {[
-                    {
-                      title: 'Seven Group 360',
-                      subtitle: 'Conheça a arquitetura central do grupo, sua mentalidade e seus pilares estratégicos.',
-                      action: () => navigate('/sevengroup'),
-                      status: 'Acessar página institucional',
-                    },
-                    {
-                      title: 'ARQO Inteligência Imobiliária',
-                      subtitle: 'Conheça a consultoria premium de clareza, curadoria e decisão estratégica.',
-                      action: () => navigate('/arqo'),
-                      status: 'Acessar página institucional',
-                    },
-                  ].map((option) => (
+                  {companyOptions.map((option) => (
                     <button
                       type="button"
                       key={option.title}

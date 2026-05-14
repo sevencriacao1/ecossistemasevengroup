@@ -1,29 +1,57 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-
-export type Company = 'Seven' | 'ARQO' | 'Nexa';
-export type UserRole = 'admin' | 'colaborador';
-
-export interface UserProfile {
-  id: string;
-  username: string;
-  full_name: string | null;
-  role: UserRole;
-  company: Company;
-}
+import { Company, UserProfile, UserRole, UserStatus } from '../types/learning';
 
 interface AuthContextType {
   session: Session | null;
   user: UserProfile | null;
   profile: UserProfile | null;
   isLoading: boolean;
+  isAdmin: boolean;
+  company: Company | null;
+  role: UserRole | null;
   signIn: (email: string, password: string) => Promise<UserProfile | null>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const profileRequests = new Map<string, Promise<UserProfile | null>>();
+
+function normalizeRole(value: unknown): UserRole {
+  return value === 'admin' ? 'admin' : 'colaborador';
+}
+
+function normalizeCompany(value: unknown): Company {
+  return value === 'ARQO' ? 'ARQO' : 'Seven';
+}
+
+function normalizeStatus(value: unknown): UserStatus {
+  return value === 'inativo' ? 'inativo' : 'ativo';
+}
+
+function normalizeProfile(rawProfile: Record<string, unknown>): UserProfile {
+  const email = typeof rawProfile.email === 'string' ? rawProfile.email : null;
+  const username =
+    typeof rawProfile.username === 'string'
+      ? rawProfile.username
+      : email?.split('@')[0] ?? 'usuario';
+
+  return {
+    id: String(rawProfile.id),
+    email,
+    username,
+    full_name: typeof rawProfile.full_name === 'string'
+      ? rawProfile.full_name
+      : typeof rawProfile.nome === 'string'
+        ? rawProfile.nome
+        : null,
+    avatar_url: typeof rawProfile.avatar_url === 'string' ? rawProfile.avatar_url : null,
+    role: normalizeRole(rawProfile.role ?? rawProfile.nivel_acesso),
+    company: normalizeCompany(rawProfile.company ?? rawProfile.empresa),
+    status: normalizeStatus(rawProfile.status),
+  };
+}
 
 async function loadProfile(userId: string): Promise<UserProfile | null> {
   const currentRequest = profileRequests.get(userId);
@@ -35,7 +63,7 @@ async function loadProfile(userId: string): Promise<UserProfile | null> {
   const request = Promise.resolve(
     supabase
       .from('profiles')
-      .select('id, username, full_name, role, company')
+      .select('*')
       .eq('id', userId)
       .single()
   )
@@ -45,7 +73,7 @@ async function loadProfile(userId: string): Promise<UserProfile | null> {
         return null;
       }
 
-      return data as UserProfile;
+      return normalizeProfile(data as Record<string, unknown>);
     })
     .finally(() => {
       profileRequests.delete(userId);
@@ -83,10 +111,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    supabase.auth.getSession().then(async ({ data }) => {
-      await syncSession(data.session);
-      if (isMounted) setIsLoading(false);
-    });
+    supabase.auth
+      .getSession()
+      .then(async ({ data, error }) => {
+        if (error) {
+          await supabase.auth.signOut({ scope: 'local' });
+          await syncSession(null);
+          return;
+        }
+
+        await syncSession(data.session);
+      })
+      .catch(async () => {
+        await supabase.auth.signOut({ scope: 'local' });
+        await syncSession(null);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       void syncSession(nextSession);
@@ -105,7 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (error) {
-      throw new Error('Credenciais invalidas. Tente novamente.');
+      throw new Error('Credenciais inválidas. Tente novamente.');
     }
 
     setSession(data.session);
@@ -116,7 +158,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut().catch(() => supabase.auth.signOut({ scope: 'local' }));
     lastProfileUserId.current = null;
     setSession(null);
     setProfile(null);
@@ -127,6 +169,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user: profile,
     profile,
     isLoading,
+    isAdmin: profile?.role === 'admin',
+    company: profile?.company ?? null,
+    role: profile?.role ?? null,
     signIn,
     signOut,
   }), [session, profile, isLoading]);
