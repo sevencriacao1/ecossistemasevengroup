@@ -346,9 +346,9 @@ export function SevenEntryTransition({ onLogout, initialChoices = false }: Seven
                     },
                     {
                       title: 'ARQO Inteligência Imobiliária',
-                      subtitle: 'Em breve: a operação comercial e sua lógica de mercado.',
-                      action: undefined,
-                      status: 'Conteúdo em preparação',
+                      subtitle: 'Conheça a consultoria premium de clareza, curadoria e decisão estratégica.',
+                      action: () => navigate('/arqo'),
+                      status: 'Acessar página institucional',
                     },
                   ].map((option) => (
                     <button

@@ -101,8 +101,8 @@ function RevealCharacter({
   total: number;
   progress: ReturnType<typeof useScroll>['scrollYProgress'];
 }) {
-  const start = total <= 1 ? 0 : index / total;
-  const end = total <= 1 ? 1 : (index + 3.6) / total;
+  const start = total <= 1 ? 0 : (index / Math.max(total - 1, 1)) * 0.78;
+  const end = total <= 1 ? 1 : Math.min(start + 0.18, 0.96);
   const color = useTransform(progress, [start, end], ['rgba(17,17,20,0.16)', 'rgba(17,17,20,1)']);
 
   return (

@@ -41,7 +41,7 @@ export function SevenHero() {
             posicionamento, arquitetura, marketing, renderização e aceleração comercial.
           </p>
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-            <AnchorButton href="#ecossistema" dark>
+            <AnchorButton href="#quem-somos" dark>
               Conhecer Ecossistema
               <ArrowRight className="ml-2 h-4 w-4" />
             </AnchorButton>

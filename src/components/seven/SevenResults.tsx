@@ -18,20 +18,23 @@ function CountUp({
   useEffect(() => {
     if (!isInView) return undefined;
 
-    let frame = 0;
-    const totalFrames = 70;
+    const duration = 2000;
+    const startedAt = performance.now();
+    let animation = 0;
 
-    const tick = () => {
-      frame += 1;
-      const progress = 1 - Math.pow(1 - Math.min(frame / totalFrames, 1), 3);
+    const tick = (currentTime: number) => {
+      const elapsed = currentTime - startedAt;
+      const progress = 1 - Math.pow(1 - Math.min(elapsed / duration, 1), 3);
       setValue(target * progress);
 
-      if (frame < totalFrames) {
-        requestAnimationFrame(tick);
+      if (elapsed < duration) {
+        animation = requestAnimationFrame(tick);
+      } else {
+        setValue(target);
       }
     };
 
-    const animation = requestAnimationFrame(tick);
+    animation = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animation);
   }, [isInView, target]);
 
