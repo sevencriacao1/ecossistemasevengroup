@@ -51,7 +51,6 @@ export function ArqoHero() {
       const background = backgroundRef.current;
       const logo = logoRef.current;
       const introHint = introHintRef.current;
-      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
       if (!section || !background || !logo || !logoSvg) return;
 
@@ -80,36 +79,6 @@ export function ArqoHero() {
         pathLengths.set(element, next);
         return next;
       };
-
-      if (reduceMotion) {
-        gsap.set(logo, { autoAlpha: 1, scale: 1 });
-        gsap.set(background, { scale: 1 });
-        if (introHint) {
-          gsap.fromTo(introHint, { autoAlpha: 1, y: 0 }, { autoAlpha: 0, y: -8, duration: 0.55, delay: 1.1, ease: 'power1.out' });
-        }
-        gsap.set(paths, {
-          stroke: '#ffffff',
-          strokeWidth: 1.6,
-          strokeLinecap: 'round',
-          strokeLinejoin: 'round',
-          fill: '#ffffff',
-          strokeDasharray: (_index, element: SVGGeometryElement) => getPathLength(element),
-          strokeDashoffset: (_index, element: SVGGeometryElement) => getPathLength(element) * 0.28,
-          strokeOpacity: 0.7,
-          fillOpacity: 0,
-          opacity: 1,
-        });
-        gsap.to(paths, {
-          strokeDashoffset: 0,
-          strokeOpacity: 1,
-          fillOpacity: 1,
-          strokeWidth: 1.1,
-          duration: 1.4,
-          stagger: 0.008,
-          ease: 'power1.out',
-        });
-        return;
-      }
 
       gsap.set(logo, { autoAlpha: 0, scale: 0.985 });
       if (introHint) gsap.set(introHint, { autoAlpha: 1, y: 0 });

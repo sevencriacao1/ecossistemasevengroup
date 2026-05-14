@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ArrowRight, BookOpen, Building2, LayoutDashboard, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -33,7 +33,6 @@ function ParticleField({ isVisible }: { isVisible: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const pointerRef = useRef({ x: 0, y: 0 });
   const centerRef = useRef({ x: 0, y: 0, vx: 0, vy: 0 });
-  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     if (!isVisible) return undefined;
@@ -73,9 +72,7 @@ function ParticleField({ isVisible }: { isVisible: boolean }) {
     const createParticles = () => {
       particles.length = 0;
       const isCompact = width < 768;
-      const spacing = reduceMotion
-        ? Math.max(isCompact ? 52 : 44, Math.min(isCompact ? 70 : 62, width / (isCompact ? 16 : 26)))
-        : Math.max(isCompact ? 34 : 26, Math.min(isCompact ? 48 : 40, width / (isCompact ? 30 : 44)));
+      const spacing = Math.max(isCompact ? 34 : 26, Math.min(isCompact ? 48 : 40, width / (isCompact ? 30 : 44)));
       const cols = Math.ceil(width / spacing) + 8;
       const rows = Math.ceil(height / spacing) + 8;
 
@@ -112,32 +109,9 @@ function ParticleField({ isVisible }: { isVisible: boolean }) {
     const onResize = () => {
       resize();
       createParticles();
-      if (reduceMotion) {
-        context.clearRect(0, 0, width, height);
-        particles.forEach((particle) => {
-          drawParticle(particle, 0, 0);
-        });
-      }
     };
 
     const drawParticle = (particle: Particle, time: number, delta: number) => {
-      if (reduceMotion) {
-        const size = particle.size * 0.9;
-        context.save();
-        context.translate(particle.originX, particle.originY);
-        context.rotate((particle.seed - 0.5) * 0.9);
-        context.strokeStyle = particle.color;
-        context.lineWidth = 1.4;
-        context.lineCap = 'round';
-        context.globalAlpha = (isVisible ? 1 : 0) * particle.opacity * 0.34;
-        context.beginPath();
-        context.moveTo(-size / 2, 0);
-        context.lineTo(size / 2, 0);
-        context.stroke();
-        context.restore();
-        return;
-      }
-
       const timeScale = time * 0.001;
       const ambientX = Math.sin(timeScale * 0.34 + particle.seed * 18.2) * 8;
       const ambientY = Math.cos(timeScale * 0.28 + particle.seed2 * 21.4) * 8;
@@ -207,29 +181,18 @@ function ParticleField({ isVisible }: { isVisible: boolean }) {
       animationFrame = window.requestAnimationFrame(animate);
     };
 
-    const drawStatic = () => {
-      context.clearRect(0, 0, width, height);
-      particles.forEach((particle) => {
-        drawParticle(particle, 0, 0);
-      });
-    };
-
     resize();
     createParticles();
     window.addEventListener('resize', onResize);
-    if (reduceMotion) {
-      drawStatic();
-    } else {
-      window.addEventListener('pointermove', onPointerMove);
-      animationFrame = window.requestAnimationFrame(animate);
-    }
+    window.addEventListener('pointermove', onPointerMove);
+    animationFrame = window.requestAnimationFrame(animate);
 
     return () => {
       if (animationFrame) window.cancelAnimationFrame(animationFrame);
       window.removeEventListener('resize', onResize);
       window.removeEventListener('pointermove', onPointerMove);
     };
-  }, [isVisible, reduceMotion]);
+  }, [isVisible]);
 
   return (
     <motion.canvas
