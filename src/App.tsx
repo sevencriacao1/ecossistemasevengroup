@@ -32,6 +32,15 @@ function App() {
           />
 
           <Route
+            path="/seven"
+            element={(
+              <ProtectedRoute>
+                <SevenGroupPage />
+              </ProtectedRoute>
+            )}
+          />
+
+          <Route
             path="/arqo"
             element={(
               <ProtectedRoute>

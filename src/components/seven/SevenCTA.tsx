@@ -1,7 +1,144 @@
 import { ArrowUp, Home, Layers3 } from 'lucide-react';
-import { WheelEvent, useState } from 'react';
+import { motion } from 'framer-motion';
+import { WheelEvent, useEffect, useId, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnchorButton, Reveal } from './SevenPrimitives';
+
+const signatureSource = '/assets/seven/assign_gilson%2005.svg';
+const signatureDurations = [1.12, 0.92, 0.94, 1.06, 1.16, 0.26, 0.26];
+const signatureStrokeWidths = [92, 58, 74, 58, 34, 28, 28];
+
+interface SignaturePath {
+  d: string;
+}
+
+function SignatureReveal({ active }: { active: boolean }) {
+  const maskId = useId().replace(/:/g, '');
+  const [paths, setPaths] = useState<SignaturePath[]>([]);
+  const [viewBox, setViewBox] = useState({ x: 0, y: 0, width: 1480, height: 624 });
+
+  useEffect(() => {
+    let isMounted = true;
+
+    fetch(signatureSource)
+      .then((response) => response.text())
+      .then((svgText) => {
+        if (!isMounted) return;
+
+        const documentSvg = new DOMParser().parseFromString(svgText, 'image/svg+xml');
+        const svgElement = documentSvg.querySelector('svg');
+        const sourcePaths = Array.from(documentSvg.querySelectorAll('path'))
+          .map((path) => ({ d: path.getAttribute('d') ?? '' }))
+          .filter((path) => path.d.length > 0);
+
+        const nextViewBox = svgElement?.getAttribute('viewBox')?.split(/\s+/).map(Number);
+        if (nextViewBox?.length === 4 && nextViewBox.every(Number.isFinite)) {
+          setViewBox({
+            x: nextViewBox[0],
+            y: nextViewBox[1],
+            width: nextViewBox[2],
+            height: nextViewBox[3],
+          });
+        }
+
+        setPaths(sourcePaths);
+      })
+      .catch(() => setPaths([]));
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  return (
+    <div className="pointer-events-none relative mx-auto mt-[-6px] h-[96px] w-[min(76vw,390px)] sm:h-[118px] sm:w-[390px]">
+      <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-white/[0.025]" />
+      <svg
+        viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
+        className="absolute inset-0 h-full w-full overflow-visible opacity-95 drop-shadow-[0_14px_32px_rgba(255,255,255,0.08)]"
+        aria-hidden="true"
+      >
+        <defs>
+          {paths.map((path, index) => (
+            <mask
+              key={`mask-${index}`}
+              id={`${maskId}-signature-${index}`}
+              maskUnits="userSpaceOnUse"
+              x={viewBox.x}
+              y={viewBox.y}
+              width={viewBox.width}
+              height={viewBox.height}
+            >
+              <rect x={viewBox.x} y={viewBox.y} width={viewBox.width} height={viewBox.height} fill="black" />
+              <motion.path
+                d={path.d}
+                fill="none"
+                stroke="white"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={signatureStrokeWidths[index] ?? 56}
+                initial={false}
+                animate={{ pathLength: active ? 1 : 0 }}
+                transition={{
+                  duration: signatureDurations[index] ?? 0.72,
+                  ease: [0.42, 0, 0.18, 1],
+                  delay: active ? 0.28 + index * 0.34 : 0,
+                }}
+              />
+              <motion.path
+                d={path.d}
+                fill="white"
+                initial={false}
+                animate={{ opacity: active ? 1 : 0 }}
+                transition={{
+                  duration: 0.18,
+                  delay: active ? 0.28 + index * 0.34 + (signatureDurations[index] ?? 0.72) * 0.82 : 0,
+                }}
+              />
+              <motion.rect
+                x={viewBox.x}
+                y={viewBox.y}
+                width={viewBox.width}
+                height={viewBox.height}
+                initial={false}
+                fill="white"
+                animate={{ opacity: active ? 1 : 0 }}
+                transition={{
+                  duration: 0.01,
+                  delay: active ? 0.28 + index * 0.34 + (signatureDurations[index] ?? 0.72) : 0,
+                }}
+              />
+            </mask>
+          ))}
+        </defs>
+
+        {paths.map((path, index) => (
+          <motion.path
+            key={`${path.d.slice(0, 24)}-${index}`}
+            d={path.d}
+            fill="rgba(254,254,254,0.92)"
+            mask={`url(#${maskId}-signature-${index})`}
+            initial={false}
+            animate={{
+              opacity: active ? 1 : 0,
+              filter: active ? 'blur(0px)' : 'blur(1.2px)',
+            }}
+            transition={{
+              opacity: {
+                duration: 0.12,
+                delay: active ? 0.24 + index * 0.34 : 0,
+              },
+              filter: {
+                duration: 0.32,
+                delay: active ? 0.24 + index * 0.34 : 0,
+              },
+            }}
+          />
+        ))}
+      </svg>
+    </div>
+  );
+}
 
 export function SevenCTA() {
   const navigate = useNavigate();
@@ -72,8 +209,8 @@ export function SevenCTA() {
       >
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:72px_72px] [mask-image:radial-gradient(circle_at_center,black,transparent_72%)]" />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_38%,rgba(231,105,18,0.22),transparent_30%),radial-gradient(circle_at_18%_78%,rgba(255,255,255,0.08),transparent_22%)]" />
-        <Reveal>
-          <div className="relative z-10 rounded-[38px] border border-white/10 bg-white/[0.055] px-8 py-10 text-center shadow-[0_34px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:px-14 sm:py-14">
+        <Reveal className="relative z-10 flex flex-col items-center">
+          <div className="rounded-[38px] border border-white/10 bg-white/[0.055] px-8 py-10 text-center shadow-[0_34px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:px-14 sm:py-14">
             <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[#FF9B45]">Seven Group</p>
             <h2 className="mt-5 max-w-4xl whitespace-nowrap text-center text-4xl font-semibold leading-[0.95] tracking-[-0.055em] sm:text-6xl lg:text-7xl">
               Seja muito bem-vindo
@@ -81,6 +218,7 @@ export function SevenCTA() {
               à nossa equipe.
             </h2>
           </div>
+          <SignatureReveal active={welcomeVisible} />
         </Reveal>
       </section>
     </>

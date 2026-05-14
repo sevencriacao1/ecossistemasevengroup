@@ -2,6 +2,7 @@ import { ArrowLeft, Menu } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SevenAbout } from '../components/seven/SevenAbout';
+import { SevenArqoBridge } from '../components/seven/SevenArqoBridge';
 import { SevenCommitment } from '../components/seven/SevenCommitment';
 import { SevenCreativeTeam } from '../components/seven/SevenCreativeTeam';
 import { SevenCTA } from '../components/seven/SevenCTA';
@@ -125,6 +126,7 @@ export function SevenGroupPage() {
       <SevenDifferentials />
       <SevenFocus />
       <SevenCommitment />
+      <SevenArqoBridge />
       <SevenCTA />
     </main>
   );
