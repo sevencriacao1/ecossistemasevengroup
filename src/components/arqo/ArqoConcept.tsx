@@ -1,11 +1,7 @@
-import { useGSAP } from '@gsap/react';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useEffect, useRef, useState } from 'react';
+import { gsap, scheduleScrollTriggerRefresh, useGSAP } from '../../lib/gsap';
 import { StableTextReveal } from './ArqoPrimitives';
 import { arqoAssets } from './arqoContent';
-
-gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 const arqBullets = ['Estrutura', 'Lógica', 'Planejamento', 'Visão'];
 const oBullets = ['O alvo', 'O ponto de chegada', 'A decisão certa'];
@@ -113,8 +109,7 @@ function ArqoConceptDesktop() {
           .to(finalText, { autoAlpha: 1, y: 0, duration: 0.04 }, 0.975)
           .to(finalChars, { color: 'rgba(22,22,21,1)', stagger: 0.006, duration: 0.14, ease: 'none' }, 0.985);
 
-        ScrollTrigger.sort();
-        ScrollTrigger.refresh();
+        scheduleScrollTriggerRefresh();
       };
 
       firstFrame = requestAnimationFrame(() => {
@@ -214,7 +209,7 @@ function ArqoConceptDesktop() {
           ref={logoCardRef}
           className="absolute bottom-[12vh] left-1/2 z-20 flex w-[min(26.6rem,33.6vw)] -translate-x-1/2 items-center justify-center border border-black/[0.065] bg-[#F8F7F3]/88 px-8 py-6 shadow-[0_24px_70px_rgba(34,33,29,0.045)] backdrop-blur-xl"
         >
-          <img src={arqoAssets.logo} alt="ARQO" className="h-auto w-full object-contain" />
+          <img src={arqoAssets.logo} alt="ARQO" className="h-auto w-full object-contain" loading="lazy" decoding="async" />
         </div>
 
         <div

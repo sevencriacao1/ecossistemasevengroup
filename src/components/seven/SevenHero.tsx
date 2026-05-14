@@ -20,8 +20,8 @@ export function SevenHero() {
 
       <div className="relative z-10 mx-auto grid min-h-[calc(100vh-12rem)] max-w-7xl items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
         <motion.div
-          initial={{ opacity: 0, y: 24, filter: 'blur(12px)' }}
-          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
         >
           <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-black/[0.06] bg-white/60 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#686871] shadow-[0_14px_36px_rgba(17,17,20,0.06)] backdrop-blur-2xl">
@@ -32,6 +32,9 @@ export function SevenHero() {
             src={sevenAssets.logo}
             alt="Seven Group"
             className="h-auto w-[min(520px,86vw)] object-contain object-left"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
           />
           <p className="mt-8 max-w-3xl text-balance text-2xl font-medium leading-tight tracking-[-0.035em] text-[#242428] sm:text-3xl lg:text-4xl">
             Transformamos projetos imobiliários em movimentos de mercado.
@@ -66,6 +69,8 @@ export function SevenHero() {
             label="Logo N Seven Group"
             className="absolute inset-6"
             fit="contain"
+            loading="eager"
+            fetchPriority="high"
           />
           <div className="absolute bottom-10 left-10 right-10 rounded-[24px] border border-white/55 bg-white/32 p-5 shadow-[0_24px_54px_rgba(17,17,20,0.10)] backdrop-blur-[34px] backdrop-saturate-150">
             <Quote className="mb-3 h-4 w-4 text-[#E76912]" />

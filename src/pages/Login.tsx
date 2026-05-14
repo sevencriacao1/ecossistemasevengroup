@@ -53,6 +53,9 @@ export function Login() {
             alt=""
             className="h-full min-h-[360px] w-full object-cover sm:min-h-[500px]"
             aria-hidden="true"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
           />
         </div>
 
@@ -63,6 +66,8 @@ export function Login() {
                 src="/assets/login/icon-n-laranja.webp"
                 alt="Seven Group"
                 className="mb-4 h-12 w-12 object-contain object-left"
+                loading="eager"
+                decoding="async"
               />
               <h1 className="text-[30px] font-semibold uppercase leading-[0.9] tracking-[-0.04em] text-[#25272B] sm:text-[34px]">
                 <span className="block font-medium">Ecossistema</span>

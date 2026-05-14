@@ -1,11 +1,7 @@
-import { useGSAP } from '@gsap/react';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useRef } from 'react';
+import { gsap, scheduleScrollTriggerRefresh, useGSAP } from '../../lib/gsap';
 import { ArqoIconBadge, StableTextReveal } from './ArqoPrimitives';
 import { investorJourney } from './arqoContent';
-
-gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 export function ArqoInvestorJourney() {
   const sectionRef = useRef<HTMLElement | null>(null);
@@ -39,7 +35,6 @@ export function ArqoInvestorJourney() {
           autoAlpha: 0.72,
           x: 20,
           scale: 0.99,
-          filter: 'blur(0px)',
           transformOrigin: '50% 50%',
         });
         gsap.set(dots, { autoAlpha: 0.48, scale: 0.92 });
@@ -91,7 +86,7 @@ export function ArqoInvestorJourney() {
 
         timeline.to(cards[cards.length - 1], { autoAlpha: 1, scale: 1, duration: 0.12 }, 0.9);
 
-        requestAnimationFrame(() => ScrollTrigger.refresh());
+        scheduleScrollTriggerRefresh();
 
         return () => {
           timeline.scrollTrigger?.kill();

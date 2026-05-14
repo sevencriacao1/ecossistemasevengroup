@@ -41,6 +41,12 @@ export function SevenGroupPage() {
   };
 
   useEffect(() => {
+    const shouldSkipSoftWheel =
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+      window.matchMedia('(pointer: coarse)').matches;
+
+    if (shouldSkipSoftWheel) return undefined;
+
     const onWheel = (event: globalThis.WheelEvent) => handleSoftWheel(event);
     window.addEventListener('wheel', onWheel, { passive: true });
 
@@ -69,6 +75,8 @@ export function SevenGroupPage() {
               src="/assets/seven/Logo%20Seven%20Group.webp"
               alt="Seven Group"
               className="h-5 w-auto object-contain"
+              loading="eager"
+              decoding="async"
             />
           </button>
 

@@ -40,7 +40,7 @@ export function ArqoCTA() {
 
       <div className="relative z-10 mx-auto flex min-h-[calc(100vh-10rem)] w-full max-w-7xl flex-col items-center justify-center text-center">
         <div className="mb-14 h-px w-full max-w-3xl bg-gradient-to-r from-transparent via-white/22 to-transparent" />
-        <img src={arqoAssets.logoWhite} alt="ARQO" className="mx-auto h-auto w-[min(204px,46vw)] object-contain" />
+        <img src={arqoAssets.logoWhite} alt="ARQO" className="mx-auto h-auto w-[min(204px,46vw)] object-contain" loading="lazy" decoding="async" />
         <h2 className="arqo-heading mx-auto mt-14 max-w-4xl text-balance text-4xl font-medium leading-[1.06] tracking-[-0.04em] text-white sm:text-6xl">
           Clareza, critério e direção para escolhas de alto valor.
         </h2>

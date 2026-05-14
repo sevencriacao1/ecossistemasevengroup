@@ -5,11 +5,10 @@ import { useRef } from 'react';
 import { cn } from '../../lib/utils';
 
 export const fadeUp: Variants = {
-  hidden: { opacity: 0, y: 28, filter: 'blur(10px)' },
+  hidden: { opacity: 0, y: 28 },
   visible: {
     opacity: 1,
     y: 0,
-    filter: 'blur(0px)',
     transition: { duration: 0.75, ease: [0.16, 1, 0.3, 1] },
   },
 };
@@ -147,6 +146,8 @@ export function AssetFrame({
   label,
   className,
   fit = 'cover',
+  loading = 'lazy',
+  fetchPriority,
 }: {
   src: string;
   alt: string;
@@ -154,6 +155,8 @@ export function AssetFrame({
   label: string;
   className?: string;
   fit?: 'cover' | 'contain';
+  loading?: 'eager' | 'lazy';
+  fetchPriority?: 'high' | 'low' | 'auto';
 }) {
   const [failed, setFailed] = useState(false);
 
@@ -164,6 +167,9 @@ export function AssetFrame({
           src={src}
           alt={alt}
           onError={() => setFailed(true)}
+          loading={loading}
+          fetchPriority={fetchPriority}
+          decoding="async"
           className={cn('absolute inset-0 h-full w-full', fit === 'contain' ? 'object-contain p-20' : 'object-cover')}
         />
       )}

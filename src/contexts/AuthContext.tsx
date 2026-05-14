@@ -23,26 +23,43 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const profileRequests = new Map<string, Promise<UserProfile | null>>();
 
 async function loadProfile(userId: string): Promise<UserProfile | null> {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, username, full_name, role, company')
-    .eq('id', userId)
-    .single();
+  const currentRequest = profileRequests.get(userId);
 
-  if (error) {
-    console.error('Erro ao carregar perfil:', error);
-    return null;
+  if (currentRequest) {
+    return currentRequest;
   }
 
-  return data as UserProfile;
+  const request = Promise.resolve(
+    supabase
+      .from('profiles')
+      .select('id, username, full_name, role, company')
+      .eq('id', userId)
+      .single()
+  )
+    .then(({ data, error }) => {
+      if (error) {
+        console.error('Erro ao carregar perfil:', error);
+        return null;
+      }
+
+      return data as UserProfile;
+    })
+    .finally(() => {
+      profileRequests.delete(userId);
+    });
+
+  profileRequests.set(userId, request);
+  return request;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const lastProfileUserId = React.useRef<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -53,9 +70,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(nextSession);
 
       if (nextSession?.user.id) {
+        if (lastProfileUserId.current === nextSession.user.id) return;
+
         const nextProfile = await loadProfile(nextSession.user.id);
-        if (isMounted) setProfile(nextProfile);
+        if (isMounted) {
+          setProfile(nextProfile);
+          lastProfileUserId.current = nextProfile?.id ?? null;
+        }
       } else {
+        lastProfileUserId.current = null;
         setProfile(null);
       }
     };
@@ -87,12 +110,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setSession(data.session);
     const nextProfile = data.user ? await loadProfile(data.user.id) : null;
+    lastProfileUserId.current = nextProfile?.id ?? null;
     setProfile(nextProfile);
     return nextProfile;
   };
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    lastProfileUserId.current = null;
     setSession(null);
     setProfile(null);
   };

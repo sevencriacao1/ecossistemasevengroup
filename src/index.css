@@ -97,12 +97,6 @@
   }
 }
 
-@keyframes shimmer {
-  100% {
-    transform: translateX(100%);
-  }
-}
-
 @keyframes arqoDashFlow {
   from {
     stroke-dashoffset: 0;
@@ -114,4 +108,20 @@
 
 .arqo-dash-flow {
   animation: arqoDashFlow 1.8s linear infinite;
+}
+
+@media (max-width: 767px), (prefers-reduced-motion: reduce) {
+  .backdrop-blur-xl,
+  .backdrop-blur-2xl,
+  .backdrop-blur-3xl,
+  .backdrop-blur-\[28px\],
+  .backdrop-blur-\[34px\] {
+    --tw-backdrop-blur: blur(12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arqo-dash-flow {
+    animation: none;
+  }
 }

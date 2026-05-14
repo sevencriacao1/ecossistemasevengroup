@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowUp, Menu } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArqoConcept } from '../components/arqo/ArqoConcept';
 import { ArqoCTA } from '../components/arqo/ArqoCTA';
@@ -30,6 +30,8 @@ export function ArqoPage() {
   const [activeSection, setActiveSection] = useState(arqoNavItems[0].href);
   const [isHeaderOnDark, setIsHeaderOnDark] = useState(true);
   const [isNotchOnDark, setIsNotchOnDark] = useState(true);
+  const headerToneRef = useRef(true);
+  const notchToneRef = useRef(true);
 
   useEffect(() => {
     const sections = arqoNavItems
@@ -55,6 +57,8 @@ export function ArqoPage() {
   }, []);
 
   useEffect(() => {
+    let frame = 0;
+
     const pointIsOnDarkSection = (y: number) => {
       const darkSections = Array.from(document.querySelectorAll<HTMLElement>('[data-arqo-tone="dark"]'));
 
@@ -65,17 +69,34 @@ export function ArqoPage() {
     };
 
     const syncFixedElementTone = () => {
-      setIsHeaderOnDark(pointIsOnDarkSection(88));
-      setIsNotchOnDark(pointIsOnDarkSection(window.innerHeight / 2));
+      frame = 0;
+      const nextHeaderTone = pointIsOnDarkSection(88);
+      const nextNotchTone = pointIsOnDarkSection(window.innerHeight / 2);
+
+      if (headerToneRef.current !== nextHeaderTone) {
+        headerToneRef.current = nextHeaderTone;
+        setIsHeaderOnDark(nextHeaderTone);
+      }
+
+      if (notchToneRef.current !== nextNotchTone) {
+        notchToneRef.current = nextNotchTone;
+        setIsNotchOnDark(nextNotchTone);
+      }
+    };
+
+    const scheduleSync = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(syncFixedElementTone);
     };
 
     syncFixedElementTone();
-    window.addEventListener('scroll', syncFixedElementTone, { passive: true });
-    window.addEventListener('resize', syncFixedElementTone);
+    window.addEventListener('scroll', scheduleSync, { passive: true });
+    window.addEventListener('resize', scheduleSync);
 
     return () => {
-      window.removeEventListener('scroll', syncFixedElementTone);
-      window.removeEventListener('resize', syncFixedElementTone);
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', scheduleSync);
+      window.removeEventListener('resize', scheduleSync);
     };
   }, []);
 
@@ -102,7 +123,7 @@ export function ArqoPage() {
             )}
           >
             <ArrowLeft className="h-4 w-4" />
-            <img src={isHeaderOnDark ? arqoAssets.logoWhite : arqoAssets.logo} alt="ARQO" className="h-5 w-auto object-contain" />
+            <img src={isHeaderOnDark ? arqoAssets.logoWhite : arqoAssets.logo} alt="ARQO" className="h-5 w-auto object-contain" loading="eager" decoding="async" />
           </button>
 
           <div className="hidden items-center gap-1 lg:flex">

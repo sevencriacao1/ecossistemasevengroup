@@ -26,6 +26,8 @@ export function SevenArqoBridge() {
                 src="/assets/arqo/Logo%20Preferencial%20%E2%80%A2%20Arqo.webp"
                 alt="ARQO"
                 className="mb-6 h-12 w-fit object-contain sm:h-[50px]"
+                loading="lazy"
+                decoding="async"
               />
               <h2 className="text-balance text-4xl font-semibold leading-[0.98] tracking-[-0.055em] text-[#111114] sm:text-5xl lg:text-6xl">
                 Estratégia também precisa de direção.
@@ -45,6 +47,8 @@ export function SevenArqoBridge() {
                   alt="Interiores premium"
                   style={{ y: imageY, scale: 1.06 }}
                   className="absolute inset-0 h-[112%] w-full object-cover opacity-88"
+                  loading="lazy"
+                  decoding="async"
                 />
                 <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(17,17,20,0.24),rgba(17,17,20,0.04)),linear-gradient(0deg,rgba(17,17,20,0.16),transparent_54%)]" />
                 <div className="absolute inset-6 border border-white/14" />

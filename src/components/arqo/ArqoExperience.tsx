@@ -17,6 +17,8 @@ function ArqoExperienceImage({
         src={src}
         alt={alt}
         className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+        loading="lazy"
+        decoding="async"
       />
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.16),rgba(23,23,21,0.12))]" />
       <div className="absolute inset-5 rounded-[22px] border border-white/24 mix-blend-screen" />

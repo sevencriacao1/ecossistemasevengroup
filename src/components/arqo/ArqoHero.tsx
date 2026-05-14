@@ -1,10 +1,6 @@
-import { useGSAP } from '@gsap/react';
-import gsap from 'gsap';
 import lottie from 'lottie-web/build/player/lottie_light';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useEffect, useRef, useState } from 'react';
-
-gsap.registerPlugin(ScrollTrigger, useGSAP);
+import { gsap, scheduleScrollTriggerRefresh, useGSAP } from '../../lib/gsap';
 
 const logoUrl = '/assets/arqo/Logo%20Arqo%20Branco.svg';
 const scrollAnimationUrl = '/assets/arqo/scroll%20down.json';
@@ -95,14 +91,24 @@ export function ArqoHero() {
 
       gsap.set(logo, { autoAlpha: 0, scale: 0.985 });
       if (introHint) gsap.set(introHint, { autoAlpha: 1, y: 0 });
+      const pathLengths = new WeakMap<SVGGeometryElement, number>();
+      const getPathLength = (element: SVGGeometryElement) => {
+        const current = pathLengths.get(element);
+        if (current !== undefined) return current;
+
+        const next = element.getTotalLength();
+        pathLengths.set(element, next);
+        return next;
+      };
+
       gsap.set(paths, {
         stroke: '#ffffff',
         strokeWidth: 2.2,
         strokeLinecap: 'round',
         strokeLinejoin: 'round',
         fill: '#ffffff',
-        strokeDasharray: (_index, element: SVGGeometryElement) => element.getTotalLength(),
-        strokeDashoffset: (_index, element: SVGGeometryElement) => element.getTotalLength(),
+        strokeDasharray: (_index, element: SVGGeometryElement) => getPathLength(element),
+        strokeDashoffset: (_index, element: SVGGeometryElement) => getPathLength(element),
         strokeOpacity: 0,
         fillOpacity: 0,
         opacity: 1,
@@ -131,7 +137,7 @@ export function ArqoHero() {
         .to(paths, { strokeWidth: 1.1, duration: 0.2, ease: 'none' }, 0.84)
         .to(logo, { scale: 1.04, duration: 0.1, ease: 'power1.out' }, 0.94);
 
-      requestAnimationFrame(() => ScrollTrigger.refresh());
+      scheduleScrollTriggerRefresh();
     },
     { dependencies: [logoSvg], scope: sectionRef, revertOnUpdate: true }
   );
@@ -143,10 +149,27 @@ export function ArqoHero() {
       className="relative h-screen min-h-screen w-full overflow-hidden bg-[#11100f] text-white"
       aria-label="Abertura institucional ARQO"
     >
-      <div
-        ref={backgroundRef}
-        className="absolute inset-0 bg-[url('/assets/arqo/background_hero.webp')] bg-cover bg-center will-change-transform"
-      />
+      <div ref={backgroundRef} className="absolute inset-0 will-change-transform">
+        <picture aria-hidden="true" className="block h-full w-full">
+          <source
+            type="image/avif"
+            srcSet="/assets/arqo/background_hero-mobile.avif 768w, /assets/arqo/background_hero-tablet.avif 1280w, /assets/arqo/background_hero-desktop.avif 1920w"
+            sizes="100vw"
+          />
+          <source
+            type="image/webp"
+            srcSet="/assets/arqo/background_hero-mobile.webp 768w, /assets/arqo/background_hero-tablet.webp 1280w, /assets/arqo/background_hero-desktop.webp 1920w"
+            sizes="100vw"
+          />
+          <img
+            src="/assets/arqo/background_hero-desktop.webp"
+            alt=""
+            className="block h-full w-full object-cover"
+            fetchPriority="high"
+            decoding="async"
+          />
+        </picture>
+      </div>
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.18)_0%,rgba(0,0,0,0.12)_42%,rgba(0,0,0,0.26)_100%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_44%,rgba(255,255,255,0.08),transparent_34%)] mix-blend-screen" />
 
@@ -164,7 +187,7 @@ export function ArqoHero() {
             className="w-[clamp(220px,72vw,420px)] opacity-100 md:w-[clamp(320px,42vw,760px)]"
             aria-hidden="true"
           >
-            <img src={logoUrl} alt="" className="h-auto w-full opacity-100" />
+            <img src={logoUrl} alt="" className="h-auto w-full opacity-100" loading="eager" decoding="async" />
           </div>
         )}
         <span className="sr-only">ARQO Inteligência Imobiliária</span>

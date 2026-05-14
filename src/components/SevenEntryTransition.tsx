@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, Building2, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -31,8 +31,11 @@ function ParticleField({ isVisible }: { isVisible: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const pointerRef = useRef({ x: 0, y: 0 });
   const centerRef = useRef({ x: 0, y: 0, vx: 0, vy: 0 });
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
+    if (!isVisible || reduceMotion) return undefined;
+
     const canvas = canvasRef.current;
     const context = canvas?.getContext('2d');
     if (!canvas || !context) return;
@@ -49,7 +52,8 @@ function ParticleField({ isVisible }: { isVisible: boolean }) {
     };
 
     const resize = () => {
-      const ratio = window.devicePixelRatio || 1;
+      const isCompact = window.innerWidth < 768;
+      const ratio = Math.min(window.devicePixelRatio || 1, isCompact ? 1.25 : 1.5);
       width = window.innerWidth;
       height = window.innerHeight;
       canvas.width = width * ratio;
@@ -66,7 +70,8 @@ function ParticleField({ isVisible }: { isVisible: boolean }) {
 
     const createParticles = () => {
       particles.length = 0;
-      const spacing = Math.max(24, Math.min(36, width / 46));
+      const isCompact = width < 768;
+      const spacing = Math.max(isCompact ? 34 : 26, Math.min(isCompact ? 48 : 40, width / (isCompact ? 30 : 44)));
       const cols = Math.ceil(width / spacing) + 8;
       const rows = Math.ceil(height / spacing) + 8;
 
@@ -186,7 +191,9 @@ function ParticleField({ isVisible }: { isVisible: boolean }) {
       window.removeEventListener('resize', onResize);
       window.removeEventListener('pointermove', onPointerMove);
     };
-  }, [isVisible]);
+  }, [isVisible, reduceMotion]);
+
+  if (reduceMotion) return null;
 
   return (
     <motion.canvas
@@ -279,6 +286,8 @@ export function SevenEntryTransition({ onLogout, initialChoices = false }: Seven
                 alt=""
                 className="h-4 w-4 object-contain"
                 aria-hidden="true"
+                loading="eager"
+                decoding="async"
               />
               Ecossistema Seven
             </div>
@@ -312,11 +321,10 @@ export function SevenEntryTransition({ onLogout, initialChoices = false }: Seven
             )}
 
             <motion.div
-              initial={{ opacity: 0, y: 22, filter: 'blur(14px)' }}
+              initial={{ opacity: 0, y: 22 }}
               animate={{
                 opacity: isTypingDone ? 1 : 0,
                 y: isTypingDone ? 0 : 22,
-                filter: isTypingDone ? 'blur(0px)' : 'blur(14px)',
               }}
               transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
               className={showChoices ? 'mt-4' : 'mt-9'}

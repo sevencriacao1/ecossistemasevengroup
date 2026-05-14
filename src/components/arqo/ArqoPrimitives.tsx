@@ -7,11 +7,10 @@ import { cn } from '../../lib/utils';
 const arqoEase = [0.16, 1, 0.3, 1] as const;
 
 export const arqoFade: Variants = {
-  hidden: { opacity: 0, y: 26, filter: 'blur(10px)' },
+  hidden: { opacity: 0, y: 26 },
   visible: {
     opacity: 1,
     y: 0,
-    filter: 'blur(0px)',
     transition: { duration: 0.9, ease: arqoEase },
   },
 };
@@ -155,9 +154,12 @@ export function StableTextReveal({
   const reduceMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start 86%', 'end 44%'] });
   const Tag = as;
+  const setRef = (node: HTMLElement | null) => {
+    ref.current = node;
+  };
 
   return (
-    <Tag ref={ref} className={cn('arqo-text-stable', className)}>
+    <Tag ref={setRef} className={cn('arqo-text-stable', className)}>
       {text.split(' ').map((word, wordIndex, words) => (
         <span key={`${word}-${wordIndex}`} className="inline-block whitespace-nowrap">
           {Array.from(word).map((char, charIndex) => {
