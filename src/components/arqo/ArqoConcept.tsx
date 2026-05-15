@@ -50,22 +50,10 @@ function ArqoConceptDesktop() {
       let timeline: gsap.core.Timeline | undefined;
       let firstFrame = 0;
       let secondFrame = 0;
-      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const arqBulletsNodes = gsap.utils.toArray<HTMLElement>(arqCard.querySelectorAll('[data-concept-bullet]'));
       const oBulletsNodes = gsap.utils.toArray<HTMLElement>(oCard.querySelectorAll('[data-concept-bullet]'));
       const finalChars = gsap.utils.toArray<HTMLElement>(finalText.querySelectorAll('[data-final-char]'));
       const branchPath = branchConnector.querySelector<SVGPathElement>('[data-logo-connector]');
-
-      if (reduceMotion) {
-        gsap.set([arqCard, oCard, connector, branchConnector, logoCard, finalText, arqBulletsNodes, oBulletsNodes, finalChars], {
-          autoAlpha: 1,
-          clearProps: 'transform',
-        });
-        if (branchPath) {
-          gsap.set(branchPath, { strokeDashoffset: 0 });
-        }
-        return;
-      }
 
       gsap.set(arqCard, { autoAlpha: 0, x: '50%', y: 80, scale: 0.96 });
       gsap.set(arqBulletsNodes, { autoAlpha: 0, y: 16 });
@@ -128,10 +116,10 @@ function ArqoConceptDesktop() {
 
   return (
     <>
-      <section id="conceito" ref={sectionRef} className="relative min-h-screen overflow-hidden bg-white text-[#171715]">
+      <section id="conceito" ref={sectionRef} className="relative min-h-[100svh] overflow-hidden bg-white text-[#171715]">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(22,22,21,0.028)_1px,transparent_1px),linear-gradient(90deg,rgba(22,22,21,0.024)_1px,transparent_1px)] bg-[size:64px_64px] opacity-70" />
 
-      <div className="relative z-10 mx-auto grid min-h-screen max-w-[94rem] grid-rows-[auto_auto_auto_auto] items-center overflow-hidden px-8 pb-[clamp(2rem,4vh,4rem)] pt-[clamp(5.8rem,11vh,8rem)] xl:px-10">
+      <div className="relative z-10 mx-auto grid min-h-[100svh] max-w-[94rem] grid-rows-[auto_auto_auto_auto] items-center overflow-hidden px-8 pb-[clamp(2rem,4svh,4rem)] pt-[clamp(6.25rem,12svh,8.5rem)] xl:px-10">
         <div className="mx-auto w-full max-w-4xl px-4 text-center">
           <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.36em] text-[#7B786E]">O Conceito da ARQO</p>
           <StableTextReveal
@@ -144,7 +132,7 @@ function ArqoConceptDesktop() {
           </p>
         </div>
 
-        <div className="relative mt-[clamp(2.2rem,7vh,5.2rem)] grid w-full grid-cols-[minmax(0,1fr)_clamp(5rem,10vw,11rem)_minmax(0,1fr)] items-center gap-6 xl:gap-12">
+        <div className="relative mt-[clamp(2rem,6svh,4.4rem)] grid w-full grid-cols-[minmax(0,1fr)_clamp(5rem,10vw,11rem)_minmax(0,1fr)] items-center gap-6 xl:gap-12">
           <ConceptCard
             ref={arqCardRef}
             title="ARQ"
@@ -188,7 +176,7 @@ function ArqoConceptDesktop() {
 
         <svg
           ref={branchConnectorRef}
-          className="pointer-events-none absolute left-1/2 top-[62%] z-10 h-[clamp(4.8rem,12vh,8rem)] w-[25vw] -translate-x-1/2 overflow-visible text-[#8F8778]"
+          className="pointer-events-none absolute left-1/2 top-[62%] z-10 h-[clamp(4.2rem,10svh,7.2rem)] w-[min(25vw,24rem)] -translate-x-1/2 overflow-visible text-[#8F8778]"
           viewBox="0 0 320 180"
           fill="none"
           aria-hidden="true"
@@ -207,14 +195,14 @@ function ArqoConceptDesktop() {
 
         <div
           ref={logoCardRef}
-          className="relative z-20 mx-auto mt-[clamp(1.8rem,5vh,4rem)] flex w-[clamp(18rem,28vw,26.6rem)] items-center justify-center border border-black/[0.065] bg-[#F8F7F3]/88 px-[clamp(1.4rem,2.6vw,2rem)] py-[clamp(1rem,2.2vh,1.5rem)] shadow-[0_24px_70px_rgba(34,33,29,0.045)] backdrop-blur-xl"
+          className="relative z-20 mx-auto mt-[clamp(1.5rem,4svh,3.2rem)] flex w-[clamp(18rem,28vw,26.6rem)] items-center justify-center border border-black/[0.065] bg-[#F8F7F3]/88 px-[clamp(1.4rem,2.6vw,2rem)] py-[clamp(1rem,2.2svh,1.5rem)] shadow-[0_24px_70px_rgba(34,33,29,0.045)] backdrop-blur-xl"
         >
           <img src={arqoAssets.logo} alt="ARQO" className="h-auto w-full object-contain" loading="lazy" decoding="async" />
         </div>
 
         <div
           ref={finalPhraseRef}
-          className="relative z-20 mx-auto mt-[clamp(1.4rem,4vh,3rem)] w-full max-w-5xl px-4 text-center"
+          className="relative z-20 mx-auto mt-[clamp(1.2rem,3svh,2.5rem)] w-full max-w-5xl px-4 text-center"
         >
           <p className="arqo-heading text-balance text-[clamp(1.65rem,2.3vw,2rem)] font-medium leading-[1.08] tracking-[-0.035em] text-[#171715]">
             {finalPhrase.split(' ').map((word, wordIndex, words) => (
@@ -297,7 +285,7 @@ function ConceptCard({
       ref={ref}
       className={[
         'relative overflow-hidden border border-black/[0.065] bg-[#F8F7F3]/94 p-7 shadow-[0_24px_70px_rgba(34,33,29,0.045)] backdrop-blur-xl sm:p-9',
-        'lg:h-[clamp(15.5rem,34vh,23rem)]',
+        'lg:h-[clamp(15rem,31svh,21.5rem)]',
         className,
       ]
         .filter(Boolean)

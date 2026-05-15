@@ -275,7 +275,7 @@ export function SevenEntryTransition({ onLogout, initialChoices = false, notice 
   ].filter((option) => profile?.role !== 'colaborador' || option.company === profile.company);
 
   return (
-    <main className="seven-entry-cursor fixed inset-0 z-[100] overflow-hidden bg-[#F7F7F8] text-[#111114]">
+    <main className="seven-entry-cursor fixed inset-0 z-[100] overflow-x-hidden overflow-y-auto bg-[#F7F7F8] text-[#111114]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_18%,rgba(255,138,31,0.16),transparent_24%),radial-gradient(circle_at_78%_12%,rgba(17,17,17,0.055),transparent_20%),linear-gradient(180deg,#ffffff_0%,#f4f4f5_100%)]" />
       <ParticleField isVisible={isTypingDone} />
 
@@ -316,7 +316,7 @@ export function SevenEntryTransition({ onLogout, initialChoices = false, notice 
         </div>
       )}
 
-      <section className="relative z-20 flex min-h-screen items-center justify-center px-5 py-10">
+      <section className="relative z-20 flex min-h-[100svh] items-center justify-center px-5 pb-10 pt-24 sm:pt-10">
         <div className="w-full max-w-5xl">
           <motion.div
             initial={{ opacity: 0, y: 18, scale: 0.985 }}
@@ -377,7 +377,7 @@ export function SevenEntryTransition({ onLogout, initialChoices = false, notice 
                 <button
                   type="button"
                   onClick={() => setShowChoices(true)}
-                  className="seven-entry-clickable group inline-flex min-h-[56px] items-center justify-center rounded-full border border-white/70 bg-[#111114]/90 px-6 text-base font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.24),0_18px_48px_rgba(17,17,20,0.22)] backdrop-blur-2xl transition hover:bg-black sm:px-8"
+                  className="seven-entry-clickable group inline-flex min-h-[56px] max-w-full flex-wrap items-center justify-center rounded-full border border-white/70 bg-[#111114]/90 px-6 text-center text-base font-semibold leading-6 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.24),0_18px_48px_rgba(17,17,20,0.22)] backdrop-blur-2xl transition hover:bg-black sm:px-8"
                 >
                   Iniciar a Experiência Ecossistema Seven
                   <ArrowRight className="ml-3 h-4 w-4 transition group-hover:translate-x-1" />

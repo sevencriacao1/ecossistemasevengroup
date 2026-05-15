@@ -1,4 +1,4 @@
-import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef } from 'react';
 import { ArqoSection, ArqoTitle } from './ArqoPrimitives';
 
@@ -31,9 +31,8 @@ function ArqoExperienceImage({
 
 export function ArqoExperience() {
   const ref = useRef<HTMLDivElement | null>(null);
-  const reduceMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start 84%', 'end 24%'] });
-  const y = useTransform(scrollYProgress, [0, 1], [reduceMotion ? 0 : 36, reduceMotion ? 0 : -32]);
+  const y = useTransform(scrollYProgress, [0, 1], [36, -32]);
 
   return (
     <ArqoSection className="bg-white">

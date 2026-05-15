@@ -103,7 +103,7 @@ export function ArqoPage() {
   return (
     <main
       id="topo"
-      className="min-h-screen scroll-smooth bg-[#F8F7F3] text-[#161615] selection:bg-[#c8c0b1]/40"
+      className="safe-page-x min-h-screen scroll-smooth bg-[#F8F7F3] text-[#161615] selection:bg-[#c8c0b1]/40"
     >
       <header className="fixed left-0 right-0 top-0 z-50 px-4 py-4 sm:px-6">
         <nav

@@ -148,9 +148,9 @@ export function CollaboratorDashboard() {
   };
 
   return (
-    <main className="relative min-h-screen bg-[#F7F7F8] text-[#111114]">
+    <main className="safe-page-x relative min-h-screen bg-[#F7F7F8] text-[#111114]">
       <header className="border-b border-[#E4E4E8] bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-5 sm:px-8">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-5 sm:px-8">
           <button type="button" onClick={() => navigate('/home')} className="flex items-center gap-3 text-left">
             <img src="/assets/seven/Logo%20N.webp" alt="" className="h-10 w-10 object-contain" />
             <span>
@@ -169,7 +169,7 @@ export function CollaboratorDashboard() {
         </div>
       </header>
 
-      <section className="mx-auto grid max-w-7xl gap-6 px-5 py-7 sm:px-8 xl:grid-cols-[340px_1fr]">
+      <section className="mx-auto grid max-w-7xl gap-6 px-5 py-7 sm:px-8 xl:grid-cols-[minmax(280px,340px)_minmax(0,1fr)]">
         <aside className="space-y-4">
           {[
             { label: 'Empresa', value: profile?.company ?? 'Seven', icon: ShieldCheck },
@@ -196,7 +196,7 @@ export function CollaboratorDashboard() {
               <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{profile?.company}</p>
-                  <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em]">Cursos disponíveis</h1>
+                  <h1 className="mt-2 text-3xl font-semibold leading-tight tracking-[-0.04em]">Cursos disponíveis</h1>
                   <p className="mt-2 text-sm leading-6 text-[#666670]">Escolha um curso para ver as aulas disponíveis.</p>
                 </div>
                 <Button type="button" onClick={() => openContinueLesson()} className="rounded-md">
@@ -222,7 +222,7 @@ export function CollaboratorDashboard() {
               <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{activeCourse.company}</p>
-                  <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em]">{activeCourse.title}</h1>
+                  <h1 className="mt-2 text-3xl font-semibold leading-tight tracking-[-0.04em]">{activeCourse.title}</h1>
                   <p className="mt-2 text-sm leading-6 text-[#666670]">{activeCourse.description || 'Curso de onboarding interno.'}</p>
                 </div>
                 <Button type="button" onClick={() => openContinueLesson(activeCourse)} className="rounded-md">
@@ -242,7 +242,7 @@ export function CollaboratorDashboard() {
                             type="button"
                             key={lesson.id}
                             onClick={() => navigate(`/dashboard/colaborador/aulas/${lesson.id}`)}
-                            className="flex items-center justify-between gap-3 rounded-md border border-[#ECECEF] bg-white px-3 py-3 text-left text-sm transition hover:border-primary/40"
+                            className="flex flex-col gap-3 rounded-md border border-[#ECECEF] bg-white px-3 py-3 text-left text-sm transition hover:border-primary/40 sm:flex-row sm:items-center sm:justify-between"
                           >
                             <span className="flex items-center gap-2">
                               <PlayCircle className="h-4 w-4 text-primary" />
@@ -271,7 +271,7 @@ export function CollaboratorDashboard() {
                 Voltar ao curso
               </button>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Aula</p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em]">{activeLesson.title}</h1>
+              <h1 className="mt-2 text-3xl font-semibold leading-tight tracking-[-0.04em]">{activeLesson.title}</h1>
               <p className="mt-2 text-sm leading-6 text-[#666670]">{activeLesson.description || 'Sem descrição.'}</p>
 
               <div className="mt-6 overflow-hidden rounded-lg border border-[#ECECEF] bg-black">

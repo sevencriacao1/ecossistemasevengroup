@@ -4,7 +4,7 @@ import { AssetFrame, IconBadge, PremiumCard, Reveal, SectionHeader } from './Sev
 export function SevenCreativeTeam() {
   return (
     <section className="bg-white px-5 py-24 sm:px-8 lg:px-10">
-      <div className="mx-auto flex min-h-screen max-w-7xl flex-col justify-center">
+      <div className="mx-auto flex min-h-[100svh] max-w-7xl flex-col justify-center">
         <SectionHeader
           eyebrow="Equipe criativa"
           title="Branding, autoridade, estética e presença digital."
@@ -13,7 +13,7 @@ export function SevenCreativeTeam() {
         <div className="mt-14 grid gap-5 lg:grid-cols-2">
             {creativeTeam.map((member) => (
               <Reveal key={member.name}>
-                <PremiumCard className="flex h-full min-h-[560px] flex-col">
+                <PremiumCard className="flex h-full min-h-[auto] flex-col lg:min-h-[560px]">
                   <div className="mb-6 grid grid-cols-3 gap-3">
                     {member.images.map((image, index) => (
                       <AssetFrame
@@ -22,7 +22,7 @@ export function SevenCreativeTeam() {
                         alt={`${member.name} ${index + 1}`}
                         initials={member.initials}
                         label={member.role}
-                        className="h-[220px]"
+                        className="h-[clamp(9rem,20vw,13.75rem)]"
                       />
                     ))}
                   </div>

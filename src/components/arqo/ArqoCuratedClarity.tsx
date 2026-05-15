@@ -1,4 +1,4 @@
-import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef } from 'react';
 import { ArqoSection, StableTextReveal } from './ArqoPrimitives';
 
@@ -26,7 +26,6 @@ const cloudOptions = [
 
 export function ArqoCuratedClarity() {
   const ref = useRef<HTMLDivElement | null>(null);
-  const reduceMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start 92%', 'end 56%'] });
   const blur = useTransform(scrollYProgress, [0, 0.18], ['blur(2px)', 'blur(0px)']);
   const opacity = useTransform(scrollYProgress, [0, 0.2], [0.72, 1]);
@@ -59,12 +58,12 @@ export function ArqoCuratedClarity() {
                   key={`${item}-${index}`}
                   className="absolute rounded-full border border-black/[0.055] bg-white/48 px-4 py-2 text-sm font-medium text-[#6D6A62]"
                   initial={false}
-                  animate={reduceMotion ? undefined : { y: [0, index % 2 ? 12 : -12, 0], x: [0, index % 3 ? -8 : 8, 0] }}
+                  animate={{ y: [0, index % 2 ? 12 : -12, 0], x: [0, index % 3 ? -8 : 8, 0] }}
                   transition={{ duration: 5.4 + index * 0.16, repeat: Infinity, ease: 'easeInOut' }}
                   style={{
                     left: `${4 + (index * 23) % 78}%`,
                     top: `${4 + (index * 13) % 78}%`,
-                    filter: reduceMotion ? undefined : `blur(${0.7 + (index % 4) * 0.55}px)`,
+                    filter: `blur(${0.7 + (index % 4) * 0.55}px)`,
                     opacity: (0.18 + (index % 5) * 0.1) * 5,
                   }}
                 >
@@ -85,7 +84,7 @@ export function ArqoCuratedClarity() {
               <div className="mx-auto mt-8 flex h-44 w-44 items-center justify-center rounded-full border border-white/18">
                 <div className="flex h-24 w-24 items-center justify-center rounded-full border border-white/24">
                   <motion.div
-                    animate={reduceMotion ? undefined : { scale: [1, 1.24, 1], opacity: [1, 0.62, 1] }}
+                    animate={{ scale: [1, 1.24, 1], opacity: [1, 0.62, 1] }}
                     transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut' }}
                     className="h-3 w-3 rounded-full bg-white"
                   />

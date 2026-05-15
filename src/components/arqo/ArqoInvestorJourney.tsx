@@ -20,15 +20,9 @@ export function ArqoInvestorJourney() {
 
       if (!section || !progress || !glow || cards.length === 0) return;
 
-      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const mm = gsap.matchMedia();
 
       mm.add('(min-width: 1024px)', () => {
-        if (reduceMotion) {
-          gsap.set([progress, glow, cards, dots], { clearProps: 'all' });
-          return;
-        }
-
         gsap.set(progress, { scaleY: 0, transformOrigin: '50% 0%' });
         gsap.set(glow, { scaleY: 0, autoAlpha: 0.1, transformOrigin: '50% 0%' });
         gsap.set(cards, {

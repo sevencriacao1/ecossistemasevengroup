@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { motion, MotionValue, useReducedMotion, useScroll, useTransform, Variants } from 'framer-motion';
+import { motion, MotionValue, useScroll, useTransform, Variants } from 'framer-motion';
 import { LucideIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { cn } from '../../lib/utils';
@@ -26,12 +26,6 @@ export function ArqoReveal({
   delay?: number;
   amount?: number;
 }) {
-  const reduceMotion = useReducedMotion();
-
-  if (reduceMotion) {
-    return <div className={className}>{children}</div>;
-  }
-
   return (
     <motion.div
       variants={arqoFade}
@@ -74,9 +68,8 @@ export function ArqoEditorialPause({
   align?: 'center' | 'left';
 }) {
   const ref = useRef<HTMLElement | null>(null);
-  const reduceMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start 88%', 'end 18%'] });
-  const y = useTransform(scrollYProgress, [0, 1], [reduceMotion ? 0 : 28, reduceMotion ? 0 : -18]);
+  const y = useTransform(scrollYProgress, [0, 1], [28, -18]);
   const opacity = useTransform(scrollYProgress, [0, 0.35, 0.86, 1], [0.34, 1, 1, 0.62]);
 
   return (
@@ -151,7 +144,6 @@ export function StableTextReveal({
   as?: 'h1' | 'h2' | 'p' | 'span';
 }) {
   const ref = useRef<HTMLElement | null>(null);
-  const reduceMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start 86%', 'end 44%'] });
   const Tag = as;
   const setRef = (node: HTMLElement | null) => {
@@ -171,7 +163,6 @@ export function StableTextReveal({
                 index={previousChars + charIndex}
                 total={text.length}
                 progress={scrollYProgress}
-                reduceMotion={Boolean(reduceMotion)}
               />
             );
           })}
@@ -187,21 +178,15 @@ function StableCharacter({
   index,
   total,
   progress,
-  reduceMotion,
 }: {
   char: string;
   index: number;
   total: number;
   progress: MotionValue<number>;
-  reduceMotion: boolean;
 }) {
   const start = total <= 1 ? 0 : (index / Math.max(total - 1, 1)) * 0.72;
   const end = Math.min(start + 0.2, 1);
   const color = useTransform(progress, [start, end], ['rgba(22,22,21,0.22)', 'rgba(22,22,21,1)']);
-
-  if (reduceMotion) {
-    return <span className="inline">{char}</span>;
-  }
 
   return (
     <motion.span style={{ color }} className="inline">
@@ -221,7 +206,6 @@ export function ArqoButton({
   dark?: boolean;
   onClick?: () => void;
 }) {
-  const reduceMotion = useReducedMotion();
   const className = cn(
     'group relative inline-flex min-h-[52px] items-center justify-center overflow-hidden rounded-full px-6 text-sm font-semibold transition duration-500',
     dark
@@ -232,8 +216,7 @@ export function ArqoButton({
     <>
       <span className="absolute inset-0 translate-x-[-120%] bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.34),transparent)] transition duration-700 group-hover:translate-x-[120%]" />
       <motion.span
-        animate={reduceMotion ? undefined : undefined}
-        whileHover={reduceMotion ? undefined : { x: 1 }}
+        whileHover={{ x: 1 }}
         className="relative z-10 inline-flex items-center"
       >
         {children}
@@ -270,11 +253,9 @@ export function ArqoIconBadge({ icon: Icon, className }: { icon: LucideIcon; cla
 }
 
 export function ArqoCard({ children, className }: { children: ReactNode; className?: string }) {
-  const reduceMotion = useReducedMotion();
-
   return (
     <motion.div
-      whileHover={reduceMotion ? undefined : { y: -3, scale: 1.006 }}
+      whileHover={{ y: -3, scale: 1.006 }}
       transition={{ duration: 0.5, ease: arqoEase }}
       className={cn(
         'rounded-[26px] border border-black/[0.07] bg-white/72 p-6 shadow-[0_22px_60px_rgba(34,33,29,0.055)] backdrop-blur-2xl transition-colors duration-500 hover:border-black/[0.12] hover:bg-white/86',
@@ -294,9 +275,8 @@ export function ArqoImagePlaceholder({
   className?: string;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
-  const reduceMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start 92%', 'end 18%'] });
-  const y = useTransform(scrollYProgress, [0, 1], [reduceMotion ? 0 : 18, reduceMotion ? 0 : -18]);
+  const y = useTransform(scrollYProgress, [0, 1], [18, -18]);
 
   return (
     <div ref={ref} className={cn('group relative overflow-hidden rounded-[28px] border border-black/[0.07] bg-[#F2F0EB]', className)}>

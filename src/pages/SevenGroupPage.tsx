@@ -41,12 +41,6 @@ export function SevenGroupPage() {
   };
 
   useEffect(() => {
-    const shouldSkipSoftWheel =
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
-      window.matchMedia('(pointer: coarse)').matches;
-
-    if (shouldSkipSoftWheel) return undefined;
-
     const onWheel = (event: globalThis.WheelEvent) => handleSoftWheel(event);
     window.addEventListener('wheel', onWheel, { passive: true });
 
@@ -61,7 +55,7 @@ export function SevenGroupPage() {
   return (
     <main
       id="topo"
-      className="min-h-screen scroll-smooth bg-[#F7F7F8] text-[#111114] selection:bg-[#ff6a00]/20"
+      className="safe-page-x min-h-screen scroll-smooth bg-[#F7F7F8] text-[#111114] selection:bg-[#ff6a00]/20"
     >
       <header className="fixed left-0 right-0 top-0 z-50 px-4 py-4 sm:px-6">
         <nav className="mx-auto flex max-w-7xl items-center justify-between rounded-full border border-black/[0.06] bg-white/72 px-4 py-3 shadow-[0_18px_54px_rgba(17,17,20,0.10)] backdrop-blur-2xl">

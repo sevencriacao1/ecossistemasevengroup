@@ -128,7 +128,7 @@ export function ArqoHero() {
     <section
       ref={sectionRef}
       data-arqo-tone="dark"
-      className="relative h-screen min-h-screen w-full overflow-hidden bg-[#11100f] text-white"
+      className="relative h-[100svh] min-h-[100svh] w-full overflow-hidden bg-[#11100f] text-white"
       aria-label="Abertura institucional ARQO"
     >
       <div ref={backgroundRef} className="absolute inset-0 will-change-transform">
@@ -155,7 +155,7 @@ export function ArqoHero() {
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.18)_0%,rgba(0,0,0,0.12)_42%,rgba(0,0,0,0.26)_100%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_44%,rgba(255,255,255,0.08),transparent_34%)] mix-blend-screen" />
 
-      <div className="relative z-10 flex h-full min-h-screen items-center justify-center px-6">
+      <div className="relative z-10 flex h-full min-h-[100svh] items-center justify-center px-6">
         {logoSvg === null ? null : logoSvg ? (
           <div
             ref={logoRef}

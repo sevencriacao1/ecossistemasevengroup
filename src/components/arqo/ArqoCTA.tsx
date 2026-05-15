@@ -32,13 +32,13 @@ export function ArqoCTA() {
   const navigate = useNavigate();
 
   return (
-    <section data-arqo-tone="dark" className="relative flex min-h-screen overflow-hidden bg-[#11110f] px-5 py-20 text-white sm:px-8 lg:px-10">
+    <section data-arqo-tone="dark" className="relative flex min-h-[100svh] overflow-hidden bg-[#11110f] px-5 py-20 text-white sm:px-8 lg:px-10">
       <div className="absolute inset-0 bg-[linear-gradient(115deg,rgba(255,255,255,0.08)_0%,transparent_26%,transparent_70%,rgba(255,255,255,0.045)_100%)]" />
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.028)_1px,transparent_1px)] bg-[size:72px_72px] opacity-30" />
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/22 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/58 to-transparent" />
 
-      <div className="relative z-10 mx-auto flex min-h-[calc(100vh-10rem)] w-full max-w-7xl flex-col items-center justify-center text-center">
+      <div className="relative z-10 mx-auto flex min-h-[calc(100svh-10rem)] w-full max-w-7xl flex-col items-center justify-center text-center">
         <div className="mb-14 h-px w-full max-w-3xl bg-gradient-to-r from-transparent via-white/22 to-transparent" />
         <img src={arqoAssets.logoWhite} alt="ARQO" className="mx-auto h-auto w-[min(204px,46vw)] object-contain" loading="lazy" decoding="async" />
         <h2 className="arqo-heading mx-auto mt-14 max-w-4xl text-balance text-4xl font-medium leading-[1.06] tracking-[-0.04em] text-white sm:text-6xl">

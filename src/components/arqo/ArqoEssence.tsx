@@ -1,12 +1,11 @@
-import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef } from 'react';
 import { ArqoSection, ArqoTitle, StableTextReveal } from './ArqoPrimitives';
 
 export function ArqoEssence() {
   const ref = useRef<HTMLDivElement | null>(null);
-  const reduceMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start 80%', 'end 24%'] });
-  const rotate = useTransform(scrollYProgress, [0, 1], [0, reduceMotion ? 0 : 26]);
+  const rotate = useTransform(scrollYProgress, [0, 1], [0, 26]);
 
   return (
     <ArqoSection id="essencia" className="bg-white py-16 lg:py-20">

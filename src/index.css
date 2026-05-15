@@ -7,6 +7,7 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    scroll-padding-top: 6.5rem;
     background: #0F0F10;
     font-family: "Space Grotesk", sans-serif;
     cursor: url("/assets/cursors/cursor-default-smaller.png") 1 1, default;
@@ -20,10 +21,20 @@
     font-synthesis: none;
     text-rendering: geometricPrecision;
     cursor: url("/assets/cursors/cursor-default-smaller.png") 1 1, default;
+    overflow-x: clip;
+  }
+
+  #root {
+    min-height: 100svh;
+    overflow-x: clip;
   }
 
   * {
     box-sizing: border-box;
+  }
+
+  [id] {
+    scroll-margin-top: clamp(5.5rem, 11svh, 7rem);
   }
 
   p,
@@ -95,6 +106,18 @@
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     @apply bg-text-dark;
   }
+
+  .h-screen {
+    height: 100svh;
+  }
+
+  .min-h-screen {
+    min-height: 100svh;
+  }
+
+  .safe-page-x {
+    overflow-x: clip;
+  }
 }
 
 @keyframes arqoDashFlow {
@@ -110,18 +133,12 @@
   animation: arqoDashFlow 1.8s linear infinite;
 }
 
-@media (max-width: 767px), (prefers-reduced-motion: reduce) {
+@media (max-width: 767px) {
   .backdrop-blur-xl,
   .backdrop-blur-2xl,
   .backdrop-blur-3xl,
   .backdrop-blur-\[28px\],
   .backdrop-blur-\[34px\] {
     --tw-backdrop-blur: blur(12px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .arqo-dash-flow {
-    animation: none;
   }
 }

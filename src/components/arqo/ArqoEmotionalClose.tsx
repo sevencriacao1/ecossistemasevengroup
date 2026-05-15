@@ -1,14 +1,13 @@
-import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef } from 'react';
 import { ArqoSection } from './ArqoPrimitives';
 
 export function ArqoEmotionalClose() {
   const ref = useRef<HTMLDivElement | null>(null);
-  const reduceMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start 78%', 'end 24%'] });
   const lineScale = useTransform(scrollYProgress, [0.08, 0.72], [0.12, 1]);
-  const statementY = useTransform(scrollYProgress, [0, 0.68], [reduceMotion ? 0 : 26, reduceMotion ? 0 : -10]);
-  const paragraphY = useTransform(scrollYProgress, [0.12, 0.78], [reduceMotion ? 0 : 18, 0]);
+  const statementY = useTransform(scrollYProgress, [0, 0.68], [26, -10]);
+  const paragraphY = useTransform(scrollYProgress, [0.12, 0.78], [18, 0]);
   const paragraphOpacity = useTransform(scrollYProgress, [0.16, 0.58], [0.42, 1]);
 
   return (

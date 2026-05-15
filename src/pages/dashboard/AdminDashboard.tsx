@@ -84,7 +84,7 @@ function Modal({
 }) {
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-[#111114]/55 px-4 py-6 backdrop-blur-sm">
-      <section className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-lg border border-[#E6E6EA] bg-white p-5 text-[#111114] shadow-[0_24px_70px_rgba(17,17,20,0.18)]">
+      <section className="max-h-[92svh] w-full max-w-3xl overflow-y-auto rounded-lg border border-[#E6E6EA] bg-white p-5 text-[#111114] shadow-[0_24px_70px_rgba(17,17,20,0.18)]">
         <header className="mb-5 flex items-center justify-between gap-4 border-b border-[#ECECEF] pb-4">
           <h2 className="text-xl font-semibold">{title}</h2>
           <button type="button" onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-md border border-[#E6E6EA] text-[#62626A]">
@@ -204,7 +204,7 @@ function Toast({ message, type }: { message: string; type: 'success' | 'error' }
   return (
     <div
       role="status"
-      className={`fixed bottom-6 right-6 z-[180] max-w-sm rounded-lg border px-4 py-3 text-sm font-medium shadow-[0_18px_45px_rgba(17,17,20,0.16)] ${
+      className={`fixed bottom-4 left-4 right-4 z-[180] rounded-lg border px-4 py-3 text-sm font-medium shadow-[0_18px_45px_rgba(17,17,20,0.16)] sm:bottom-6 sm:left-auto sm:right-6 sm:max-w-sm ${
         type === 'error'
           ? 'border-red-200 bg-red-50 text-red-700'
           : 'border-emerald-200 bg-emerald-50 text-emerald-700'
@@ -584,8 +584,8 @@ export function AdminDashboard() {
   }
 
   return (
-    <main className="relative min-h-screen bg-[#F7F7F8] text-[#111114]">
-      <div className="grid min-h-screen lg:grid-cols-[280px_1fr]">
+    <main className="safe-page-x relative min-h-screen bg-[#F7F7F8] text-[#111114]">
+      <div className="grid min-h-screen lg:grid-cols-[minmax(240px,280px)_minmax(0,1fr)]">
         <aside className="flex flex-col border-b border-[#E4E4E8] bg-white px-5 py-5 shadow-[8px_0_28px_rgba(17,17,20,0.04)] lg:min-h-screen lg:border-b-0 lg:border-r">
           <div>
             <button type="button" onClick={() => navigate('/home')} className="flex items-center gap-3 text-left">
@@ -629,7 +629,7 @@ export function AdminDashboard() {
           </button>
         </aside>
 
-        <section className="px-5 py-6 sm:px-8 lg:px-10">
+        <section className="min-w-0 px-5 py-6 sm:px-8 lg:px-10">
           <header className="mb-7 flex flex-col gap-4 border-b border-[#E4E4E8] pb-6 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">Admin</p>
@@ -667,7 +667,7 @@ export function AdminDashboard() {
               />
             </div>
           ) : route === 'cursos' ? (
-            <div className="grid gap-7 xl:grid-cols-[320px_1fr]">
+            <div className="grid gap-7 xl:grid-cols-[minmax(280px,320px)_minmax(0,1fr)]">
               <aside className="space-y-4">
                 <Button type="button" onClick={() => setModal('course')} className="w-full rounded-md">
                   <Plus className="mr-2 h-4 w-4" /> Criar curso
@@ -740,7 +740,7 @@ export function AdminDashboard() {
 
                           <div className="mt-4 grid gap-2">
                             {moduleItem.lessons.map((lesson) => (
-                              <div key={lesson.id} className="flex items-center justify-between gap-3 rounded-md border border-[#ECECEF] bg-white px-3 py-3 text-sm">
+                              <div key={lesson.id} className="flex flex-col gap-3 rounded-md border border-[#ECECEF] bg-white px-3 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
                                 <span>{lesson.order_index}. {lesson.title}</span>
                                 <IconButton label="Editar aula" onClick={() => openLessonEditor(lesson)}>
                                   <Edit3 className="h-4 w-4" />
@@ -878,7 +878,7 @@ function UserCanvas({
         {icon}
         <h2 className="font-semibold">{title}</h2>
       </header>
-      <div className={`grid gap-3 border-b border-[#ECECEF] px-5 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-[#8A8A92] ${admin ? 'md:grid-cols-[1.2fr_0.7fr_0.7fr_0.4fr]' : 'md:grid-cols-[1.2fr_0.7fr_0.7fr_0.7fr_0.4fr]'}`}>
+      <div className={`hidden gap-3 border-b border-[#ECECEF] px-5 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-[#8A8A92] md:grid ${admin ? 'md:grid-cols-[1.2fr_0.7fr_0.7fr_0.4fr]' : 'md:grid-cols-[1.2fr_0.7fr_0.7fr_0.7fr_0.4fr]'}`}>
         <span>Usuário</span>
         <span>Role</span>
         {!admin && <span>Empresa</span>}
@@ -886,7 +886,7 @@ function UserCanvas({
         <span>Editar</span>
       </div>
       {users.map((user) => (
-        <article key={user.id} className={`grid gap-3 border-b border-[#F0F0F2] px-5 py-4 text-sm last:border-b-0 ${admin ? 'md:grid-cols-[1.2fr_0.7fr_0.7fr_0.4fr]' : 'md:grid-cols-[1.2fr_0.7fr_0.7fr_0.7fr_0.4fr]'}`}>
+        <article key={user.id} className={`grid gap-3 border-b border-[#F0F0F2] px-5 py-4 text-sm last:border-b-0 md:items-center ${admin ? 'md:grid-cols-[1.2fr_0.7fr_0.7fr_0.4fr]' : 'md:grid-cols-[1.2fr_0.7fr_0.7fr_0.7fr_0.4fr]'}`}>
           <div>
             <p className="font-semibold">{user.full_name || user.username}</p>
             <p className="text-xs text-[#8A8A92]">{user.email || user.username}</p>
@@ -945,7 +945,7 @@ function CollaboratorGroup({
 
   return (
     <section>
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{company}</p>
           <h2 className="mt-1 text-2xl font-semibold tracking-[-0.035em]">{title}</h2>
@@ -998,7 +998,7 @@ function CollaboratorGroup({
                   </div>
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-[#8A8A92]">Módulo atual</span>
-                    <span className="max-w-[150px] truncate font-semibold">{userProgress.currentModule}</span>
+                    <span className="max-w-[min(12rem,52vw)] truncate font-semibold">{userProgress.currentModule}</span>
                   </div>
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-[#8A8A92]">Progresso</span>

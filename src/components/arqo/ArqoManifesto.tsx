@@ -1,4 +1,4 @@
-import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef } from 'react';
 import { ArqoSection, StableTextReveal } from './ArqoPrimitives';
 
@@ -6,11 +6,10 @@ const excessLines = ['Excesso de opções.', 'Excesso de pressão.', 'Excesso de
 
 export function ArqoManifesto() {
   const ref = useRef<HTMLDivElement | null>(null);
-  const reduceMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start 82%', 'end 18%'] });
   const axisScale = useTransform(scrollYProgress, [0.08, 0.72], [0.08, 1]);
-  const excessY = useTransform(scrollYProgress, [0, 1], [reduceMotion ? 0 : 24, reduceMotion ? 0 : -18]);
-  const clarityY = useTransform(scrollYProgress, [0.18, 1], [reduceMotion ? 0 : 34, reduceMotion ? 0 : -10]);
+  const excessY = useTransform(scrollYProgress, [0, 1], [24, -18]);
+  const clarityY = useTransform(scrollYProgress, [0.18, 1], [34, -10]);
 
   return (
     <ArqoSection id="manifesto" className="bg-white py-24 lg:py-36">
