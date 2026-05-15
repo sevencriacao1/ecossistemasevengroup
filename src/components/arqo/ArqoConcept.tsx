@@ -119,7 +119,7 @@ function ArqoConceptDesktop() {
       <section id="conceito" ref={sectionRef} className="relative min-h-[100svh] overflow-hidden bg-white text-[#171715]">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(22,22,21,0.028)_1px,transparent_1px),linear-gradient(90deg,rgba(22,22,21,0.024)_1px,transparent_1px)] bg-[size:64px_64px] opacity-70" />
 
-      <div className="relative z-10 mx-auto grid min-h-[100svh] max-w-[94rem] grid-rows-[auto_auto_auto_auto] items-center overflow-hidden px-8 pb-[clamp(2rem,4svh,4rem)] pt-[clamp(6.25rem,12svh,8.5rem)] xl:px-10">
+      <div className="relative z-10 mx-auto grid min-h-[100svh] max-w-[94rem] grid-rows-[auto_auto_auto_auto] items-center px-8 pb-[clamp(1.75rem,3svh,3rem)] pt-[clamp(5.75rem,10svh,7.5rem)] xl:px-10">
         <div className="mx-auto w-full max-w-4xl px-4 text-center">
           <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.36em] text-[#7B786E]">O Conceito da ARQO</p>
           <StableTextReveal
@@ -132,7 +132,7 @@ function ArqoConceptDesktop() {
           </p>
         </div>
 
-        <div className="relative mt-[clamp(2rem,6svh,4.4rem)] grid w-full grid-cols-[minmax(0,1fr)_clamp(5rem,10vw,11rem)_minmax(0,1fr)] items-center gap-6 xl:gap-12">
+        <div className="relative mt-[clamp(1.75rem,4svh,3.6rem)] grid w-full grid-cols-[minmax(0,1fr)_clamp(5rem,10vw,11rem)_minmax(0,1fr)] items-center gap-6 xl:gap-12">
           <ConceptCard
             ref={arqCardRef}
             title="ARQ"
@@ -176,7 +176,7 @@ function ArqoConceptDesktop() {
 
         <svg
           ref={branchConnectorRef}
-          className="pointer-events-none absolute left-1/2 top-[62%] z-10 h-[clamp(4.2rem,10svh,7.2rem)] w-[min(25vw,24rem)] -translate-x-1/2 overflow-visible text-[#8F8778]"
+          className="pointer-events-none absolute left-1/2 top-[60%] z-10 h-[clamp(3.8rem,8svh,6.4rem)] w-[min(25vw,24rem)] -translate-x-1/2 overflow-visible text-[#8F8778]"
           viewBox="0 0 320 180"
           fill="none"
           aria-hidden="true"
@@ -195,14 +195,14 @@ function ArqoConceptDesktop() {
 
         <div
           ref={logoCardRef}
-          className="relative z-20 mx-auto mt-[clamp(1.5rem,4svh,3.2rem)] flex w-[clamp(18rem,28vw,26.6rem)] items-center justify-center border border-black/[0.065] bg-[#F8F7F3]/88 px-[clamp(1.4rem,2.6vw,2rem)] py-[clamp(1rem,2.2svh,1.5rem)] shadow-[0_24px_70px_rgba(34,33,29,0.045)] backdrop-blur-xl"
+          className="relative z-20 mx-auto mt-[clamp(1.2rem,3svh,2.6rem)] flex w-[clamp(18rem,28vw,26.6rem)] items-center justify-center border border-black/[0.065] bg-[#F8F7F3]/88 px-[clamp(1.4rem,2.6vw,2rem)] py-[clamp(0.85rem,1.8svh,1.35rem)] shadow-[0_24px_70px_rgba(34,33,29,0.045)] backdrop-blur-xl"
         >
           <img src={arqoAssets.logo} alt="ARQO" className="h-auto w-full object-contain" loading="lazy" decoding="async" />
         </div>
 
         <div
           ref={finalPhraseRef}
-          className="relative z-20 mx-auto mt-[clamp(1.2rem,3svh,2.5rem)] w-full max-w-5xl px-4 text-center"
+          className="relative z-20 mx-auto mt-[clamp(1rem,2.4svh,2rem)] w-full max-w-5xl px-4 text-center"
         >
           <p className="arqo-heading text-balance text-[clamp(1.65rem,2.3vw,2rem)] font-medium leading-[1.08] tracking-[-0.035em] text-[#171715]">
             {finalPhrase.split(' ').map((word, wordIndex, words) => (
@@ -284,8 +284,8 @@ function ConceptCard({
     <article
       ref={ref}
       className={[
-        'relative overflow-hidden border border-black/[0.065] bg-[#F8F7F3]/94 p-7 shadow-[0_24px_70px_rgba(34,33,29,0.045)] backdrop-blur-xl sm:p-9',
-        'lg:h-[clamp(15rem,31svh,21.5rem)]',
+        'relative overflow-hidden border border-black/[0.065] bg-[#F8F7F3]/94 p-7 shadow-[0_24px_70px_rgba(34,33,29,0.045)] backdrop-blur-xl sm:p-8',
+        'lg:min-h-[clamp(18.75rem,39svh,23rem)]',
         className,
       ]
         .filter(Boolean)
@@ -299,19 +299,19 @@ function ConceptCard({
         </div>
       )}
       <div className="relative z-10">
-        <p className="arqo-heading text-7xl font-medium leading-none tracking-[-0.055em] text-[#171715] sm:text-8xl lg:text-[clamp(4.4rem,6.2vw,8rem)]">
+        <p className="arqo-heading text-7xl font-medium leading-none tracking-[-0.055em] text-[#171715] sm:text-8xl lg:text-[clamp(4.25rem,5.6vw,7.25rem)]">
           {title}
         </p>
-        <p className="mt-[clamp(1rem,2vh,1.5rem)] text-[11px] font-semibold uppercase tracking-[0.34em] text-[#817D73]">{eyebrow}</p>
-        <div className="mt-[clamp(1rem,2vh,1.5rem)] grid gap-[clamp(0.55rem,1.1vh,0.75rem)] text-[clamp(0.9rem,1.1vw,1rem)] font-medium text-[#4E4B45]">
+        <p className="mt-[clamp(0.85rem,1.35svh,1.2rem)] text-[11px] font-semibold uppercase tracking-[0.34em] text-[#817D73]">{eyebrow}</p>
+        <div className="mt-[clamp(0.85rem,1.35svh,1.2rem)] grid gap-[clamp(0.4rem,0.85svh,0.65rem)] text-[clamp(0.86rem,1vw,0.96rem)] font-medium text-[#4E4B45]">
           {bullets.map((bullet) => (
-            <span key={bullet} data-concept-bullet className="flex items-center gap-3 border-t border-black/[0.07] pt-3">
+            <span key={bullet} data-concept-bullet className="flex items-center gap-3 border-t border-black/[0.07] pt-[clamp(0.55rem,0.9svh,0.75rem)]">
               <span className="h-1 w-1 rounded-full bg-[#8F8778]" />
               {bullet}
             </span>
           ))}
         </div>
-        <p className="mt-[clamp(1rem,2vh,1.75rem)] max-w-md text-base leading-8 text-[#625F57] lg:text-[clamp(0.82rem,1vw,1rem)] lg:leading-[1.65]">{body}</p>
+        <p className="mt-[clamp(0.8rem,1.2svh,1.25rem)] max-w-md text-base leading-8 text-[#625F57] lg:text-[clamp(0.78rem,0.92vw,0.95rem)] lg:leading-[1.5]">{body}</p>
       </div>
     </article>
   );
