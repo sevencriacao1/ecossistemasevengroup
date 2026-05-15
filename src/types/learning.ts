@@ -42,6 +42,7 @@ export interface LearningModule {
   title: string;
   description: string | null;
   duration?: string | null;
+  has_quiz?: boolean;
   order_index: number;
   created_at: string;
   updated_at?: string;
@@ -54,6 +55,7 @@ export interface Lesson {
   description: string | null;
   video_url: string | null;
   attachment_url?: string | null;
+  video_duration_seconds?: number | null;
   content: string | null;
   order_index: number;
   is_active: boolean;
@@ -74,6 +76,79 @@ export interface LessonProgress {
 
 export interface CourseTree extends Course {
   modules: Array<LearningModule & { lessons: Lesson[] }>;
+}
+
+export type QuizQuestionType = 'single' | 'multiple';
+
+export interface QuizOption {
+  id: string;
+  text: string;
+  isCorrect: boolean;
+}
+
+export interface QuizQuestion {
+  id: string;
+  quiz_id: string;
+  question: string;
+  type: QuizQuestionType;
+  options: QuizOption[];
+  order_index: number;
+}
+
+export interface Quiz {
+  id: string;
+  module_id: string;
+  title: string;
+  passing_score: number;
+  time_per_question_minutes: number;
+  is_active: boolean;
+  created_at: string;
+  questions: QuizQuestion[];
+}
+
+export interface QuizAttempt {
+  id: string;
+  quiz_id: string;
+  module_id: string;
+  course_id: string;
+  user_id: string;
+  score: number;
+  passed: boolean;
+  answers: Record<string, string[]>;
+  attempt_number: number;
+  completed_at: string;
+}
+
+export interface CourseFailure {
+  id: string;
+  user_id: string;
+  course_id: string;
+  failure_count: number;
+  last_failed_at: string;
+}
+
+export interface Certificate {
+  id: string;
+  user_id: string;
+  course_id: string;
+  issued_at: string;
+  certificate_url: string | null;
+  workload_minutes: number;
+  started_at: string | null;
+  completed_at: string | null;
+  validation_code: string | null;
+}
+
+export interface PublicCertificateValidation {
+  certificate_id: string;
+  certificate_url: string | null;
+  validation_code: string;
+  issued_at: string;
+  completed_at: string | null;
+  workload_minutes: number;
+  student_name: string;
+  course_title: string;
+  company: Company;
 }
 
 export interface AdminMetrics {

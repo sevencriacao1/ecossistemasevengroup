@@ -1,7 +1,9 @@
 import { supabase } from '../lib/supabase';
 import {
   AdminMetrics,
+  Certificate,
   Company,
+  CourseFailure,
   Course,
   CourseTree,
   HealthIssue,
@@ -9,6 +11,12 @@ import {
   Lesson,
   LessonProgress,
   ManagedAuthUser,
+  PublicCertificateValidation,
+  Quiz,
+  QuizAttempt,
+  QuizOption,
+  QuizQuestion,
+  QuizQuestionType,
   ReadinessScore,
   UserProfile,
   UserRole,
@@ -17,6 +25,7 @@ import {
 
 type ProfileRow = Record<string, unknown>;
 type SupabaseMaybeError = { code?: string; message?: string; details?: string };
+type QuizQuestionRow = Record<string, unknown>;
 
 function isMissingRestResource(error: SupabaseMaybeError | null | undefined) {
   if (!error) return false;
@@ -49,6 +58,34 @@ function asRole(value: unknown): UserRole {
 
 function asStatus(value: unknown): UserStatus {
   return value === 'inativo' ? 'inativo' : 'ativo';
+}
+
+function asQuizQuestionType(value: unknown): QuizQuestionType {
+  return value === 'multiple' ? 'multiple' : 'single';
+}
+
+function normalizeOptions(value: unknown): QuizOption[] {
+  return Array.isArray(value)
+    ? value.map((option) => {
+      const nextOption = option as Record<string, unknown>;
+      return {
+        id: asString(nextOption.id, crypto.randomUUID()),
+        text: asString(nextOption.text),
+        isCorrect: nextOption.isCorrect === true || nextOption.correct === true || nextOption.is_correct === true,
+      };
+    })
+    : [];
+}
+
+function normalizeQuizQuestion(row: QuizQuestionRow): QuizQuestion {
+  return {
+    id: asString(row.id),
+    quiz_id: asString(row.quiz_id),
+    question: asString(row.question),
+    type: asQuizQuestionType(row.type),
+    options: normalizeOptions(row.options),
+    order_index: Number(row.order_index ?? 1),
+  };
 }
 
 function normalizeProfile(row: ProfileRow): UserProfile {
@@ -279,9 +316,83 @@ export async function updateManagedUser(values: {
   return data;
 }
 
-export async function uploadProfileImage(file: File) {
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-');
-  const path = `${crypto.randomUUID()}-${safeName}`;
+export async function deleteManagedUser(id: string) {
+  const { data, error } = await supabase.functions.invoke('admin-users', {
+    body: { action: 'delete', id },
+  });
+
+  if (error) throw error;
+  return data;
+}
+
+type LessonMediaContext = {
+  company: Company;
+  courseOrder: number;
+  moduleOrder: number;
+  lessonOrder: number;
+};
+
+type ProfileImageContext = {
+  fullName: string;
+  company: Company;
+};
+
+type CourseCoverContext = {
+  company: Company;
+  title: string;
+};
+
+type StorageBucket = 'profile-images' | 'course-covers' | 'lesson-videos' | 'lesson-attachments' | 'certificates';
+
+function fileExtension(fileName: string, fallback: string) {
+  const extension = fileName.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '');
+  return extension || fallback;
+}
+
+function stripAccents(value: string) {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function compactLabel(value: string, fallback: string) {
+  const normalized = stripAccents(value)
+    .replace(/&/g, ' e ')
+    .replace(/[^a-zA-Z0-9]+/g, ' ')
+    .trim();
+
+  return normalized || fallback;
+}
+
+function companyLabel(company: Company) {
+  return company === 'ARQO' ? 'Arqo' : 'Seven';
+}
+
+function lessonMediaBaseName(context: LessonMediaContext) {
+  return `${companyLabel(context.company)} - C${context.courseOrder}M${context.moduleOrder}A${context.lessonOrder}`;
+}
+
+function uniqueStoragePath(folder: string, baseName: string, extension: string) {
+  return `${folder}/${baseName} - ${crypto.randomUUID().slice(0, 8)}.${extension}`;
+}
+
+function isStoragePath(path: string | null | undefined) {
+  return Boolean(path && !/^https?:\/\//.test(path));
+}
+
+export async function removeStorageObject(bucket: StorageBucket, path: string | null | undefined) {
+  if (!isStoragePath(path)) return;
+
+  const { error } = await supabase.storage
+    .from(bucket)
+    .remove([path as string]);
+
+  if (error) throw error;
+}
+
+export async function uploadProfileImage(file: File, context: ProfileImageContext) {
+  const extension = fileExtension(file.name, 'jpg');
+  const personName = compactLabel(context.fullName, 'Usuario');
+  const baseName = `${personName} PP - ${companyLabel(context.company)}`;
+  const path = uniqueStoragePath('profile-picture', baseName, extension);
   const { data, error } = await supabase.storage
     .from('profile-images')
     .upload(path, file, { upsert: false });
@@ -290,10 +401,11 @@ export async function uploadProfileImage(file: File) {
   return data.path;
 }
 
-export async function uploadCourseCover(file: File) {
+export async function uploadCourseCover(file: File, context: CourseCoverContext) {
   await assertImageSize(file, 600, 400);
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-');
-  const path = `${crypto.randomUUID()}-${safeName}`;
+  const extension = fileExtension(file.name, 'jpg');
+  const courseName = compactLabel(context.title, 'Curso');
+  const path = uniqueStoragePath('course-covers', `${companyLabel(context.company)} - ${courseName} Cover`, extension);
   const { data, error } = await supabase.storage
     .from('course-covers')
     .upload(path, file, { upsert: false });
@@ -347,15 +459,11 @@ export async function fetchLearningTree() {
     title: asString(moduleItem.title, asString(moduleItem.titulo, 'Modulo')),
     description: asNullableString(moduleItem.description) ?? asNullableString(moduleItem.descricao),
     duration: asNullableString(moduleItem.duration),
+    has_quiz: moduleItem.has_quiz === true,
     order_index: Number(moduleItem.order_index ?? moduleItem.ordem ?? 1),
     created_at: asString(moduleItem.created_at, new Date().toISOString()),
     updated_at: asNullableString(moduleItem.updated_at) ?? undefined,
   }));
-
-  const hasModernModuleLink = modules.some((moduleItem) => !moduleItem.course_id.startsWith('legacy-'));
-  if (!hasModernModuleLink) {
-    return buildLegacyCourseTree(modules);
-  }
 
   const coursesResponse = await supabase
     .from('courses')
@@ -368,6 +476,11 @@ export async function fetchLearningTree() {
   }
 
   if (coursesResponse.error) throw coursesResponse.error;
+  const courses = (coursesResponse.data ?? []) as Course[];
+
+  if (courses.length === 0) {
+    return buildLegacyCourseTree(modules);
+  }
 
   const lessonsResponse = await supabase
     .from('lessons')
@@ -375,13 +488,13 @@ export async function fetchLearningTree() {
     .order('order_index', { ascending: true });
 
   if (isMissingRestResource(lessonsResponse.error)) {
-    return buildCourseTree((coursesResponse.data ?? []) as Course[], modules, []);
+    return buildCourseTree(courses, modules, []);
   }
 
   if (lessonsResponse.error) throw lessonsResponse.error;
 
   return buildCourseTree(
-    (coursesResponse.data ?? []) as Course[],
+    courses,
     modules,
     (lessonsResponse.data ?? []) as Lesson[]
   );
@@ -446,14 +559,19 @@ export async function createCourse(values: {
   description: string;
   cover_url?: string;
 }) {
-  const { error } = await supabase.from('courses').insert({
-    company: values.company,
-    title: values.title,
-    description: values.description,
-    cover_url: values.cover_url || null,
-  });
+  const { data, error } = await supabase
+    .from('courses')
+    .insert({
+      company: values.company,
+      title: values.title,
+      description: values.description,
+      cover_url: values.cover_url || null,
+    })
+    .select('*')
+    .single();
 
   if (error) throw error;
+  return data as Course;
 }
 
 export async function updateCourse(id: string, values: Partial<Course>) {
@@ -494,9 +612,11 @@ export async function deleteModule(id: string) {
 
 export async function createModule(values: {
   course_id: string;
+  company: Company;
   title: string;
   description: string;
   order_index: number;
+  has_quiz?: boolean;
 }) {
   const { error } = await supabase.from('modules').insert(values);
   if (error) throw error;
@@ -510,6 +630,7 @@ export async function createLesson(values: {
   order_index: number;
   video_url?: string | null;
   attachment_url?: string | null;
+  video_duration_seconds?: number | null;
 }) {
   const { error } = await supabase.from('lessons').insert(values);
   if (error) throw error;
@@ -524,9 +645,9 @@ export async function updateLesson(id: string, values: Partial<Lesson>) {
   if (error) throw error;
 }
 
-export async function uploadLessonVideo(file: File) {
-  const extension = file.name.split('.').pop() || 'mp4';
-  const path = `${crypto.randomUUID()}.${extension}`;
+export async function uploadLessonVideo(file: File, context: LessonMediaContext) {
+  const extension = fileExtension(file.name, 'mp4');
+  const path = uniqueStoragePath('video-aulas', lessonMediaBaseName(context), extension);
   const { data, error } = await supabase.storage
     .from('lesson-videos')
     .upload(path, file, { upsert: false });
@@ -535,9 +656,26 @@ export async function uploadLessonVideo(file: File) {
   return data.path;
 }
 
-export async function uploadLessonAttachment(file: File) {
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-');
-  const path = `${crypto.randomUUID()}-${safeName}`;
+export async function getVideoFileDuration(file: File) {
+  const url = URL.createObjectURL(file);
+  try {
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    await new Promise<void>((resolve, reject) => {
+      video.onloadedmetadata = () => resolve();
+      video.onerror = () => reject(new Error('Nao foi possivel validar a duracao do video.'));
+      video.src = url;
+    });
+
+    return Number.isFinite(video.duration) ? Math.round(video.duration) : null;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+export async function uploadLessonAttachment(file: File, context: LessonMediaContext) {
+  const extension = fileExtension(file.name, 'pdf');
+  const path = uniqueStoragePath('materiais-de-apoio', `${lessonMediaBaseName(context)} - Apoio`, extension);
   const { data, error } = await supabase.storage
     .from('lesson-attachments')
     .upload(path, file, { upsert: false });
@@ -566,6 +704,280 @@ export async function getLessonAttachmentUrl(attachmentPath: string) {
 
   if (error) throw error;
   return data.signedUrl;
+}
+
+export async function fetchQuizzes(moduleIds?: string[]) {
+  let query = supabase
+    .from('quizzes')
+    .select('*, quiz_questions(*)')
+    .order('created_at', { ascending: true });
+
+  if (moduleIds?.length) {
+    query = query.in('module_id', moduleIds);
+  }
+
+  const { data, error } = await query;
+  if (isMissingRestResource(error)) return [];
+  if (error) throw error;
+
+  return ((data ?? []) as Array<Record<string, unknown>>).map((quiz): Quiz => ({
+    id: asString(quiz.id),
+    module_id: asString(quiz.module_id),
+    title: asString(quiz.title, 'Prova do modulo'),
+    passing_score: Number(quiz.passing_score ?? 70),
+    time_per_question_minutes: Number(quiz.time_per_question_minutes ?? 2),
+    is_active: quiz.is_active === true,
+    created_at: asString(quiz.created_at, new Date().toISOString()),
+    questions: ((quiz.quiz_questions ?? []) as QuizQuestionRow[])
+      .map((question) => normalizeQuizQuestion(question))
+      .sort((a, b) => a.order_index - b.order_index),
+  }));
+}
+
+function validateQuizQuestions(questions: Array<Omit<QuizQuestion, 'id' | 'quiz_id'>>) {
+  questions.forEach((question, index) => {
+    if (!question.question.trim()) throw new Error(`A pergunta ${index + 1} precisa de enunciado.`);
+    if (question.options.length < 3) throw new Error(`A pergunta ${index + 1} precisa ter pelo menos 3 opcoes.`);
+    const validOptions = question.options.filter((option) => option.text.trim());
+    if (validOptions.length < 3) throw new Error(`A pergunta ${index + 1} precisa ter pelo menos 3 opcoes preenchidas.`);
+    const correctCount = validOptions.filter((option) => option.isCorrect).length;
+    if (correctCount < 1) throw new Error(`A pergunta ${index + 1} precisa ter uma resposta correta.`);
+    if (question.type === 'single' && correctCount !== 1) throw new Error(`A pergunta objetiva ${index + 1} aceita apenas uma resposta correta.`);
+  });
+}
+
+export async function saveModuleQuiz(values: {
+  moduleId: string;
+  title: string;
+  isActive: boolean;
+  questions: Array<Omit<QuizQuestion, 'id' | 'quiz_id'>>;
+}) {
+  if (values.isActive) validateQuizQuestions(values.questions);
+
+  const existing = await fetchQuizzes([values.moduleId]);
+  const existingQuiz = existing[0];
+  const quizPayload = {
+    module_id: values.moduleId,
+    title: values.title || 'Prova do modulo',
+    passing_score: 70,
+    time_per_question_minutes: 2,
+    is_active: values.isActive,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data: quiz, error } = existingQuiz
+    ? await supabase.from('quizzes').update(quizPayload).eq('id', existingQuiz.id).select('*').single()
+    : await supabase.from('quizzes').insert(quizPayload).select('*').single();
+
+  if (error) throw error;
+
+  const quizId = asString(quiz.id);
+  const deleteResponse = await supabase.from('quiz_questions').delete().eq('quiz_id', quizId);
+  if (deleteResponse.error) throw deleteResponse.error;
+
+  if (values.questions.length > 0) {
+    const insertResponse = await supabase.from('quiz_questions').insert(values.questions.map((question, index) => ({
+      quiz_id: quizId,
+      question: question.question,
+      type: question.type,
+      options: question.options.map((option) => ({
+        id: option.id || crypto.randomUUID(),
+        text: option.text,
+        isCorrect: option.isCorrect,
+      })),
+      order_index: index + 1,
+    })));
+    if (insertResponse.error) throw insertResponse.error;
+  }
+
+  await updateModule(values.moduleId, { has_quiz: values.isActive });
+}
+
+export async function fetchQuizAttempts(userId?: string) {
+  let query = supabase.from('quiz_attempts').select('*').order('completed_at', { ascending: false });
+  if (userId) query = query.eq('user_id', userId);
+
+  const { data, error } = await query;
+  if (isMissingRestResource(error)) return [];
+  if (error) throw error;
+
+  return (data ?? []) as QuizAttempt[];
+}
+
+export async function fetchCourseFailures(userId?: string) {
+  let query = supabase.from('course_failures').select('*');
+  if (userId) query = query.eq('user_id', userId);
+
+  const { data, error } = await query;
+  if (isMissingRestResource(error)) return [];
+  if (error) throw error;
+
+  return (data ?? []) as CourseFailure[];
+}
+
+export async function fetchCertificates(userId?: string) {
+  let query = supabase.from('certificates').select('*').order('issued_at', { ascending: false });
+  if (userId) query = query.eq('user_id', userId);
+
+  const { data, error } = await query;
+  if (isMissingRestResource(error)) return [];
+  if (error) throw error;
+
+  return (data ?? []) as Certificate[];
+}
+
+export async function getCertificateUrl(path: string | null) {
+  if (!path) return '';
+  if (/^https?:\/\//.test(path)) return path;
+
+  const { data, error } = await supabase.storage
+    .from('certificates')
+    .createSignedUrl(path, 60 * 60);
+
+  if (error) return '';
+  return data.signedUrl;
+}
+
+export async function validateCertificateCode(code: string) {
+  const normalizedCode = code.trim().toUpperCase();
+  if (!normalizedCode) return null;
+
+  const { data, error } = await supabase
+    .rpc('validate_certificate_code', { input_code: normalizedCode });
+
+  if (error) throw error;
+  return (data?.[0] ?? null) as PublicCertificateValidation | null;
+}
+
+export async function resetCourseProgress(userId: string, course: CourseTree) {
+  const lessonIds = course.modules.flatMap((moduleItem) => moduleItem.lessons.map((lesson) => lesson.id));
+  if (lessonIds.length === 0) return;
+
+  const { error } = await supabase
+    .from('lesson_progress')
+    .delete()
+    .eq('user_id', userId)
+    .in('lesson_id', lessonIds);
+
+  if (error) throw error;
+}
+
+export async function registerCourseFailure(userId: string, courseId: string) {
+  const current = await fetchCourseFailures(userId);
+  const existing = current.find((failure) => failure.course_id === courseId);
+  const failureCount = (existing?.failure_count ?? 0) + 1;
+
+  const { error } = await supabase
+    .from('course_failures')
+    .upsert({
+      user_id: userId,
+      course_id: courseId,
+      failure_count: failureCount,
+      last_failed_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,course_id' });
+
+  if (error) throw error;
+  return failureCount;
+}
+
+export function gradeQuiz(quiz: Quiz, answers: Record<string, string[]>) {
+  const total = quiz.questions.length || 1;
+  const correct = quiz.questions.filter((question) => {
+    const expected = question.options.filter((option) => option.isCorrect).map((option) => option.id).sort();
+    const received = [...(answers[question.id] ?? [])].sort();
+    return expected.length === received.length && expected.every((optionId, index) => optionId === received[index]);
+  }).length;
+
+  const score = Math.round((correct / total) * 100);
+  return { score, passed: score >= quiz.passing_score };
+}
+
+export async function submitQuizAttempt(values: {
+  quiz: Quiz;
+  course: CourseTree;
+  userId: string;
+  answers: Record<string, string[]>;
+}) {
+  const { score, passed } = gradeQuiz(values.quiz, values.answers);
+  const failures = await fetchCourseFailures(values.userId);
+  const attemptNumber = (failures.find((failure) => failure.course_id === values.course.id)?.failure_count ?? 0) + 1;
+
+  const { error } = await supabase.from('quiz_attempts').insert({
+    quiz_id: values.quiz.id,
+    module_id: values.quiz.module_id,
+    course_id: values.course.id,
+    user_id: values.userId,
+    score,
+    passed,
+    answers: values.answers,
+    attempt_number: attemptNumber,
+    completed_at: new Date().toISOString(),
+  });
+
+  if (error) throw error;
+
+  if (!passed) {
+    await registerCourseFailure(values.userId, values.course.id);
+    await resetCourseProgress(values.userId, values.course);
+  }
+
+  return { score, passed };
+}
+
+export function calculateCourseWorkloadMinutes(course: CourseTree, quizzes: Quiz[]) {
+  const videoSeconds = course.modules.reduce((courseTotal, moduleItem) => (
+    courseTotal + moduleItem.lessons.reduce((moduleTotal, lesson) => moduleTotal + (lesson.video_duration_seconds ?? 0), 0)
+  ), 0);
+  const quizMinutes = quizzes
+    .filter((quiz) => quiz.is_active && course.modules.some((moduleItem) => moduleItem.id === quiz.module_id))
+    .reduce((total, quiz) => total + (quiz.questions.length * quiz.time_per_question_minutes), 0);
+
+  return Math.ceil(videoSeconds / 60) + quizMinutes;
+}
+
+export async function uploadCertificatePng(file: Blob, context: { company: Company; courseTitle: string; userName: string; userId: string }) {
+  const issuedAt = new Date().toISOString().replace(/[:.]/g, '-');
+  const path = `${companyLabel(context.company)}/${compactLabel(context.courseTitle, 'Curso')}/${context.userId}/${compactLabel(context.userName, 'Colaborador')} - ${issuedAt}.png`;
+  const { data, error } = await supabase.storage
+    .from('certificates')
+    .upload(path, file, { contentType: 'image/png', upsert: false });
+
+  if (error) throw error;
+  return data.path;
+}
+
+export async function upsertCertificate(values: {
+  userId: string;
+  courseId: string;
+  certificateUrl: string;
+  workloadMinutes: number;
+  startedAt: string | null;
+  completedAt: string | null;
+  validationCode: string;
+}) {
+  const { data, error } = await supabase.from('certificates').upsert({
+    user_id: values.userId,
+    course_id: values.courseId,
+    certificate_url: values.certificateUrl,
+    workload_minutes: values.workloadMinutes,
+    started_at: values.startedAt,
+    completed_at: values.completedAt,
+    validation_code: values.validationCode,
+    issued_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'user_id,course_id' }).select('*').single();
+
+  if (error) throw error;
+  return data as Certificate;
+}
+
+export async function deleteCertificate(certificateId: string) {
+  const { error } = await supabase
+    .from('certificates')
+    .delete()
+    .eq('id', certificateId);
+
+  if (error) throw error;
 }
 
 export function buildAdminMetrics(

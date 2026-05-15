@@ -7,6 +7,7 @@ const Login = lazy(() => import('./pages/Login').then((module) => ({ default: mo
 const Home = lazy(() => import('./pages/Home').then((module) => ({ default: module.Home })));
 const SevenGroupPage = lazy(() => import('./pages/SevenGroupPage').then((module) => ({ default: module.SevenGroupPage })));
 const ArqoPage = lazy(() => import('./pages/ArqoPage').then((module) => ({ default: module.ArqoPage })));
+const CertificateValidation = lazy(() => import('./pages/CertificateValidation').then((module) => ({ default: module.CertificateValidation })));
 const DashboardRouter = lazy(() => import('./pages/dashboard/DashboardRouter').then((module) => ({ default: module.DashboardRouter })));
 const AdminDashboard = lazy(() => import('./pages/dashboard/AdminDashboard').then((module) => ({ default: module.AdminDashboard })));
 const CollaboratorDashboard = lazy(() => import('./pages/dashboard/CollaboratorDashboard').then((module) => ({ default: module.CollaboratorDashboard })));
@@ -29,6 +30,7 @@ function App() {
         <Suspense fallback={<RouteFallback />}>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/validar-certificado" element={<CertificateValidation />} />
 
             <Route
               path="/home"

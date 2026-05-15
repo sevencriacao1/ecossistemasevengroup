@@ -2,9 +2,13 @@ import { FormEvent, ReactNode, useEffect, useMemo, useState } from 'react';
 import {
   BarChart3,
   BookOpen,
+  Award,
+  ClipboardList,
+  Eye,
   Trash2,
   Edit3,
   FileText,
+  Home,
   LogOut,
   Plus,
   Settings,
@@ -13,46 +17,166 @@ import {
   X,
 } from 'lucide-react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { VideoPlayer } from '../../components/VideoPlayer';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { useAuth } from '../../contexts/AuthContext';
+import { createCertificateValidationCode } from '../../lib/certificateValidation';
 import {
+  calculateCourseWorkloadMinutes,
   calculateReadiness,
   createCourse,
   createLesson,
   createManagedUser,
   createModule,
+  deleteCertificate,
   deleteCourse,
+  deleteManagedUser,
   deleteModule,
   fetchAllProgress,
+  fetchCertificates,
+  fetchCourseFailures,
   fetchLearningTree,
+  fetchQuizAttempts,
+  fetchQuizzes,
   fetchUsers,
+  getVideoFileDuration,
   listManagedAuthUsers,
   syncManagedUserProfile,
   updateLesson,
   updateManagedUser,
   updateCourse,
   updateModule,
+  getLessonAttachmentUrl,
+  getLessonVideoUrl,
   getStorageImageUrl,
+  removeStorageObject,
+  saveModuleQuiz,
+  uploadCertificatePng,
   uploadCourseCover,
   uploadLessonAttachment,
   uploadLessonVideo,
   uploadProfileImage,
+  upsertCertificate,
 } from '../../services/learningService';
-import { Company, CourseTree, Lesson, LessonProgress, ManagedAuthUser, UserProfile, UserRole, UserStatus } from '../../types/learning';
+import { Certificate, Company, CourseFailure, CourseTree, Lesson, LessonProgress, ManagedAuthUser, Quiz, QuizAttempt, QuizOption, QuizQuestionType, UserProfile, UserRole, UserStatus } from '../../types/learning';
 
-type AdminRoute = 'inicio' | 'cursos' | 'settings';
-type ModalName = 'course' | 'editCourse' | 'module' | 'editModule' | 'lesson' | 'editLesson' | 'user' | 'editUser' | null;
+type AdminRoute = 'inicio' | 'cursos' | 'progress' | 'settings';
+type ModalName = 'course' | 'editCourse' | 'module' | 'editModule' | 'lesson' | 'editLesson' | 'user' | 'editUser' | 'quiz' | null;
+type PreviewMedia = {
+  title: string;
+  url: string;
+  fileName?: string;
+  type: 'image' | 'video' | 'file';
+};
+type QuizQuestionDraft = {
+  id: string;
+  question: string;
+  type: QuizQuestionType;
+  options: QuizOption[];
+  order_index: number;
+};
 
 const companyOptions: Company[] = ['Seven', 'ARQO'];
 const roleOptions: UserRole[] = ['admin', 'colaborador'];
 const statusOptions: UserStatus[] = ['ativo', 'inativo'];
 const inputClass = 'h-10 rounded-md border border-[#D8D8DE] bg-white px-3 py-2 text-sm text-[#111114] placeholder-transparent outline-none transition focus:border-primary focus:ring-primary';
 const textInputClass = 'rounded-md border border-[#D8D8DE] bg-white px-3 py-2 text-sm text-[#111114] placeholder-transparent outline-none transition focus:border-primary';
+const emptyCourseForm = { company: 'Seven' as Company, title: '', description: '', cover_url: '' };
+const emptyLessonForm = { title: '', description: '', content: '', order_index: 1 };
+const emptyUserForm = {
+  email: '',
+  password: '',
+  username: '',
+  fullName: '',
+  role: 'colaborador' as UserRole,
+  company: 'Seven' as Company,
+  status: 'ativo' as UserStatus,
+  avatarUrl: '',
+};
+
+function emptyModuleForm(orderIndex = 1) {
+  return { title: '', description: '', order_index: orderIndex, has_quiz: false };
+}
+
+function emptyQuizQuestion(orderIndex = 1): QuizQuestionDraft {
+  return {
+    id: crypto.randomUUID(),
+    question: '',
+    type: 'single',
+    order_index: orderIndex,
+    options: Array.from({ length: 3 }, (_, index) => ({
+      id: crypto.randomUUID(),
+      text: '',
+      isCorrect: index === 0,
+    })),
+  };
+}
+
+function getCourseLessons(course: CourseTree) {
+  return course.modules.flatMap((moduleItem) => moduleItem.lessons);
+}
+
+function getCourseStartDateForUser(course: CourseTree, progress: LessonProgress[], userId: string) {
+  const lessonIds = new Set(getCourseLessons(course).map((lesson) => lesson.id));
+  const dates = progress
+    .filter((item) => item.user_id === userId && lessonIds.has(item.lesson_id))
+    .map((item) => item.created_at)
+    .sort();
+  return dates[0] ?? null;
+}
+
+function formatCertificateWorkload(minutes: number) {
+  const hours = Math.floor(minutes / 60);
+  const remaining = minutes % 60;
+  if (hours && remaining) return `${hours}h${remaining.toString().padStart(2, '0')}`;
+  if (hours) return `${hours}h`;
+  return `${minutes} minutos`;
+}
+
+async function renderCertificateBlob({
+  userName,
+  course,
+  workloadMinutes,
+  startedAt,
+  completedAt,
+}: {
+  userName: string;
+  course: CourseTree;
+  workloadMinutes: number;
+  startedAt: string | null;
+  completedAt: string | null;
+}) {
+  const completionDate = completedAt ?? new Date().toISOString();
+  const dateFormatter = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+  const response = await fetch('/api/render-certificate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      userName,
+      courseName: course.title,
+      workload: formatCertificateWorkload(workloadMinutes),
+      city: 'Dourados - MS',
+      startedAt,
+      completedAt: completionDate,
+      completionDate: dateFormatter.format(new Date(completionDate)),
+      validationCode: createCertificateValidationCode(userName, course.title, completionDate),
+      logoUrl: new URL('/assets/arqo/Logo%20Preferencial%20%E2%80%A2%20Arqo.webp', window.location.origin).toString(),
+      signatureUrl: new URL('/assets/seven/assign_gilson%2005.svg', window.location.origin).toString(),
+    }),
+  });
+
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || 'Nao foi possivel renderizar o certificado.');
+  }
+
+  return response.blob();
+}
 
 function Panel({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <section className={`rounded-lg border border-[#E6E6EA] bg-white shadow-[0_16px_38px_rgba(17,17,20,0.05)] ${className}`}>
+    <section className={`rounded-[26px] border border-[#E6E6EA] bg-white shadow-[0_16px_38px_rgba(17,17,20,0.05)] lg:rounded-lg ${className}`}>
       {children}
     </section>
   );
@@ -60,6 +184,7 @@ function Panel({ children, className = '' }: { children: ReactNode; className?: 
 
 function resolveRoute(pathname: string): AdminRoute {
   if (pathname.includes('/cursos')) return 'cursos';
+  if (pathname.includes('/progresso')) return 'progress';
   if (pathname.includes('/settings')) return 'settings';
   return 'inicio';
 }
@@ -83,16 +208,50 @@ function Modal({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-[#111114]/55 px-4 py-6 backdrop-blur-sm">
-      <section className="max-h-[92svh] w-full max-w-3xl overflow-y-auto rounded-lg border border-[#E6E6EA] bg-white p-5 text-[#111114] shadow-[0_24px_70px_rgba(17,17,20,0.18)]">
+    <div className="fixed inset-0 z-[120] flex items-end justify-center bg-[#111114]/55 px-3 pb-3 pt-10 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6">
+      <section className="max-h-[92svh] w-full max-w-3xl overflow-y-auto rounded-[28px] border border-[#E6E6EA] bg-white p-5 text-[#111114] shadow-[0_24px_70px_rgba(17,17,20,0.18)] sm:rounded-lg">
         <header className="mb-5 flex items-center justify-between gap-4 border-b border-[#ECECEF] pb-4">
           <h2 className="text-xl font-semibold">{title}</h2>
-          <button type="button" onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-md border border-[#E6E6EA] text-[#62626A]">
+          <button type="button" onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-[15px] border border-[#E6E6EA] bg-[#F7F7F8] text-[#62626A] sm:h-9 sm:w-9 sm:rounded-md sm:bg-white">
             <X className="h-4 w-4" />
           </button>
         </header>
         {children}
       </section>
+    </div>
+  );
+}
+
+function FormSection({
+  title,
+  description,
+  children,
+  className = '',
+}: {
+  title: string;
+  description?: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={`rounded-[22px] border border-[#ECECEF] bg-[#FAFAFB] p-4 lg:rounded-lg ${className}`}>
+      <div className="mb-4">
+        <h3 className="text-base font-semibold tracking-[-0.02em] text-[#111114]">{title}</h3>
+        {description && <p className="mt-1 text-sm leading-5 text-[#777780]">{description}</p>}
+      </div>
+      <div className="grid gap-4">{children}</div>
+    </section>
+  );
+}
+
+function FormActions({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  return (
+    <div className="sticky bottom-0 -mx-5 -mb-5 border-t border-[#ECECEF] bg-white/92 px-5 py-4 backdrop-blur-xl">
+      {children}
     </div>
   );
 }
@@ -113,7 +272,7 @@ function SelectField<T extends string>({
       value={value}
       disabled={disabled}
       onChange={(event) => onChange(event.target.value as T)}
-      className="h-10 rounded-md border border-[#D8D8DE] bg-white px-3 text-sm text-[#111114] outline-none transition focus:border-primary disabled:bg-[#F1F1F3] disabled:text-[#8A8A92]"
+      className="h-10 w-full rounded-md border border-[#D8D8DE] bg-white px-3 text-sm text-[#111114] outline-none transition focus:border-primary disabled:bg-[#F1F1F3] disabled:text-[#8A8A92]"
     >
       {options.map((option) => <option key={option} value={option}>{option}</option>)}
     </select>
@@ -132,7 +291,7 @@ function FilePicker({
   onChange: (file: File | null) => void;
 }) {
   return (
-    <label className="flex min-h-24 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[#CFCFD6] bg-[#FAFAFB] px-4 py-5 text-center transition hover:border-primary hover:bg-primary/5">
+    <label className="flex min-h-24 cursor-pointer flex-col items-center justify-center rounded-[20px] border border-dashed border-[#CFCFD6] bg-[#FAFAFB] px-4 py-5 text-center transition hover:border-primary hover:bg-primary/5 lg:rounded-lg">
       <UploadIcon />
       <span className="mt-2 text-sm font-semibold text-[#111114]">{label}</span>
       {helper && <span className="mt-1 text-xs leading-5 text-[#8A8A92]">{helper}</span>}
@@ -144,6 +303,232 @@ function FilePicker({
       />
     </label>
   );
+}
+
+function ToggleSwitch({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className="flex items-center justify-between gap-4 rounded-[18px] border border-[#E6E6EA] bg-white px-4 py-3 text-left lg:rounded-md"
+    >
+      <span className="text-sm font-semibold text-[#111114]">{label}</span>
+      <span className={`relative h-7 w-12 rounded-full transition ${checked ? 'bg-primary' : 'bg-[#D9D9DE]'}`}>
+        <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition ${checked ? 'left-6' : 'left-1'}`} />
+      </span>
+    </button>
+  );
+}
+
+function MediaPreview({
+  title,
+  url,
+  fileName,
+  type,
+}: {
+  title: string;
+  url: string;
+  fileName?: string;
+  type: 'image' | 'video' | 'file';
+}) {
+  if (!url) return null;
+
+  return (
+    <div className="overflow-hidden rounded-[20px] border border-[#E6E6EA] bg-[#FAFAFB] lg:rounded-lg">
+      <div className="flex items-center justify-between gap-3 border-b border-[#ECECEF] px-4 py-3">
+        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8A8A92]">{title}</span>
+        {fileName && <span className="max-w-[52%] truncate text-xs font-semibold text-[#666670]">{fileName}</span>}
+      </div>
+      {type === 'image' ? (
+        <div className="aspect-[16/10] bg-[#ECECEF]">
+          <img src={url} alt={title} className="h-full w-full object-cover" loading="lazy" decoding="async" />
+        </div>
+      ) : type === 'video' ? (
+        <VideoPlayer src={url} title={title} className="aspect-video w-full" />
+      ) : (
+        <div className="flex items-center justify-between gap-4 px-4 py-4">
+          <div>
+            <p className="text-sm font-semibold text-[#111114]">{fileName || 'Arquivo anexado'}</p>
+            <p className="mt-1 text-xs text-[#8A8A92]">Material disponível para esta aula.</p>
+          </div>
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="shrink-0 rounded-[14px] border border-[#D8D8DE] bg-white px-3 py-2 text-xs font-semibold text-[#111114] lg:rounded-md"
+          >
+            Abrir
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CurrentMediaActions({
+  title,
+  fileName,
+  onView,
+  onRemove,
+}: {
+  title: string;
+  fileName?: string;
+  onView: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-[20px] border border-[#E6E6EA] bg-white p-3 lg:rounded-lg">
+      <div className="min-w-0">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8A8A92]">{title}</p>
+        <p className="mt-1 truncate text-sm font-semibold text-[#111114]">{fileName || 'Mídia atual'}</p>
+      </div>
+      <div className="flex shrink-0 gap-2">
+        <button
+          type="button"
+          onClick={onView}
+          aria-label={`Visualizar ${title}`}
+          title={`Visualizar ${title}`}
+          className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-[#D8D8DE] bg-[#F7F7F8] text-[#111114] transition hover:border-primary hover:text-primary lg:rounded-md"
+        >
+          <Eye className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label={`Excluir ${title}`}
+          title={`Excluir ${title}`}
+          className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-red-200 bg-red-50 text-red-600 transition hover:border-red-300 hover:bg-red-100 lg:rounded-md"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ProfilePictureCanvas({
+  imageUrl,
+  name,
+  fileName,
+  onView,
+  onRemove,
+}: {
+  imageUrl: string;
+  name: string;
+  fileName?: string;
+  onView?: () => void;
+  onRemove?: () => void;
+}) {
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase() || 'U';
+
+  return (
+    <div className="rounded-[24px] border border-[#E6E6EA] bg-white p-4 text-center lg:rounded-lg">
+      <div className="mx-auto flex aspect-square w-full max-w-[176px] items-center justify-center overflow-hidden rounded-full border border-[#ECECEF] bg-[#F1F1F3] text-4xl font-semibold text-primary shadow-inner">
+        {imageUrl ? (
+          <img src={imageUrl} alt={name || 'Foto do usuário'} className="h-full w-full object-cover" loading="lazy" decoding="async" />
+        ) : (
+          <span>{initials}</span>
+        )}
+      </div>
+      <p className="mt-3 truncate text-sm font-semibold text-[#111114]">{fileName || (imageUrl ? 'Foto atual' : 'Sem foto')}</p>
+      {(onView || onRemove) && (
+        <div className="mt-3 flex justify-center gap-2">
+          {onView && (
+            <button
+              type="button"
+              onClick={onView}
+              aria-label="Visualizar foto"
+              title="Visualizar foto"
+              className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-[#D8D8DE] bg-[#F7F7F8] text-[#111114] transition hover:border-primary hover:text-primary lg:rounded-md"
+            >
+              <Eye className="h-4 w-4" />
+            </button>
+          )}
+          {onRemove && (
+            <button
+              type="button"
+              onClick={onRemove}
+              aria-label="Excluir foto"
+              title="Excluir foto"
+              className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-red-200 bg-red-50 text-red-600 transition hover:border-red-300 hover:bg-red-100 lg:rounded-md"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MediaViewerModal({
+  media,
+  onClose,
+}: {
+  media: PreviewMedia;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[180] flex items-end justify-center bg-[#111114]/70 px-3 pb-3 pt-10 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6">
+      <section className="flex max-h-[92svh] w-full max-w-5xl flex-col overflow-hidden rounded-[28px] border border-white/10 bg-white text-[#111114] shadow-[0_28px_90px_rgba(0,0,0,0.28)] sm:rounded-xl">
+        <header className="flex items-center justify-between gap-4 border-b border-[#ECECEF] px-5 py-4">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8A8A92]">Visualização</p>
+            <h2 className="mt-1 truncate text-lg font-semibold">{media.title}</h2>
+            {media.fileName && <p className="mt-1 truncate text-xs font-semibold text-[#777780]">{media.fileName}</p>}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fechar visualização"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[15px] border border-[#E6E6EA] bg-[#F7F7F8] text-[#62626A] sm:rounded-md"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </header>
+        <div className="min-h-0 flex-1 overflow-auto bg-[#F4F4F6] p-3 sm:p-5">
+          {media.type === 'image' ? (
+            <div className="flex min-h-[52svh] items-center justify-center">
+              <img src={media.url} alt={media.title} className="max-h-[72svh] max-w-full rounded-lg object-contain shadow-[0_18px_46px_rgba(17,17,20,0.16)]" />
+            </div>
+          ) : media.type === 'video' ? (
+            <VideoPlayer src={media.url} title={media.title} autoPlay className="mx-auto aspect-video max-h-[72svh] w-full max-w-4xl rounded-lg" />
+          ) : (
+            <div className="h-[72svh] overflow-hidden rounded-lg border border-[#D8D8DE] bg-white">
+              <iframe src={media.url} title={media.title} className="h-full w-full" />
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function previewTypeFor(file: File | null, url: string): 'image' | 'video' | 'file' {
+  const source = file?.type || url;
+  if (/image\//.test(source) || /\.(png|jpe?g|webp|gif|avif|svg)(\?|$)/i.test(source)) return 'image';
+  if (/video\//.test(source) || /\.(mp4|webm|mov|m4v)(\?|$)/i.test(source)) return 'video';
+  return 'file';
+}
+
+function fileLabel(file: File | null, path?: string | null) {
+  if (file?.name) return file.name;
+  if (!path) return undefined;
+  return decodeURIComponent(path.split('/').pop() || path);
 }
 
 function UploadProgress({ value }: { value: number }) {
@@ -177,7 +562,7 @@ function IconButton({
       aria-label={label}
       title={label}
       onClick={onClick}
-      className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#D8D8DE] bg-[#F1F1F3] text-[#111114] transition hover:border-primary hover:bg-white"
+      className="inline-flex h-10 w-10 items-center justify-center rounded-[14px] border border-[#D8D8DE] bg-[#F1F1F3] text-[#111114] transition hover:border-primary hover:bg-white lg:rounded-md"
     >
       {children}
     </button>
@@ -223,6 +608,31 @@ function UploadIcon() {
   );
 }
 
+function AppTabButton({
+  active,
+  icon,
+  label,
+  onClick,
+}: {
+  active?: boolean;
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[18px] px-2 py-2 text-[11px] font-semibold transition ${
+        active ? 'bg-[#111114] text-white shadow-[0_10px_24px_rgba(17,17,20,0.18)]' : 'text-[#777780] hover:bg-[#F4F4F5] hover:text-[#111114]'
+      }`}
+    >
+      {icon}
+      <span className="max-w-full truncate">{label}</span>
+    </button>
+  );
+}
+
 function progressForUser(user: UserProfile, progress: LessonProgress[], courses: CourseTree[]) {
   const userProgress = progress.filter((item) => item.user_id === user.id);
   const companyCourses = courses.filter((course) => course.company === user.company);
@@ -255,6 +665,10 @@ export function AdminDashboard() {
   const [courses, setCourses] = useState<CourseTree[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [progress, setProgress] = useState<LessonProgress[]>([]);
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([]);
+  const [courseFailures, setCourseFailures] = useState<CourseFailure[]>([]);
+  const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [authUsers, setAuthUsers] = useState<ManagedAuthUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [feedback, setFeedback] = useState('');
@@ -266,35 +680,52 @@ export function AdminDashboard() {
   const [editingModule, setEditingModule] = useState<CourseTree['modules'][number] | null>(null);
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
-  const [courseForm, setCourseForm] = useState({ company: 'Seven' as Company, title: '', description: '', cover_url: '' });
-  const [moduleForm, setModuleForm] = useState({ title: '', description: '', order_index: 1 });
-  const [lessonForm, setLessonForm] = useState({ title: '', description: '', content: '', order_index: 1 });
+  const [courseForm, setCourseForm] = useState(emptyCourseForm);
+  const [moduleForm, setModuleForm] = useState(emptyModuleForm());
+  const [quizModule, setQuizModule] = useState<CourseTree['modules'][number] | null>(null);
+  const [quizTitle, setQuizTitle] = useState('Prova do módulo');
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestionDraft[]>([emptyQuizQuestion()]);
+  const [lessonForm, setLessonForm] = useState(emptyLessonForm);
   const [lessonVideo, setLessonVideo] = useState<File | null>(null);
   const [lessonAttachment, setLessonAttachment] = useState<File | null>(null);
+  const [removeLessonVideo, setRemoveLessonVideo] = useState(false);
+  const [removeLessonAttachment, setRemoveLessonAttachment] = useState(false);
   const [courseCoverFile, setCourseCoverFile] = useState<File | null>(null);
+  const [removeCourseCover, setRemoveCourseCover] = useState(false);
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [removeProfileImage, setRemoveProfileImage] = useState(false);
   const [profileImages, setProfileImages] = useState<Record<string, string>>({});
+  const [courseCoverPreview, setCourseCoverPreview] = useState('');
+  const [profileImagePreview, setProfileImagePreview] = useState('');
+  const [lessonVideoPreview, setLessonVideoPreview] = useState('');
+  const [lessonAttachmentPreview, setLessonAttachmentPreview] = useState('');
+  const [previewMedia, setPreviewMedia] = useState<PreviewMedia | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [userForm, setUserForm] = useState({
-    email: '',
-    password: '',
-    username: '',
-    fullName: '',
-    role: 'colaborador' as UserRole,
-    company: 'Seven' as Company,
-    status: 'ativo' as UserStatus,
-    avatarUrl: '',
-  });
+  const [regeneratingCertificateKey, setRegeneratingCertificateKey] = useState('');
+  const [deletingCertificateKey, setDeletingCertificateKey] = useState('');
+  const [userForm, setUserForm] = useState(emptyUserForm);
 
   const refresh = async () => {
     setError('');
     const nextCourses = await fetchLearningTree();
     const preferModernSchema = nextCourses.some((course) => !course.id.startsWith('legacy-'));
-    const [nextUsers, nextProgress] = await Promise.all([fetchUsers(), fetchAllProgress(preferModernSchema)]);
+    const moduleIds = nextCourses.flatMap((course) => course.modules.map((moduleItem) => moduleItem.id));
+    const [nextUsers, nextProgress, nextQuizzes, nextAttempts, nextFailures, nextCertificates] = await Promise.all([
+      fetchUsers(),
+      fetchAllProgress(preferModernSchema),
+      fetchQuizzes(moduleIds),
+      fetchQuizAttempts(),
+      fetchCourseFailures(),
+      fetchCertificates(),
+    ]);
     const nextAuthUsers = await listManagedAuthUsers().catch(() => []);
     setCourses(nextCourses);
     setUsers(nextUsers);
     setProgress(nextProgress);
+    setQuizzes(nextQuizzes);
+    setQuizAttempts(nextAttempts);
+    setCourseFailures(nextFailures);
+    setCertificates(nextCertificates);
     setAuthUsers(nextAuthUsers);
     setSelectedCourseId((current) => current || nextCourses[0]?.id || '');
   };
@@ -327,21 +758,192 @@ export function AdminDashboard() {
     void loadProfileImages();
   }, [users]);
 
+  useEffect(() => {
+    if (courseCoverFile) {
+      const previewUrl = URL.createObjectURL(courseCoverFile);
+      setCourseCoverPreview(previewUrl);
+      return () => URL.revokeObjectURL(previewUrl);
+    }
+
+    if (removeCourseCover) {
+      setCourseCoverPreview('');
+      return undefined;
+    }
+
+    if (!courseForm.cover_url) {
+      setCourseCoverPreview('');
+      return undefined;
+    }
+
+    let isMounted = true;
+    getStorageImageUrl('course-covers', courseForm.cover_url)
+      .then((url) => {
+        if (isMounted) setCourseCoverPreview(url);
+      })
+      .catch(() => {
+        if (isMounted) setCourseCoverPreview('');
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [courseCoverFile, courseForm.cover_url, removeCourseCover]);
+
+  useEffect(() => {
+    if (profileImageFile) {
+      const previewUrl = URL.createObjectURL(profileImageFile);
+      setProfileImagePreview(previewUrl);
+      return () => URL.revokeObjectURL(previewUrl);
+    }
+
+    if (removeProfileImage) {
+      setProfileImagePreview('');
+      return undefined;
+    }
+
+    if (!userForm.avatarUrl) {
+      setProfileImagePreview('');
+      return undefined;
+    }
+
+    let isMounted = true;
+    getStorageImageUrl('profile-images', userForm.avatarUrl)
+      .then((url) => {
+        if (isMounted) setProfileImagePreview(url);
+      })
+      .catch(() => {
+        if (isMounted) setProfileImagePreview('');
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [profileImageFile, removeProfileImage, userForm.avatarUrl]);
+
+  useEffect(() => {
+    if (lessonVideo) {
+      const previewUrl = URL.createObjectURL(lessonVideo);
+      setLessonVideoPreview(previewUrl);
+      return () => URL.revokeObjectURL(previewUrl);
+    }
+
+    if (removeLessonVideo) {
+      setLessonVideoPreview('');
+      return undefined;
+    }
+
+    if (!editingLesson?.video_url) {
+      setLessonVideoPreview('');
+      return undefined;
+    }
+
+    let isMounted = true;
+    getLessonVideoUrl(editingLesson.video_url)
+      .then((url) => {
+        if (isMounted) setLessonVideoPreview(url);
+      })
+      .catch(() => {
+        if (isMounted) setLessonVideoPreview('');
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [editingLesson?.video_url, lessonVideo, removeLessonVideo]);
+
+  useEffect(() => {
+    if (lessonAttachment) {
+      const previewUrl = URL.createObjectURL(lessonAttachment);
+      setLessonAttachmentPreview(previewUrl);
+      return () => URL.revokeObjectURL(previewUrl);
+    }
+
+    if (removeLessonAttachment) {
+      setLessonAttachmentPreview('');
+      return undefined;
+    }
+
+    if (!editingLesson?.attachment_url) {
+      setLessonAttachmentPreview('');
+      return undefined;
+    }
+
+    let isMounted = true;
+    getLessonAttachmentUrl(editingLesson.attachment_url)
+      .then((url) => {
+        if (isMounted) setLessonAttachmentPreview(url);
+      })
+      .catch(() => {
+        if (isMounted) setLessonAttachmentPreview('');
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [editingLesson?.attachment_url, lessonAttachment, removeLessonAttachment]);
+
   const selectedCourse = courses.find((course) => course.id === selectedCourseId) ?? courses[0];
   const selectedModule = selectedCourse?.modules.find((moduleItem) => moduleItem.id === selectedModuleId) ?? null;
+  const selectedCourseOrder = selectedCourse ? courses.findIndex((course) => course.id === selectedCourse.id) + 1 : 1;
+  const selectedModuleOrder = selectedCourse?.modules.findIndex((moduleItem) => moduleItem.id === selectedModule?.id) ?? 0;
+  const lessonMediaContext = {
+    company: selectedCourse?.company ?? 'Seven' as Company,
+    courseOrder: selectedCourseOrder || 1,
+    moduleOrder: selectedModuleOrder + 1 || 1,
+    lessonOrder: lessonForm.order_index || 1,
+  };
   const collaborators = users.filter((user) => user.role === 'colaborador');
   const admins = users.filter((user) => user.role === 'admin');
   const missingProfiles = authUsers.filter((authUser) => !authUser.has_profile);
-  const closeModal = () => {
-    setModal(null);
+  const totalLessons = courses.reduce((sum, course) => sum + course.modules.reduce((moduleSum, moduleItem) => moduleSum + moduleItem.lessons.length, 0), 0);
+  const averageProgress = collaborators.length
+    ? Math.round(collaborators.reduce((sum, user) => sum + progressForUser(user, progress, courses).percent, 0) / collaborators.length)
+    : 0;
+  const hasCurrentLessonVideo = modal === 'editLesson' && Boolean(editingLesson?.video_url) && !removeLessonVideo;
+  const hasCurrentLessonAttachment = modal === 'editLesson' && Boolean(editingLesson?.attachment_url) && !removeLessonAttachment;
+  const hasCurrentProfileImage = modal === 'editUser' && Boolean(userForm.avatarUrl) && !removeProfileImage;
+  const hasCurrentCourseCover = modal === 'editCourse' && Boolean(courseForm.cover_url) && !removeCourseCover;
+
+  const resetCourseDraft = () => {
     setEditingCourse(null);
+    setCourseForm(emptyCourseForm);
+    setCourseCoverFile(null);
+    setCourseCoverPreview('');
+    setRemoveCourseCover(false);
+  };
+
+  const resetModuleDraft = (orderIndex = (selectedCourse?.modules.length ?? 0) + 1) => {
     setEditingModule(null);
+    setModuleForm(emptyModuleForm(orderIndex));
+  };
+
+  const resetLessonDraft = (orderIndex = (selectedModule?.lessons.length ?? 0) + 1) => {
     setEditingLesson(null);
-    setEditingUser(null);
+    setLessonForm({ ...emptyLessonForm, order_index: orderIndex });
     setLessonVideo(null);
     setLessonAttachment(null);
-    setCourseCoverFile(null);
+    setLessonVideoPreview('');
+    setLessonAttachmentPreview('');
+    setRemoveLessonVideo(false);
+    setRemoveLessonAttachment(false);
+  };
+
+  const resetUserDraft = () => {
+    setEditingUser(null);
+    setUserForm(emptyUserForm);
     setProfileImageFile(null);
+    setProfileImagePreview('');
+    setRemoveProfileImage(false);
+  };
+
+  const closeModal = () => {
+    setModal(null);
+    setPreviewMedia(null);
+    resetCourseDraft();
+    resetModuleDraft();
+    resetLessonDraft();
+    resetUserDraft();
+    setQuizModule(null);
     setUploadProgress(0);
   };
 
@@ -361,6 +963,10 @@ export function AdminDashboard() {
     }
   };
 
+  const openPreview = (media: PreviewMedia) => {
+    setPreviewMedia(media);
+  };
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/login', { replace: true });
@@ -372,9 +978,12 @@ export function AdminDashboard() {
       if (!courseCoverFile) {
         throw new Error('Anexe uma capa de curso com no máximo 600x400 px.');
       }
-      const coverUrl = courseCoverFile ? await withUploadProgress(() => uploadCourseCover(courseCoverFile)) : courseForm.cover_url;
-      await createCourse({ ...courseForm, cover_url: coverUrl });
-      setCourseForm({ company: 'Seven', title: '', description: '', cover_url: '' });
+      const coverUrl = courseCoverFile
+        ? await withUploadProgress(() => uploadCourseCover(courseCoverFile, { company: courseForm.company, title: courseForm.title }))
+        : courseForm.cover_url;
+      const createdCourse = await createCourse({ ...courseForm, cover_url: coverUrl });
+      setSelectedCourseId(createdCourse.id);
+      resetCourseDraft();
       await refresh();
       setFeedback('Curso criado com sucesso.');
       closeModal();
@@ -387,8 +996,16 @@ export function AdminDashboard() {
     event.preventDefault();
     if (!editingCourse) return;
     try {
-      const coverUrl = courseCoverFile ? await withUploadProgress(() => uploadCourseCover(courseCoverFile)) : courseForm.cover_url;
+      const previousCoverUrl = editingCourse.cover_url;
+      const coverUrl = courseCoverFile
+        ? await withUploadProgress(() => uploadCourseCover(courseCoverFile, { company: courseForm.company, title: courseForm.title }))
+        : removeCourseCover
+          ? null
+          : courseForm.cover_url;
       await updateCourse(editingCourse.id, { ...courseForm, cover_url: coverUrl });
+      if ((removeCourseCover || courseCoverFile) && previousCoverUrl && previousCoverUrl !== coverUrl) {
+        await removeStorageObject('course-covers', previousCoverUrl);
+      }
       await refresh();
       setFeedback('Curso atualizado.');
       closeModal();
@@ -413,8 +1030,8 @@ export function AdminDashboard() {
     event.preventDefault();
     if (!selectedCourse) return;
     try {
-      await createModule({ ...moduleForm, course_id: selectedCourse.id });
-      setModuleForm({ title: '', description: '', order_index: moduleForm.order_index + 1 });
+      await createModule({ ...moduleForm, course_id: selectedCourse.id, company: selectedCourse.company });
+      resetModuleDraft(moduleForm.order_index + 1);
       await refresh();
       setFeedback('Módulo criado com sucesso.');
       closeModal();
@@ -447,14 +1064,52 @@ export function AdminDashboard() {
     }
   };
 
+  const openQuizEditor = (moduleItem: CourseTree['modules'][number]) => {
+    const quiz = quizzes.find((item) => item.module_id === moduleItem.id);
+    setQuizModule(moduleItem);
+    setQuizTitle(quiz?.title ?? `Prova - ${moduleItem.title}`);
+    setQuizQuestions(
+      quiz?.questions.length
+        ? quiz.questions.map((question, index) => ({
+          id: question.id,
+          question: question.question,
+          type: question.type,
+          order_index: index + 1,
+          options: question.options.length >= 3 ? question.options : emptyQuizQuestion(index + 1).options,
+        }))
+        : [emptyQuizQuestion()]
+    );
+    setModal('quiz');
+  };
+
+  const submitQuiz = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!quizModule) return;
+
+    try {
+      await saveModuleQuiz({
+        moduleId: quizModule.id,
+        title: quizTitle,
+        isActive: true,
+        questions: quizQuestions.map((question, index) => ({ ...question, order_index: index + 1 })),
+      });
+      await refresh();
+      setFeedback('Prova salva com sucesso.');
+      closeModal();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Erro ao salvar prova.');
+    }
+  };
+
   const submitLesson = async (event: FormEvent) => {
     event.preventDefault();
     if (!selectedModuleId) return;
     try {
-      const videoPath = lessonVideo ? await withUploadProgress(() => uploadLessonVideo(lessonVideo)) : null;
-      const attachmentPath = lessonAttachment ? await withUploadProgress(() => uploadLessonAttachment(lessonAttachment)) : null;
-      await createLesson({ ...lessonForm, module_id: selectedModuleId, video_url: videoPath, attachment_url: attachmentPath });
-      setLessonForm({ title: '', description: '', content: '', order_index: lessonForm.order_index + 1 });
+      const videoPath = lessonVideo ? await withUploadProgress(() => uploadLessonVideo(lessonVideo, lessonMediaContext)) : null;
+      const videoDuration = lessonVideo ? await getVideoFileDuration(lessonVideo) : null;
+      const attachmentPath = lessonAttachment ? await withUploadProgress(() => uploadLessonAttachment(lessonAttachment, lessonMediaContext)) : null;
+      await createLesson({ ...lessonForm, module_id: selectedModuleId, video_url: videoPath, attachment_url: attachmentPath, video_duration_seconds: videoDuration });
+      resetLessonDraft(lessonForm.order_index + 1);
       await refresh();
       setFeedback('Aula criada com sucesso.');
       closeModal();
@@ -467,16 +1122,38 @@ export function AdminDashboard() {
     event.preventDefault();
     if (!editingLesson) return;
     try {
-      const videoPath = lessonVideo ? await withUploadProgress(() => uploadLessonVideo(lessonVideo)) : editingLesson.video_url;
-      const attachmentPath = lessonAttachment ? await withUploadProgress(() => uploadLessonAttachment(lessonAttachment)) : editingLesson.attachment_url;
+      const previousVideoUrl = editingLesson.video_url;
+      const previousAttachmentUrl = editingLesson.attachment_url;
+      const videoPath = lessonVideo
+        ? await withUploadProgress(() => uploadLessonVideo(lessonVideo, lessonMediaContext))
+        : removeLessonVideo
+          ? null
+          : editingLesson.video_url;
+      const videoDuration = lessonVideo
+        ? await getVideoFileDuration(lessonVideo)
+        : removeLessonVideo
+          ? null
+          : editingLesson.video_duration_seconds;
+      const attachmentPath = lessonAttachment
+        ? await withUploadProgress(() => uploadLessonAttachment(lessonAttachment, lessonMediaContext))
+        : removeLessonAttachment
+          ? null
+          : editingLesson.attachment_url;
       await updateLesson(editingLesson.id, {
         title: lessonForm.title,
         description: lessonForm.description,
         content: lessonForm.content,
         order_index: lessonForm.order_index,
         video_url: videoPath,
+        video_duration_seconds: videoDuration,
         attachment_url: attachmentPath,
       });
+      if ((removeLessonVideo || lessonVideo) && previousVideoUrl && previousVideoUrl !== videoPath) {
+        await removeStorageObject('lesson-videos', previousVideoUrl);
+      }
+      if ((removeLessonAttachment || lessonAttachment) && previousAttachmentUrl && previousAttachmentUrl !== attachmentPath) {
+        await removeStorageObject('lesson-attachments', previousAttachmentUrl);
+      }
       await refresh();
       setFeedback('Aula atualizada.');
       closeModal();
@@ -488,9 +1165,11 @@ export function AdminDashboard() {
   const submitUser = async (event: FormEvent) => {
     event.preventDefault();
     try {
-      const avatarUrl = profileImageFile ? await withUploadProgress(() => uploadProfileImage(profileImageFile)) : userForm.avatarUrl;
+      const avatarUrl = profileImageFile
+        ? await withUploadProgress(() => uploadProfileImage(profileImageFile, { fullName: userForm.fullName || userForm.username, company: userForm.company }))
+        : userForm.avatarUrl;
       await createManagedUser({ ...userForm, avatarUrl });
-      setUserForm({ email: '', password: '', username: '', fullName: '', role: 'colaborador', company: 'Seven', status: 'ativo', avatarUrl: '' });
+      resetUserDraft();
       await refresh();
       setFeedback('Usuário criado pela função segura.');
       closeModal();
@@ -503,6 +1182,12 @@ export function AdminDashboard() {
     event.preventDefault();
     if (!editingUser) return;
     try {
+      const previousAvatarUrl = editingUser.avatar_url;
+      const avatarUrl = profileImageFile
+        ? await withUploadProgress(() => uploadProfileImage(profileImageFile, { fullName: userForm.fullName || userForm.username, company: userForm.role === 'admin' ? 'Seven' : userForm.company }))
+        : removeProfileImage
+          ? null
+          : userForm.avatarUrl;
       await updateManagedUser({
         id: editingUser.id,
         email: userForm.email,
@@ -512,8 +1197,11 @@ export function AdminDashboard() {
         role: userForm.role,
         company: userForm.role === 'admin' ? 'Seven' : userForm.company,
         status: userForm.status,
-        avatarUrl: profileImageFile ? await withUploadProgress(() => uploadProfileImage(profileImageFile)) : userForm.avatarUrl,
+        avatarUrl,
       });
+      if ((removeProfileImage || profileImageFile) && previousAvatarUrl && previousAvatarUrl !== avatarUrl) {
+        await removeStorageObject('profile-images', previousAvatarUrl);
+      }
       await refresh();
       setFeedback('Usuário atualizado.');
       closeModal();
@@ -532,8 +1220,125 @@ export function AdminDashboard() {
     }
   };
 
+  const handleDeleteUser = async (user: UserProfile) => {
+    if (!profile) return;
+    if (user.id === profile.id) {
+      setError('Você não pode excluir o próprio cadastro enquanto está logado.');
+      return;
+    }
+
+    const label = user.full_name || user.username || user.email || 'este usuário';
+    if (!window.confirm(`Excluir definitivamente ${label}? Esta ação remove o usuário do Supabase.`)) return;
+
+    try {
+      await deleteManagedUser(user.id);
+      if (user.avatar_url) {
+        await removeStorageObject('profile-images', user.avatar_url);
+      }
+      await refresh();
+      setFeedback('Usuário excluído do Supabase.');
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Não foi possível excluir o usuário.');
+    }
+  };
+
+  const handleRegenerateCertificate = async (user: UserProfile, course: CourseTree, certificate?: Certificate | null) => {
+    const key = `${user.id}:${course.id}`;
+    setRegeneratingCertificateKey(key);
+    setError('');
+    setFeedback('');
+
+    try {
+      const courseQuizzes = quizzes.filter((quiz) => quiz.is_active && course.modules.some((moduleItem) => moduleItem.id === quiz.module_id));
+      const workloadMinutes = calculateCourseWorkloadMinutes(course, courseQuizzes);
+      const startedAt = getCourseStartDateForUser(course, progress, user.id);
+      const completedAt = certificate?.completed_at ?? new Date().toISOString();
+      const validationCode = createCertificateValidationCode(user.full_name || user.username, course.title, completedAt);
+      const blob = await renderCertificateBlob({
+        userName: user.full_name || user.username,
+        course,
+        workloadMinutes,
+        startedAt,
+        completedAt,
+      });
+      const certificatePath = await uploadCertificatePng(blob, {
+        company: user.company,
+        courseTitle: course.title,
+        userName: user.full_name || user.username,
+        userId: user.id,
+      });
+      const nextCertificate = await upsertCertificate({
+        userId: user.id,
+        courseId: course.id,
+        certificateUrl: certificatePath,
+        workloadMinutes,
+        startedAt,
+        completedAt,
+        validationCode,
+      });
+
+      if (certificate?.certificate_url && certificate.certificate_url !== certificatePath) {
+        await removeStorageObject('certificates', certificate.certificate_url).catch(() => undefined);
+      }
+
+      setCertificates((current) => [nextCertificate, ...current.filter((item) => !(item.user_id === user.id && item.course_id === course.id))]);
+      await refresh();
+      setFeedback(certificate ? 'Certificado regerado com sucesso.' : 'Certificado gerado com sucesso.');
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Nao foi possivel regerar o certificado.');
+    } finally {
+      setRegeneratingCertificateKey('');
+    }
+  };
+
+  const handleDeleteCertificate = async (user: UserProfile, course: CourseTree, certificate: Certificate) => {
+    const label = user.full_name || user.username || user.email || 'este colaborador';
+    if (!window.confirm(`Apagar o certificado de ${label} no curso "${course.title}"? Esta acao remove o PNG do Supabase.`)) return;
+
+    const key = `${user.id}:${course.id}`;
+    setDeletingCertificateKey(key);
+    setError('');
+    setFeedback('');
+
+    try {
+      if (certificate.certificate_url) {
+        await removeStorageObject('certificates', certificate.certificate_url);
+      }
+      await deleteCertificate(certificate.id);
+      setCertificates((current) => current.filter((item) => item.id !== certificate.id));
+      setFeedback('Certificado apagado do colaborador.');
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Nao foi possivel apagar o certificado.');
+    } finally {
+      setDeletingCertificateKey('');
+    }
+  };
+
+  const openCourseCreator = () => {
+    resetCourseDraft();
+    setModal('course');
+  };
+
+  const openModuleCreator = () => {
+    resetModuleDraft((selectedCourse?.modules.length ?? 0) + 1);
+    setModal('module');
+  };
+
+  const openLessonCreator = (moduleItem: CourseTree['modules'][number]) => {
+    setSelectedModuleId(moduleItem.id);
+    resetLessonDraft(moduleItem.lessons.length + 1);
+    setModal('lesson');
+  };
+
+  const openUserCreator = () => {
+    resetUserDraft();
+    setModal('user');
+  };
+
   const openCourseEditor = (course: CourseTree) => {
     setEditingCourse(course);
+    setCourseCoverFile(null);
+    setRemoveCourseCover(false);
     setCourseForm({
       company: course.company,
       title: course.title,
@@ -549,12 +1354,17 @@ export function AdminDashboard() {
       title: moduleItem.title,
       description: moduleItem.description ?? '',
       order_index: moduleItem.order_index,
+      has_quiz: moduleItem.has_quiz === true,
     });
     setModal('editModule');
   };
 
   const openLessonEditor = (lesson: Lesson) => {
     setEditingLesson(lesson);
+    setLessonVideo(null);
+    setLessonAttachment(null);
+    setRemoveLessonVideo(false);
+    setRemoveLessonAttachment(false);
     setLessonForm({
       title: lesson.title,
       description: lesson.description ?? '',
@@ -566,6 +1376,8 @@ export function AdminDashboard() {
 
   const openUserEditor = (user: UserProfile) => {
     setEditingUser(user);
+    setProfileImageFile(null);
+    setRemoveProfileImage(false);
     setUserForm({
       email: user.email ?? '',
       password: '',
@@ -584,9 +1396,32 @@ export function AdminDashboard() {
   }
 
   return (
-    <main className="safe-page-x relative min-h-screen bg-[#F7F7F8] text-[#111114]">
+    <main className="safe-page-x relative min-h-screen bg-[#F2F2F7] pb-28 text-[#111114] lg:bg-[#F7F7F8] lg:pb-0">
+      <header className="sticky top-0 z-40 border-b border-white/70 bg-[#F2F2F7]/86 px-5 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-2xl lg:hidden">
+        <div className="flex items-center justify-between gap-3">
+          <button type="button" onClick={() => navigate('/home')} className="flex min-w-0 items-center gap-3 text-left">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[16px] bg-white shadow-[0_10px_26px_rgba(17,17,20,0.08)]">
+              <img src="/assets/seven/Logo%20N.webp" alt="" className="h-7 w-7 object-contain" />
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Admin</span>
+              <span className="block truncate text-lg font-semibold tracking-[-0.04em]">
+                {route === 'inicio' ? 'Início' : route === 'cursos' ? 'Cursos' : route === 'progress' ? 'Progresso' : 'Ajustes'}
+              </span>
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            aria-label="Sair"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[16px] bg-white text-[#666670] shadow-[0_10px_26px_rgba(17,17,20,0.08)]"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
+      </header>
       <div className="grid min-h-screen lg:grid-cols-[minmax(240px,280px)_minmax(0,1fr)]">
-        <aside className="flex flex-col border-b border-[#E4E4E8] bg-white px-5 py-5 shadow-[8px_0_28px_rgba(17,17,20,0.04)] lg:min-h-screen lg:border-b-0 lg:border-r">
+        <aside className="hidden flex-col border-b border-[#E4E4E8] bg-white px-5 py-5 shadow-[8px_0_28px_rgba(17,17,20,0.04)] lg:flex lg:min-h-screen lg:border-b-0 lg:border-r">
           <div>
             <button type="button" onClick={() => navigate('/home')} className="flex items-center gap-3 text-left">
               <img src="/assets/seven/Logo%20N.webp" alt="" className="h-9 w-9 object-contain" />
@@ -601,6 +1436,7 @@ export function AdminDashboard() {
             {[
               { id: 'inicio' as const, label: 'Início', href: '/dashboard/admin', icon: BarChart3 },
               { id: 'cursos' as const, label: 'Cursos', href: '/dashboard/admin/cursos', icon: BookOpen },
+              { id: 'progress' as const, label: 'Progresso', href: '/dashboard/admin/progresso', icon: Award },
               { id: 'settings' as const, label: 'Configurações', href: '/dashboard/admin/settings', icon: Settings },
             ].map((item) => {
               const Icon = item.icon;
@@ -629,26 +1465,43 @@ export function AdminDashboard() {
           </button>
         </aside>
 
-        <section className="min-w-0 px-5 py-6 sm:px-8 lg:px-10">
-          <header className="mb-7 flex flex-col gap-4 border-b border-[#E4E4E8] pb-6 md:flex-row md:items-end md:justify-between">
+        <section className="min-w-0 px-4 py-5 sm:px-8 lg:px-10 lg:py-6">
+          <header className="mb-5 rounded-[28px] border border-white/70 bg-white/82 p-5 shadow-[0_18px_42px_rgba(17,17,20,0.06)] backdrop-blur-2xl md:flex md:flex-col md:gap-4 lg:mb-7 lg:flex-row lg:items-end lg:justify-between lg:rounded-none lg:border-b lg:border-l-0 lg:border-r-0 lg:border-t-0 lg:bg-transparent lg:p-0 lg:pb-6 lg:shadow-none lg:backdrop-blur-0">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">Admin</p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
-                {route === 'inicio' ? 'Início' : route === 'cursos' ? 'Cursos' : 'Configurações'}
+              <h1 className="mt-2 text-[2rem] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-4xl">
+                {route === 'inicio' ? 'Início' : route === 'cursos' ? 'Cursos' : route === 'progress' ? 'Progresso' : 'Configurações'}
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-[#666670]">
                 {profile?.full_name || profile?.username}, a plataforma nova segue isolada da home institucional.
               </p>
             </div>
-            <Button type="button" variant="secondary" onClick={() => navigate('/home')} className="rounded-md">
+            <Button type="button" variant="secondary" onClick={() => navigate('/home')} className="mt-4 w-full rounded-[18px] border-[#D8D8DE] bg-[#E8E8ED] text-[#111114] hover:bg-[#DDDEE5] md:mt-0 md:w-auto lg:rounded-md">
               Voltar para home
             </Button>
           </header>
 
           {isLoading ? (
-            <div className="flex min-h-[360px] items-center justify-center text-[#8A8A92]">Carregando dashboard...</div>
+            <div className="flex min-h-[360px] items-center justify-center rounded-[28px] bg-white/82 text-[#8A8A92] shadow-[0_18px_42px_rgba(17,17,20,0.05)] lg:bg-transparent lg:shadow-none">Carregando dashboard...</div>
           ) : route === 'inicio' ? (
-            <div className="space-y-7">
+            <div className="space-y-6 lg:space-y-7">
+              <section className="hidden grid-cols-2 gap-3 lg:grid lg:grid-cols-4">
+                {[
+                  { label: 'Colaboradores', value: collaborators.length, icon: Users },
+                  { label: 'Cursos', value: courses.length, icon: BookOpen },
+                  { label: 'Aulas', value: totalLessons, icon: FileText },
+                  { label: 'Média geral', value: `${averageProgress}%`, icon: BarChart3 },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <article key={item.label} className="rounded-[24px] border border-white/70 bg-white/86 p-4 shadow-[0_18px_42px_rgba(17,17,20,0.06)] backdrop-blur-2xl lg:rounded-lg lg:border-[#E6E6EA] lg:bg-white lg:p-5">
+                      <Icon className="h-5 w-5 text-primary" />
+                      <p className="mt-4 text-2xl font-semibold tracking-[-0.04em]">{item.value}</p>
+                      <p className="mt-1 text-[10px] uppercase tracking-[0.14em] text-[#8A8A92] sm:text-xs">{item.label}</p>
+                    </article>
+                  );
+                })}
+              </section>
               <CollaboratorGroup
                 title="Colaboradores Seven Group"
                 company="Seven"
@@ -667,9 +1520,9 @@ export function AdminDashboard() {
               />
             </div>
           ) : route === 'cursos' ? (
-            <div className="grid gap-7 xl:grid-cols-[minmax(280px,320px)_minmax(0,1fr)]">
-              <aside className="space-y-4">
-                <Button type="button" onClick={() => setModal('course')} className="w-full rounded-md">
+            <div className="grid gap-5 xl:grid-cols-[minmax(280px,320px)_minmax(0,1fr)] xl:gap-7">
+              <aside className="space-y-3 lg:space-y-4">
+                <Button type="button" onClick={openCourseCreator} className="w-full rounded-[18px] py-3 lg:rounded-md">
                   <Plus className="mr-2 h-4 w-4" /> Criar curso
                 </Button>
                 {courses.map((course) => {
@@ -679,7 +1532,7 @@ export function AdminDashboard() {
                       type="button"
                       key={course.id}
                       onClick={() => setSelectedCourseId(course.id)}
-                      className={`w-full rounded-lg border p-4 text-left transition ${selectedCourse?.id === course.id ? 'border-primary bg-primary/10 shadow-[0_14px_34px_rgba(223,117,13,0.12)]' : 'border-[#E6E6EA] bg-white hover:border-primary/40'}`}
+                      className={`w-full rounded-[22px] border p-4 text-left transition lg:rounded-lg ${selectedCourse?.id === course.id ? 'border-primary bg-white shadow-[0_16px_34px_rgba(223,117,13,0.14)] ring-2 ring-primary/10' : 'border-white/70 bg-white/78 shadow-[0_12px_28px_rgba(17,17,20,0.04)] hover:border-primary/40'}`}
                     >
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{course.company}</p>
                       <h2 className="mt-2 font-semibold">{course.title}</h2>
@@ -695,7 +1548,7 @@ export function AdminDashboard() {
                     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{selectedCourse.company}</p>
-                        <h2 className="mt-2 text-2xl font-semibold">{selectedCourse.title}</h2>
+                        <h2 className="mt-2 text-2xl font-semibold leading-tight tracking-[-0.035em]">{selectedCourse.title}</h2>
                         <p className="mt-2 text-sm leading-6 text-[#666670]">{selectedCourse.description || 'Sem descrição.'}</p>
                       </div>
                       <div className="flex flex-wrap gap-2">
@@ -705,7 +1558,7 @@ export function AdminDashboard() {
                         <IconButton label="Excluir curso" onClick={() => void handleDeleteCourse(selectedCourse)}>
                           <Trash2 className="h-4 w-4" />
                         </IconButton>
-                        <IconButton label="Inserir módulo" onClick={() => setModal('module')}>
+                        <IconButton label="Inserir módulo" onClick={openModuleCreator}>
                           <Plus className="h-4 w-4" />
                         </IconButton>
                       </div>
@@ -713,7 +1566,7 @@ export function AdminDashboard() {
 
                     <div className="mt-6 space-y-4">
                       {selectedCourse.modules.map((moduleItem) => (
-                        <article key={moduleItem.id} className="rounded-lg border border-[#ECECEF] bg-[#FAFAFB] p-4">
+                        <article key={moduleItem.id} className="rounded-[22px] border border-[#ECECEF] bg-[#FAFAFB] p-4 lg:rounded-lg">
                           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                             <div>
                               <h3 className="font-semibold">{moduleItem.order_index}. {moduleItem.title}</h3>
@@ -723,16 +1576,15 @@ export function AdminDashboard() {
                               <IconButton label="Editar módulo" onClick={() => openModuleEditor(moduleItem)}>
                                 <Edit3 className="h-4 w-4" />
                               </IconButton>
+                              {moduleItem.has_quiz && (
+                                <IconButton label="Editar prova" onClick={() => openQuizEditor(moduleItem)}>
+                                  <ClipboardList className="h-4 w-4" />
+                                </IconButton>
+                              )}
                               <IconButton label="Excluir módulo" onClick={() => void handleDeleteModule(moduleItem)}>
                                 <Trash2 className="h-4 w-4" />
                               </IconButton>
-                              <IconButton
-                                label="Criar aula"
-                                onClick={() => {
-                                  setSelectedModuleId(moduleItem.id);
-                                  setModal('lesson');
-                                }}
-                              >
+                              <IconButton label="Criar aula" onClick={() => openLessonCreator(moduleItem)}>
                                 <Plus className="h-4 w-4" />
                               </IconButton>
                             </div>
@@ -740,7 +1592,7 @@ export function AdminDashboard() {
 
                           <div className="mt-4 grid gap-2">
                             {moduleItem.lessons.map((lesson) => (
-                              <div key={lesson.id} className="flex flex-col gap-3 rounded-md border border-[#ECECEF] bg-white px-3 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                              <div key={lesson.id} className="flex flex-col gap-3 rounded-[16px] border border-[#ECECEF] bg-white px-3 py-3 text-sm sm:flex-row sm:items-center sm:justify-between lg:rounded-md">
                                 <span>{lesson.order_index}. {lesson.title}</span>
                                 <IconButton label="Editar aula" onClick={() => openLessonEditor(lesson)}>
                                   <Edit3 className="h-4 w-4" />
@@ -757,10 +1609,23 @@ export function AdminDashboard() {
                 )}
               </Panel>
             </div>
+          ) : route === 'progress' ? (
+            <ProgressDashboard
+              users={collaborators}
+              courses={courses}
+              progress={progress}
+              attempts={quizAttempts}
+              failures={courseFailures}
+              certificates={certificates}
+              regeneratingCertificateKey={regeneratingCertificateKey}
+              deletingCertificateKey={deletingCertificateKey}
+              onRegenerateCertificate={handleRegenerateCertificate}
+              onDeleteCertificate={handleDeleteCertificate}
+            />
           ) : (
-            <div className="space-y-7">
+            <div className="space-y-6 lg:space-y-7">
               {missingProfiles.length > 0 && (
-                <section className="rounded-lg border border-amber-200 bg-amber-50 p-5">
+                <section className="rounded-[24px] border border-amber-200 bg-amber-50 p-5 lg:rounded-lg">
                   <h2 className="font-semibold text-amber-900">Usuários em Authentication sem profile</h2>
                   <p className="mt-2 text-sm leading-6 text-amber-800">
                     Eles existem no Supabase Auth, mas não aparecem nas listas porque a dashboard lê `public.profiles`.
@@ -782,13 +1647,13 @@ export function AdminDashboard() {
               )}
 
               <div className="flex justify-end">
-                <Button type="button" onClick={() => setModal('user')} className="rounded-md">
+                <Button type="button" onClick={openUserCreator} className="w-full rounded-[18px] py-3 sm:w-auto lg:rounded-md">
                   <Plus className="mr-2 h-4 w-4" /> Criar usuário
                 </Button>
               </div>
 
-              <UserCanvas title="Admins" icon={<ShieldCheck className="h-5 w-5 text-primary" />} users={admins} onEdit={openUserEditor} admin />
-              <UserCanvas title="Colaboradores" icon={<Users className="h-5 w-5 text-primary" />} users={collaborators} onEdit={openUserEditor} />
+              <UserCanvas title="Admins" icon={<ShieldCheck className="h-5 w-5 text-primary" />} users={admins} onEdit={openUserEditor} onDelete={handleDeleteUser} currentUserId={profile?.id} admin />
+              <UserCanvas title="Colaboradores" icon={<Users className="h-5 w-5 text-primary" />} users={collaborators} onEdit={openUserEditor} onDelete={handleDeleteUser} currentUserId={profile?.id} />
             </div>
           )}
         </section>
@@ -796,66 +1661,517 @@ export function AdminDashboard() {
 
       {(modal === 'course' || modal === 'editCourse') && (
         <Modal title={modal === 'course' ? 'Criar curso' : 'Editar curso'} onClose={closeModal}>
-          <form onSubmit={modal === 'course' ? submitCourse : submitCourseEdit} className="grid gap-4">
-            <Field label="Empresa"><SelectField value={courseForm.company} options={companyOptions} onChange={(company) => setCourseForm((current) => ({ ...current, company }))} /></Field>
-            <Field label="Título"><Input className={inputClass} value={courseForm.title} onChange={(event) => setCourseForm((current) => ({ ...current, title: event.target.value }))} required /></Field>
-            <Field label="Descrição"><textarea value={courseForm.description} onChange={(event) => setCourseForm((current) => ({ ...current, description: event.target.value }))} className={`${textInputClass} min-h-24`} /></Field>
-            <FilePicker
-              label={courseCoverFile ? courseCoverFile.name : 'Anexar capa do curso'}
-              accept="image/*"
-              helper="Imagem obrigatória até 600x400 px."
-              onChange={setCourseCoverFile}
-            />
+          <form onSubmit={modal === 'course' ? submitCourse : submitCourseEdit} className="grid gap-5">
+            <FormSection title="Identificação" description="Nome, empresa e resumo que aparecem na lista de cursos.">
+              <div className="grid gap-4 sm:grid-cols-[160px_minmax(0,1fr)]">
+                <Field label="Empresa"><SelectField value={courseForm.company} options={companyOptions} onChange={(company) => setCourseForm((current) => ({ ...current, company }))} /></Field>
+                <Field label="Título"><Input className={inputClass} value={courseForm.title} onChange={(event) => setCourseForm((current) => ({ ...current, title: event.target.value }))} required /></Field>
+              </div>
+              <Field label="Descrição"><textarea value={courseForm.description} onChange={(event) => setCourseForm((current) => ({ ...current, description: event.target.value }))} className={`${textInputClass} min-h-24`} /></Field>
+            </FormSection>
+
+            <FormSection title="Capa do curso" description="Veja a capa atual ou exclua para inserir uma nova imagem.">
+              {hasCurrentCourseCover && courseCoverPreview ? (
+                <CurrentMediaActions
+                  title="Capa atual"
+                  fileName={fileLabel(null, courseForm.cover_url)}
+                  onView={() => openPreview({
+                    title: 'Capa atual',
+                    url: courseCoverPreview,
+                    fileName: fileLabel(null, courseForm.cover_url),
+                    type: 'image',
+                  })}
+                  onRemove={() => {
+                    setRemoveCourseCover(true);
+                    setCourseCoverFile(null);
+                  }}
+                />
+              ) : (
+                <>
+                  {courseCoverFile && courseCoverPreview ? (
+                    <CurrentMediaActions
+                      title="Capa selecionada"
+                      fileName={courseCoverFile.name}
+                      onView={() => openPreview({
+                        title: 'Capa selecionada',
+                        url: courseCoverPreview,
+                        fileName: courseCoverFile.name,
+                        type: 'image',
+                      })}
+                      onRemove={() => setCourseCoverFile(null)}
+                    />
+                  ) : (
+                    <>
+                      <MediaPreview
+                        title="Capa selecionada"
+                        url={courseCoverPreview}
+                        type="image"
+                      />
+                      <FilePicker
+                        label="Anexar capa do curso"
+                        accept="image/*"
+                        helper={modal === 'editCourse' && courseForm.cover_url ? 'A capa atual foi removida. Selecione uma nova imagem ou salve sem capa.' : 'Imagem obrigatória até 600x400 px. O arquivo será renomeado ao salvar.'}
+                        onChange={setCourseCoverFile}
+                      />
+                    </>
+                  )}
+                </>
+              )}
+            </FormSection>
+
             <UploadProgress value={uploadProgress} />
-            <Button type="submit" className="rounded-md">{modal === 'course' ? 'Salvar curso' : 'Atualizar curso'}</Button>
+            <FormActions>
+              <Button type="submit" className="w-full rounded-[18px] py-3 lg:rounded-md">{modal === 'course' ? 'Salvar curso' : 'Atualizar curso'}</Button>
+            </FormActions>
           </form>
         </Modal>
       )}
 
       {(modal === 'module' || modal === 'editModule') && (
         <Modal title={modal === 'module' ? `Inserir módulo em ${selectedCourse?.title ?? 'curso'}` : 'Editar módulo'} onClose={closeModal}>
-          <form onSubmit={modal === 'module' ? submitModule : submitModuleEdit} className="grid gap-4">
-            <Field label="Título"><Input className={inputClass} value={moduleForm.title} onChange={(event) => setModuleForm((current) => ({ ...current, title: event.target.value }))} required /></Field>
-            <Field label="Descrição"><textarea value={moduleForm.description} onChange={(event) => setModuleForm((current) => ({ ...current, description: event.target.value }))} className={`${textInputClass} min-h-20`} /></Field>
-            <Field label="Ordem"><Input className={inputClass} type="number" min={1} value={moduleForm.order_index} onChange={(event) => setModuleForm((current) => ({ ...current, order_index: Number(event.target.value) }))} required /></Field>
-            <Button type="submit" className="rounded-md">{modal === 'module' ? 'Salvar módulo' : 'Atualizar módulo'}</Button>
+          <form onSubmit={modal === 'module' ? submitModule : submitModuleEdit} className="grid gap-5">
+            <FormSection title="Dados do módulo" description="Organize o bloco de aulas dentro do curso selecionado.">
+              <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_120px]">
+                <Field label="Título"><Input className={inputClass} value={moduleForm.title} onChange={(event) => setModuleForm((current) => ({ ...current, title: event.target.value }))} required /></Field>
+                <Field label="Ordem"><Input className={inputClass} type="number" min={1} value={moduleForm.order_index} onChange={(event) => setModuleForm((current) => ({ ...current, order_index: Number(event.target.value) }))} required /></Field>
+              </div>
+              <Field label="Descrição"><textarea value={moduleForm.description} onChange={(event) => setModuleForm((current) => ({ ...current, description: event.target.value }))} className={`${textInputClass} min-h-20`} /></Field>
+              <ToggleSwitch
+                label="Exigir prova ao finalizar módulo"
+                checked={moduleForm.has_quiz}
+                onChange={(has_quiz) => setModuleForm((current) => ({ ...current, has_quiz }))}
+              />
+              {moduleForm.has_quiz && editingModule && (
+                <Button type="button" variant="secondary" onClick={() => openQuizEditor(editingModule)} className="rounded-[18px] lg:rounded-md">
+                  <ClipboardList className="mr-2 h-4 w-4" /> Editar prova do módulo
+                </Button>
+              )}
+            </FormSection>
+            <FormActions>
+              <Button type="submit" className="w-full rounded-[18px] py-3 lg:rounded-md">{modal === 'module' ? 'Salvar módulo' : 'Atualizar módulo'}</Button>
+            </FormActions>
+          </form>
+        </Modal>
+      )}
+
+      {modal === 'quiz' && quizModule && (
+        <Modal title={`Prova - ${quizModule.title}`} onClose={closeModal}>
+          <form onSubmit={submitQuiz} className="grid gap-5">
+            <FormSection title="Configuração da prova" description="Nota mínima fixa de 70%. Cada questão adiciona 2 minutos à carga horária do certificado.">
+              <Field label="Título da prova">
+                <Input className={inputClass} value={quizTitle} onChange={(event) => setQuizTitle(event.target.value)} required />
+              </Field>
+            </FormSection>
+
+            <FormSection title="Perguntas" description="Cada pergunta precisa ter pelo menos 3 opções e uma resposta correta.">
+              {quizQuestions.map((question, questionIndex) => (
+                <article key={question.id} className="rounded-[18px] border border-[#E1E1E5] bg-white p-4">
+                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <h3 className="font-semibold">Pergunta {questionIndex + 1}</h3>
+                    <div className="flex gap-2">
+                      <SelectField
+                        value={question.type}
+                        options={['single', 'multiple'] as QuizQuestionType[]}
+                        onChange={(type) => setQuizQuestions((current) => current.map((item) => item.id === question.id ? {
+                          ...item,
+                          type,
+                          options: type === 'single'
+                            ? item.options.map((option, index) => ({ ...option, isCorrect: index === item.options.findIndex((candidate) => candidate.isCorrect) }))
+                            : item.options,
+                        } : item))}
+                      />
+                      <IconButton label="Excluir pergunta" onClick={() => setQuizQuestions((current) => current.filter((item) => item.id !== question.id))}>
+                        <Trash2 className="h-4 w-4" />
+                      </IconButton>
+                    </div>
+                  </div>
+                  <Field label="Enunciado">
+                    <textarea
+                      value={question.question}
+                      onChange={(event) => setQuizQuestions((current) => current.map((item) => item.id === question.id ? { ...item, question: event.target.value } : item))}
+                      className={`${textInputClass} min-h-20`}
+                      required
+                    />
+                  </Field>
+                  <div className="mt-4 grid gap-3">
+                    {question.options.map((option, optionIndex) => (
+                      <div key={option.id} className="grid gap-2 rounded-[14px] border border-[#ECECEF] bg-[#FAFAFB] p-3">
+                        <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#8A8A92]">
+                          <input
+                            type={question.type === 'single' ? 'radio' : 'checkbox'}
+                            name={`question-${question.id}`}
+                            checked={option.isCorrect}
+                            onChange={(event) => setQuizQuestions((current) => current.map((item) => item.id === question.id ? {
+                              ...item,
+                              options: item.options.map((nextOption) => ({
+                                ...nextOption,
+                                isCorrect: question.type === 'single'
+                                  ? nextOption.id === option.id
+                                  : nextOption.id === option.id
+                                    ? event.target.checked
+                                    : nextOption.isCorrect,
+                              })),
+                            } : item))}
+                          />
+                          Resposta correta
+                        </label>
+                        <textarea
+                          value={option.text}
+                          onChange={(event) => setQuizQuestions((current) => current.map((item) => item.id === question.id ? {
+                            ...item,
+                            options: item.options.map((nextOption) => nextOption.id === option.id ? { ...nextOption, text: event.target.value } : nextOption),
+                          } : item))}
+                          className={`${textInputClass} min-h-16`}
+                          placeholder={`Opção ${optionIndex + 1}`}
+                          required
+                        />
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="rounded-[16px] lg:rounded-md"
+                      onClick={() => setQuizQuestions((current) => current.map((item) => item.id === question.id ? {
+                        ...item,
+                        options: [...item.options, { id: crypto.randomUUID(), text: '', isCorrect: false }],
+                      } : item))}
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> Adicionar opção
+                    </Button>
+                  </div>
+                </article>
+              ))}
+              <Button
+                type="button"
+                variant="secondary"
+                className="rounded-[18px] lg:rounded-md"
+                onClick={() => setQuizQuestions((current) => [...current, emptyQuizQuestion(current.length + 1)])}
+              >
+                <Plus className="mr-2 h-4 w-4" /> Nova pergunta
+              </Button>
+            </FormSection>
+
+            <FormActions>
+              <Button type="submit" className="w-full rounded-[18px] py-3 lg:rounded-md">Salvar prova</Button>
+            </FormActions>
           </form>
         </Modal>
       )}
 
       {(modal === 'lesson' || modal === 'editLesson') && (
         <Modal title={modal === 'lesson' ? `Criar aula em ${selectedModule?.title ?? 'módulo'}` : 'Editar aula'} onClose={closeModal}>
-          <form onSubmit={modal === 'lesson' ? submitLesson : submitLessonEdit} className="grid gap-4">
-            <Field label="Título"><Input className={inputClass} value={lessonForm.title} onChange={(event) => setLessonForm((current) => ({ ...current, title: event.target.value }))} required /></Field>
-            <Field label="Descrição"><Input className={inputClass} value={lessonForm.description} onChange={(event) => setLessonForm((current) => ({ ...current, description: event.target.value }))} /></Field>
-            <Field label="Texto da aula"><textarea value={lessonForm.content} onChange={(event) => setLessonForm((current) => ({ ...current, content: event.target.value }))} className={`${textInputClass} min-h-40`} /></Field>
-            <FilePicker label={lessonVideo ? lessonVideo.name : 'Anexar vídeo aula'} accept="video/*" helper="Selecione o arquivo de vídeo da aula." onChange={setLessonVideo} />
-            <FilePicker label={lessonAttachment ? lessonAttachment.name : 'Anexar arquivo de apoio'} helper="PDF, imagem, planilha ou material complementar." onChange={setLessonAttachment} />
+          <form onSubmit={modal === 'lesson' ? submitLesson : submitLessonEdit} className="grid gap-5">
+            <FormSection title="Dados da aula" description="Defina o título, o resumo e o texto que o colaborador vai ler.">
+              <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_120px]">
+                <Field label="Título"><Input className={inputClass} value={lessonForm.title} onChange={(event) => setLessonForm((current) => ({ ...current, title: event.target.value }))} required /></Field>
+                <Field label="Ordem"><Input className={inputClass} type="number" min={1} value={lessonForm.order_index} onChange={(event) => setLessonForm((current) => ({ ...current, order_index: Number(event.target.value) }))} required /></Field>
+              </div>
+              <Field label="Descrição curta"><Input className={inputClass} value={lessonForm.description} onChange={(event) => setLessonForm((current) => ({ ...current, description: event.target.value }))} /></Field>
+              <Field label="Texto da aula"><textarea value={lessonForm.content} onChange={(event) => setLessonForm((current) => ({ ...current, content: event.target.value }))} className={`${textInputClass} min-h-40`} /></Field>
+            </FormSection>
+
+            <div className="grid gap-5">
+              <FormSection title="Vídeo da aula" description="Confira o vídeo atual ou escolha um novo arquivo para substituir.">
+                {hasCurrentLessonVideo && lessonVideoPreview ? (
+                  <CurrentMediaActions
+                    title="Vídeo atual"
+                    fileName={fileLabel(null, editingLesson?.video_url)}
+                    onView={() => openPreview({
+                      title: 'Vídeo atual',
+                      url: lessonVideoPreview,
+                      fileName: fileLabel(null, editingLesson?.video_url),
+                      type: 'video',
+                    })}
+                    onRemove={() => {
+                      setRemoveLessonVideo(true);
+                      setLessonVideo(null);
+                    }}
+                  />
+                ) : (
+                  <>
+                    <MediaPreview
+                      title={lessonVideo ? 'Novo vídeo selecionado' : 'Vídeo selecionado'}
+                      url={lessonVideoPreview}
+                      fileName={fileLabel(lessonVideo, editingLesson?.video_url)}
+                      type="video"
+                    />
+                    <FilePicker
+                      label={lessonVideo ? lessonVideo.name : 'Anexar vídeo aula'}
+                      accept="video/*"
+                      helper={modal === 'editLesson' && editingLesson?.video_url ? 'A mídia atual foi removida. Selecione um novo vídeo ou salve sem vídeo.' : 'Selecione o arquivo de vídeo da aula.'}
+                      onChange={setLessonVideo}
+                    />
+                  </>
+                )}
+              </FormSection>
+
+              <FormSection title="Material de apoio" description="Opcional: PDF, imagem, planilha ou arquivo complementar.">
+                {hasCurrentLessonAttachment && lessonAttachmentPreview ? (
+                  <CurrentMediaActions
+                    title="Anexo atual"
+                    fileName={fileLabel(null, editingLesson?.attachment_url)}
+                    onView={() => openPreview({
+                      title: 'Anexo atual',
+                      url: lessonAttachmentPreview,
+                      fileName: fileLabel(null, editingLesson?.attachment_url),
+                      type: previewTypeFor(null, editingLesson?.attachment_url || lessonAttachmentPreview),
+                    })}
+                    onRemove={() => {
+                      setRemoveLessonAttachment(true);
+                      setLessonAttachment(null);
+                    }}
+                  />
+                ) : (
+                  <>
+                    <MediaPreview
+                      title={lessonAttachment ? 'Novo anexo selecionado' : 'Anexo selecionado'}
+                      url={lessonAttachmentPreview}
+                      fileName={fileLabel(lessonAttachment, editingLesson?.attachment_url)}
+                      type={previewTypeFor(lessonAttachment, lessonAttachmentPreview)}
+                    />
+                    <FilePicker
+                      label={lessonAttachment ? lessonAttachment.name : 'Anexar material de apoio'}
+                      helper={modal === 'editLesson' && editingLesson?.attachment_url ? 'O material atual foi removido. Selecione um novo arquivo ou salve sem anexo.' : 'PDF, imagem, planilha ou material complementar.'}
+                      onChange={setLessonAttachment}
+                    />
+                  </>
+                )}
+              </FormSection>
+            </div>
+
             <UploadProgress value={uploadProgress} />
-            <Field label="Ordem"><Input className={inputClass} type="number" min={1} value={lessonForm.order_index} onChange={(event) => setLessonForm((current) => ({ ...current, order_index: Number(event.target.value) }))} required /></Field>
-            <Button type="submit" className="rounded-md">{modal === 'lesson' ? 'Salvar aula' : 'Atualizar aula'}</Button>
+            <FormActions>
+              <Button type="submit" className="w-full rounded-[18px] py-3 lg:rounded-md">{modal === 'lesson' ? 'Salvar aula' : 'Atualizar aula'}</Button>
+            </FormActions>
           </form>
         </Modal>
       )}
 
       {(modal === 'user' || modal === 'editUser') && (
         <Modal title={modal === 'user' ? 'Criar usuário' : 'Editar usuário'} onClose={closeModal}>
-          <form onSubmit={modal === 'user' ? submitUser : submitUserEdit} className="grid gap-4">
-            <FilePicker label={profileImageFile ? profileImageFile.name : 'Inserir imagem do usuário'} accept="image/*" helper="Foto exibida nos cards de acompanhamento." onChange={setProfileImageFile} />
+          <form onSubmit={modal === 'user' ? submitUser : submitUserEdit} className="grid gap-5">
+            <FormSection title="Foto de perfil" description="Imagem exibida nos cards de acompanhamento e na área do usuário.">
+              <div className="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)] md:items-start">
+                <ProfilePictureCanvas
+                  imageUrl={profileImagePreview}
+                  name={userForm.fullName || userForm.username}
+                  fileName={profileImageFile?.name || (hasCurrentProfileImage ? fileLabel(null, userForm.avatarUrl) : undefined)}
+                  onView={hasCurrentProfileImage && profileImagePreview ? () => openPreview({
+                    title: 'Foto atual',
+                    url: profileImagePreview,
+                    fileName: fileLabel(null, userForm.avatarUrl),
+                    type: 'image',
+                  }) : undefined}
+                  onRemove={hasCurrentProfileImage ? () => {
+                    setRemoveProfileImage(true);
+                    setProfileImageFile(null);
+                  } : undefined}
+                />
+                {hasCurrentProfileImage ? (
+                  <div className="rounded-[20px] border border-[#E6E6EA] bg-white p-4 text-sm leading-6 text-[#666670] lg:rounded-lg">
+                    Use o olho para visualizar a foto atual. Para inserir uma nova imagem, exclua a foto atual primeiro.
+                  </div>
+                ) : (
+                  <FilePicker
+                    label={profileImageFile ? profileImageFile.name : 'Inserir imagem do usuário'}
+                    accept="image/*"
+                    helper={modal === 'editUser' && userForm.avatarUrl ? 'A foto atual foi removida. Selecione uma nova imagem ou salve sem foto.' : 'Use uma foto quadrada ou retrato para melhor enquadramento.'}
+                    onChange={setProfileImageFile}
+                  />
+                )}
+              </div>
+            </FormSection>
+
+            <FormSection title="Dados do usuário" description="Informações básicas usadas para identificar a pessoa na plataforma.">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Nome"><Input className={inputClass} value={userForm.fullName} onChange={(event) => setUserForm((current) => ({ ...current, fullName: event.target.value }))} required /></Field>
+                <Field label="Usuário"><Input className={inputClass} value={userForm.username} onChange={(event) => setUserForm((current) => ({ ...current, username: event.target.value }))} required /></Field>
+              </div>
+              <Field label="Email"><Input className={inputClass} type="email" value={userForm.email} onChange={(event) => setUserForm((current) => ({ ...current, email: event.target.value }))} required /></Field>
+            </FormSection>
+
+            <FormSection title="Acesso e permissões" description="Defina senha, perfil de acesso, empresa e status.">
+              <Field label={modal === 'user' ? 'Senha' : 'Nova senha (opcional)'}>
+                <Input className={inputClass} type="password" minLength={6} value={userForm.password} onChange={(event) => setUserForm((current) => ({ ...current, password: event.target.value }))} required={modal === 'user'} />
+              </Field>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <Field label="Perfil"><SelectField value={userForm.role} options={roleOptions} onChange={(role) => setUserForm((current) => ({ ...current, role }))} /></Field>
+                <Field label="Empresa"><SelectField value={userForm.company} options={companyOptions} disabled={userForm.role === 'admin'} onChange={(company) => setUserForm((current) => ({ ...current, company }))} /></Field>
+                <Field label="Status"><SelectField value={userForm.status} options={statusOptions} onChange={(status) => setUserForm((current) => ({ ...current, status }))} /></Field>
+              </div>
+            </FormSection>
+
             <UploadProgress value={uploadProgress} />
-            <Field label="Nome"><Input className={inputClass} value={userForm.fullName} onChange={(event) => setUserForm((current) => ({ ...current, fullName: event.target.value }))} required /></Field>
-            <Field label="Usuário"><Input className={inputClass} value={userForm.username} onChange={(event) => setUserForm((current) => ({ ...current, username: event.target.value }))} required /></Field>
-            <Field label="Email"><Input className={inputClass} type="email" value={userForm.email} onChange={(event) => setUserForm((current) => ({ ...current, email: event.target.value }))} required /></Field>
-            <Field label={modal === 'user' ? 'Senha' : 'Nova senha (opcional)'}><Input className={inputClass} type="password" minLength={6} value={userForm.password} onChange={(event) => setUserForm((current) => ({ ...current, password: event.target.value }))} required={modal === 'user'} /></Field>
-            <Field label="Role"><SelectField value={userForm.role} options={roleOptions} onChange={(role) => setUserForm((current) => ({ ...current, role }))} /></Field>
-            <Field label="Empresa"><SelectField value={userForm.company} options={companyOptions} disabled={userForm.role === 'admin'} onChange={(company) => setUserForm((current) => ({ ...current, company }))} /></Field>
-            <Field label="Status"><SelectField value={userForm.status} options={statusOptions} onChange={(status) => setUserForm((current) => ({ ...current, status }))} /></Field>
-            <Button type="submit" className="w-full rounded-md">{modal === 'user' ? 'Criar usuário' : 'Salvar alterações'}</Button>
+            <FormActions>
+              <Button type="submit" className="w-full rounded-[18px] py-3 lg:rounded-md">{modal === 'user' ? 'Criar usuário' : 'Salvar alterações'}</Button>
+            </FormActions>
           </form>
         </Modal>
       )}
+      {previewMedia && (
+        <MediaViewerModal media={previewMedia} onClose={() => setPreviewMedia(null)} />
+      )}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/70 bg-[#F9F9FB]/88 px-4 pb-[calc(env(safe-area-inset-bottom)+0.65rem)] pt-2 shadow-[0_-18px_44px_rgba(17,17,20,0.12)] backdrop-blur-2xl lg:hidden" aria-label="Navegação admin">
+        <div className="mx-auto flex max-w-md gap-2 rounded-[24px] border border-black/[0.04] bg-white/78 p-2">
+          <AppTabButton active={route === 'inicio'} label="Início" icon={<BarChart3 className="h-4 w-4" />} onClick={() => navigate('/dashboard/admin')} />
+          <AppTabButton active={route === 'cursos'} label="Cursos" icon={<BookOpen className="h-4 w-4" />} onClick={() => navigate('/dashboard/admin/cursos')} />
+          <AppTabButton active={route === 'progress'} label="Progresso" icon={<Award className="h-4 w-4" />} onClick={() => navigate('/dashboard/admin/progresso')} />
+          <AppTabButton active={route === 'settings'} label="Usuários" icon={<Users className="h-4 w-4" />} onClick={() => navigate('/dashboard/admin/settings')} />
+          <AppTabButton label="Home" icon={<Home className="h-4 w-4" />} onClick={() => navigate('/home')} />
+        </div>
+      </nav>
       <Toast message={error || feedback} type={error ? 'error' : 'success'} />
     </main>
+  );
+}
+
+function ProgressDashboard({
+  users,
+  courses,
+  progress,
+  attempts,
+  failures,
+  certificates,
+  regeneratingCertificateKey,
+  deletingCertificateKey,
+  onRegenerateCertificate,
+  onDeleteCertificate,
+}: {
+  users: UserProfile[];
+  courses: CourseTree[];
+  progress: LessonProgress[];
+  attempts: QuizAttempt[];
+  failures: CourseFailure[];
+  certificates: Certificate[];
+  regeneratingCertificateKey: string;
+  deletingCertificateKey: string;
+  onRegenerateCertificate: (user: UserProfile, course: CourseTree, certificate?: Certificate | null) => Promise<void>;
+  onDeleteCertificate: (user: UserProfile, course: CourseTree, certificate: Certificate) => Promise<void>;
+}) {
+  const [selectedUserId, setSelectedUserId] = useState(users[0]?.id ?? '');
+  const selectedUser = users.find((user) => user.id === selectedUserId) ?? users[0];
+  const userCourses = selectedUser ? courses.filter((course) => course.company === selectedUser.company) : [];
+  const userAttempts = selectedUser ? attempts.filter((attempt) => attempt.user_id === selectedUser.id) : [];
+  const userFailures = selectedUser ? failures.filter((failure) => failure.user_id === selectedUser.id) : [];
+  const userCertificates = selectedUser ? certificates.filter((certificate) => certificate.user_id === selectedUser.id) : [];
+
+  useEffect(() => {
+    if (!selectedUserId && users[0]) setSelectedUserId(users[0].id);
+  }, [selectedUserId, users]);
+
+  return (
+    <div className="grid gap-5 xl:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]">
+      <Panel className="overflow-hidden">
+        <header className="border-b border-[#ECECEF] p-5">
+          <h2 className="font-semibold">Colaboradores</h2>
+          <p className="mt-1 text-sm text-[#777780]">Selecione um perfil para acompanhar.</p>
+        </header>
+        <div className="grid max-h-[70svh] overflow-auto">
+          {users.map((user) => (
+            <button
+              key={user.id}
+              type="button"
+              onClick={() => setSelectedUserId(user.id)}
+              className={`border-b border-[#F0F0F2] px-5 py-4 text-left text-sm transition ${selectedUser?.id === user.id ? 'bg-primary/10 text-primary' : 'hover:bg-[#FAFAFB]'}`}
+            >
+              <span className="block font-semibold">{user.full_name || user.username}</span>
+              <span className="mt-1 block text-xs text-[#8A8A92]">{user.company}</span>
+            </button>
+          ))}
+        </div>
+      </Panel>
+
+      <div className="space-y-5">
+        {selectedUser ? (
+          <>
+            <Panel className="p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Perfil individual</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em]">{selectedUser.full_name || selectedUser.username}</h2>
+              <p className="mt-2 text-sm text-[#777780]">{selectedUser.email || selectedUser.username}</p>
+            </Panel>
+
+            {userCourses.map((course) => {
+              const courseLessons = course.modules.flatMap((moduleItem) => moduleItem.lessons);
+              const courseProgress = progress.filter((item) => item.user_id === selectedUser.id && courseLessons.some((lesson) => lesson.id === item.lesson_id));
+              const completed = courseProgress.filter((item) => item.completed).length;
+              const percent = courseLessons.length ? Math.round((completed / courseLessons.length) * 100) : 0;
+              const courseAttempts = userAttempts.filter((attempt) => attempt.course_id === course.id);
+              const average = courseAttempts.length ? Math.round(courseAttempts.reduce((sum, attempt) => sum + attempt.score, 0) / courseAttempts.length) : 0;
+              const failure = userFailures.find((item) => item.course_id === course.id);
+              const certificate = userCertificates.find((item) => item.course_id === course.id);
+              const canGenerateCertificate = Boolean(certificate) || percent === 100;
+              const certificateActionKey = `${selectedUser.id}:${course.id}`;
+              const isRegeneratingCertificate = regeneratingCertificateKey === certificateActionKey;
+              const isDeletingCertificate = deletingCertificateKey === certificateActionKey;
+
+              return (
+                <Panel key={course.id} className="p-5">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <h3 className="text-xl font-semibold">{course.title}</h3>
+                      <p className="mt-2 text-sm text-[#777780]">{completed} de {courseLessons.length} aulas concluídas</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <InfoBadge value={`${percent}%`} tone="company" />
+                      <InfoBadge value={`Média ${average}%`} tone="status" />
+                      {failure && <span className="rounded-md bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">Reprovado x{failure.failure_count}</span>}
+                      {certificate && <span className="rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">Certificado emitido</span>}
+                    </div>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={!canGenerateCertificate || isRegeneratingCertificate || isDeletingCertificate}
+                      onClick={() => void onRegenerateCertificate(selectedUser, course, certificate)}
+                      className="rounded-[16px] px-4 py-2 text-sm lg:rounded-md"
+                    >
+                      <Award className="mr-2 h-4 w-4" />
+                      {isRegeneratingCertificate ? 'Regerando...' : certificate ? 'Regerar certificado' : 'Gerar certificado'}
+                    </Button>
+                    {certificate && (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={isRegeneratingCertificate || isDeletingCertificate}
+                        onClick={() => void onDeleteCertificate(selectedUser, course, certificate)}
+                        className="rounded-[16px] border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 hover:bg-red-100 lg:rounded-md"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        {isDeletingCertificate ? 'Apagando...' : 'Apagar certificado'}
+                      </Button>
+                    )}
+                    {!canGenerateCertificate && (
+                      <span className="self-center text-xs font-semibold text-[#8A8A92]">Disponível quando o curso estiver 100% concluído.</span>
+                    )}
+                  </div>
+                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#EFEFF2]">
+                    <div className="h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
+                  </div>
+                  <div className="mt-5 grid gap-3">
+                    {course.modules.map((moduleItem) => {
+                      const moduleAttempt = courseAttempts.find((attempt) => attempt.module_id === moduleItem.id);
+                      return (
+                        <div key={moduleItem.id} className="rounded-[16px] border border-[#ECECEF] bg-[#FAFAFB] p-3 text-sm">
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <span className="font-semibold">{moduleItem.title}</span>
+                            <span className={moduleAttempt?.passed ? 'text-emerald-700' : moduleAttempt ? 'text-red-700' : 'text-[#8A8A92]'}>
+                              {moduleAttempt ? `Nota ${moduleAttempt.score}%` : moduleItem.has_quiz ? 'Prova pendente' : 'Sem prova'}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Panel>
+              );
+            })}
+          </>
+        ) : (
+          <Panel className="p-6 text-sm text-[#8A8A92]">Nenhum colaborador encontrado.</Panel>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -864,29 +2180,33 @@ function UserCanvas({
   icon,
   users,
   onEdit,
+  onDelete,
+  currentUserId,
   admin = false,
 }: {
   title: string;
   icon: ReactNode;
   users: UserProfile[];
   onEdit: (user: UserProfile) => void;
+  onDelete: (user: UserProfile) => void;
+  currentUserId?: string;
   admin?: boolean;
 }) {
   return (
-    <section className="rounded-lg border border-[#E6E6EA] bg-white shadow-[0_16px_38px_rgba(17,17,20,0.05)]">
+    <section className="overflow-hidden rounded-[26px] border border-white/70 bg-white/86 shadow-[0_18px_42px_rgba(17,17,20,0.06)] backdrop-blur-2xl lg:rounded-lg lg:border-[#E6E6EA] lg:bg-white">
       <header className="flex items-center gap-3 border-b border-[#ECECEF] px-5 py-4">
         {icon}
         <h2 className="font-semibold">{title}</h2>
       </header>
-      <div className={`hidden gap-3 border-b border-[#ECECEF] px-5 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-[#8A8A92] md:grid ${admin ? 'md:grid-cols-[1.2fr_0.7fr_0.7fr_0.4fr]' : 'md:grid-cols-[1.2fr_0.7fr_0.7fr_0.7fr_0.4fr]'}`}>
+      <div className={`hidden gap-3 border-b border-[#ECECEF] px-5 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-[#8A8A92] md:grid ${admin ? 'md:grid-cols-[1.2fr_0.7fr_0.7fr_0.7fr]' : 'md:grid-cols-[1.2fr_0.7fr_0.7fr_0.7fr_0.7fr]'}`}>
         <span>Usuário</span>
         <span>Role</span>
         {!admin && <span>Empresa</span>}
         <span>Status</span>
-        <span>Editar</span>
+        <span>Ações</span>
       </div>
       {users.map((user) => (
-        <article key={user.id} className={`grid gap-3 border-b border-[#F0F0F2] px-5 py-4 text-sm last:border-b-0 md:items-center ${admin ? 'md:grid-cols-[1.2fr_0.7fr_0.7fr_0.4fr]' : 'md:grid-cols-[1.2fr_0.7fr_0.7fr_0.7fr_0.4fr]'}`}>
+        <article key={user.id} className={`grid gap-3 border-b border-[#F0F0F2] px-5 py-4 text-sm last:border-b-0 md:items-center ${admin ? 'md:grid-cols-[1.2fr_0.7fr_0.7fr_0.7fr]' : 'md:grid-cols-[1.2fr_0.7fr_0.7fr_0.7fr_0.7fr]'}`}>
           <div>
             <p className="font-semibold">{user.full_name || user.username}</p>
             <p className="text-xs text-[#8A8A92]">{user.email || user.username}</p>
@@ -894,9 +2214,21 @@ function UserCanvas({
           <InfoBadge value={user.role} tone="role" />
           {!admin && <InfoBadge value={user.company} tone="company" />}
           <InfoBadge value={user.status} tone="status" />
-          <button type="button" onClick={() => onEdit(user)} className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#E6E6EA] text-[#666670] hover:border-primary hover:text-primary">
-            <Edit3 className="h-4 w-4" />
-          </button>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => onEdit(user)} aria-label={`Editar ${user.full_name || user.username}`} className="inline-flex h-10 flex-1 items-center justify-center rounded-[14px] border border-[#E6E6EA] bg-[#F7F7F8] text-[#666670] hover:border-primary hover:text-primary md:h-9 md:w-9 md:flex-none md:rounded-md md:bg-transparent">
+              <Edit3 className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onDelete(user)}
+              disabled={user.id === currentUserId}
+              aria-label={`Excluir ${user.full_name || user.username}`}
+              title={user.id === currentUserId ? 'Você não pode excluir o próprio cadastro' : 'Excluir usuário'}
+              className="inline-flex h-10 flex-1 items-center justify-center rounded-[14px] border border-red-200 bg-red-50 text-red-600 transition hover:border-red-300 hover:bg-red-100 disabled:cursor-not-allowed disabled:border-[#E6E6EA] disabled:bg-[#F1F1F3] disabled:text-[#B0B0B8] md:h-9 md:w-9 md:flex-none md:rounded-md"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
         </article>
       ))}
       {users.length === 0 && (
@@ -948,9 +2280,9 @@ function CollaboratorGroup({
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{company}</p>
-          <h2 className="mt-1 text-2xl font-semibold tracking-[-0.035em]">{title}</h2>
+          <h2 className="mt-1 text-2xl font-semibold leading-tight tracking-[-0.045em]">{title}</h2>
         </div>
-        <span className="rounded-md border border-[#E6E6EA] bg-white px-3 py-2 text-sm font-semibold text-[#666670]">
+        <span className="w-fit rounded-[14px] border border-white/70 bg-white px-3 py-2 text-sm font-semibold text-[#666670] shadow-[0_10px_24px_rgba(17,17,20,0.04)] lg:rounded-md lg:border-[#E6E6EA]">
           {users.length} ativos
         </span>
       </div>
@@ -973,10 +2305,10 @@ function CollaboratorGroup({
           const userProgress = progressForUser(user, progress, courses);
           const imageUrl = profileImages[user.id];
           return (
-            <article key={user.id} className="min-h-[268px] rounded-lg border border-[#E6E6EA] bg-white p-5 shadow-[0_16px_38px_rgba(17,17,20,0.05)]">
+            <article key={user.id} className="min-h-[268px] rounded-[26px] border border-white/70 bg-white/86 p-5 shadow-[0_18px_42px_rgba(17,17,20,0.06)] backdrop-blur-2xl lg:rounded-lg lg:border-[#E6E6EA] lg:bg-white">
               <div className="flex h-full flex-col">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#F0F0F2] text-xl font-semibold text-primary">
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-[22px] bg-[#F0F0F2] text-xl font-semibold text-primary lg:rounded-lg">
                     {imageUrl ? (
                       <img src={imageUrl} alt={user.full_name || user.username} className="h-full w-full object-cover" />
                     ) : (
@@ -1030,7 +2362,7 @@ function CollaboratorGroup({
               key={nextPage}
               type="button"
               onClick={() => setPage(nextPage)}
-              className={`h-9 min-w-9 rounded-md border px-3 text-sm font-semibold ${page === nextPage ? 'border-primary bg-primary text-white' : 'border-[#D8D8DE] bg-white text-[#666670]'}`}
+              className={`h-10 min-w-10 rounded-[14px] border px-3 text-sm font-semibold lg:h-9 lg:min-w-9 lg:rounded-md ${page === nextPage ? 'border-primary bg-primary text-white' : 'border-white/70 bg-white text-[#666670] lg:border-[#D8D8DE]'}`}
             >
               {nextPage}
             </button>

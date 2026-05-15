@@ -11,7 +11,7 @@ interface AuthContextType {
   isAdmin: boolean;
   company: Company | null;
   role: UserRole | null;
-  signIn: (email: string, password: string) => Promise<UserProfile | null>;
+  signIn: (username: string, password: string) => Promise<UserProfile | null>;
   signOut: () => Promise<void>;
 }
 
@@ -140,9 +140,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (username: string, password: string) => {
+    const normalizedUsername = username.trim().toLowerCase();
+    const { data: resolvedEmail, error: resolveError } = await supabase
+      .rpc('resolve_login_email', { input_username: normalizedUsername });
+
+    if (resolveError || !resolvedEmail) {
+      throw new Error('Credenciais inválidas. Tente novamente.');
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
+      email: resolvedEmail,
       password,
     });
 

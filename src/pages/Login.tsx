@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Loader2, ShieldCheck } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { useAuth } from '../contexts/AuthContext';
@@ -129,6 +129,14 @@ export function Login() {
           </div>
         </div>
       </motion.section>
+
+      <Link
+        to="/validar-certificado"
+        className="fixed bottom-4 left-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-medium text-white shadow-[0_14px_40px_rgba(0,0,0,0.32)] backdrop-blur-md transition hover:bg-white/16 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#ff6a00]/55 sm:bottom-6 sm:left-6"
+      >
+        <ShieldCheck className="h-4 w-4 text-[#ff8a2a]" />
+        Validar certificado
+      </Link>
     </main>
   );
 }

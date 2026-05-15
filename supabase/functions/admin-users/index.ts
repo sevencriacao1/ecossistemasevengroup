@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 type AdminUserPayload = {
-  action: 'create' | 'update' | 'list' | 'sync_profile';
+  action: 'create' | 'update' | 'delete' | 'list' | 'sync_profile';
   id?: string;
   email?: string;
   password?: string;
@@ -89,7 +89,7 @@ Deno.serve(async (request) => {
     }
 
     const payload = await request.json() as AdminUserPayload;
-    if (!['create', 'update', 'list', 'sync_profile'].includes(payload.action)) {
+    if (!['create', 'update', 'delete', 'list', 'sync_profile'].includes(payload.action)) {
       return new Response(JSON.stringify({ error: 'Unsupported action' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -145,6 +145,36 @@ Deno.serve(async (request) => {
         .upsert(profileFromAuthUser(userData.user));
 
       if (syncError) throw syncError;
+
+      return new Response(JSON.stringify({ id: payload.id }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (payload.action === 'delete') {
+      if (!payload.id) {
+        return new Response(JSON.stringify({ error: 'User id is required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      if (payload.id === requesterData.user.id) {
+        return new Response(JSON.stringify({ error: 'You cannot delete your own user.' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const { error: deleteUserError } = await adminClient.auth.admin.deleteUser(payload.id);
+      if (deleteUserError) throw deleteUserError;
+
+      const { error: deleteProfileError } = await adminClient
+        .from('profiles')
+        .delete()
+        .eq('id', payload.id);
+      if (deleteProfileError) throw deleteProfileError;
 
       return new Response(JSON.stringify({ id: payload.id }), {
         status: 200,
