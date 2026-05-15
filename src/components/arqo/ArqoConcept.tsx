@@ -128,23 +128,23 @@ function ArqoConceptDesktop() {
 
   return (
     <>
-      <section id="conceito" ref={sectionRef} className="relative h-screen min-h-screen overflow-hidden bg-white text-[#171715]">
+      <section id="conceito" ref={sectionRef} className="relative min-h-screen overflow-hidden bg-white text-[#171715]">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(22,22,21,0.028)_1px,transparent_1px),linear-gradient(90deg,rgba(22,22,21,0.024)_1px,transparent_1px)] bg-[size:64px_64px] opacity-70" />
 
-      <div className="relative z-10 mx-auto flex h-screen max-w-[94rem] flex-col items-center justify-center overflow-hidden px-10">
-        <div className="absolute left-1/2 top-[12vh] w-full max-w-4xl -translate-x-1/2 px-8 text-center">
+      <div className="relative z-10 mx-auto grid min-h-screen max-w-[94rem] grid-rows-[auto_auto_auto_auto] items-center overflow-hidden px-8 pb-[clamp(2rem,4vh,4rem)] pt-[clamp(5.8rem,11vh,8rem)] xl:px-10">
+        <div className="mx-auto w-full max-w-4xl px-4 text-center">
           <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.36em] text-[#7B786E]">O Conceito da ARQO</p>
           <StableTextReveal
             text="Arquitetura aplicada à decisão."
             as="h2"
-            className="arqo-heading text-balance text-4xl font-medium leading-[1.02] tracking-[-0.045em] text-[#161615] xl:text-5xl"
+            className="arqo-heading text-balance text-[clamp(2.3rem,4vw,3.6rem)] font-medium leading-[1.02] tracking-[-0.045em] text-[#161615]"
           />
-          <p className="mx-auto mt-4 max-w-3xl text-base leading-7 text-[#6D6A62]">
+          <p className="mx-auto mt-3 max-w-3xl text-[clamp(0.9rem,1.2vw,1rem)] leading-7 text-[#6D6A62]">
             A ARQO nasce da união entre arquitetura e direção estratégica.
           </p>
         </div>
 
-        <div className="relative mt-[8vh] grid h-[47vh] max-h-[25rem] min-h-[20rem] w-full grid-cols-[minmax(0,1fr)_clamp(7rem,12vw,12rem)_minmax(0,1fr)] items-center gap-8 xl:gap-12">
+        <div className="relative mt-[clamp(2.2rem,7vh,5.2rem)] grid w-full grid-cols-[minmax(0,1fr)_clamp(5rem,10vw,11rem)_minmax(0,1fr)] items-center gap-6 xl:gap-12">
           <ConceptCard
             ref={arqCardRef}
             title="ARQ"
@@ -188,7 +188,7 @@ function ArqoConceptDesktop() {
 
         <svg
           ref={branchConnectorRef}
-          className="pointer-events-none absolute left-1/2 top-[58vh] z-10 h-[18vh] w-[25vw] -translate-x-1/2 overflow-visible text-[#8F8778]"
+          className="pointer-events-none absolute left-1/2 top-[62%] z-10 h-[clamp(4.8rem,12vh,8rem)] w-[25vw] -translate-x-1/2 overflow-visible text-[#8F8778]"
           viewBox="0 0 320 180"
           fill="none"
           aria-hidden="true"
@@ -207,16 +207,16 @@ function ArqoConceptDesktop() {
 
         <div
           ref={logoCardRef}
-          className="absolute bottom-[12vh] left-1/2 z-20 flex w-[min(26.6rem,33.6vw)] -translate-x-1/2 items-center justify-center border border-black/[0.065] bg-[#F8F7F3]/88 px-8 py-6 shadow-[0_24px_70px_rgba(34,33,29,0.045)] backdrop-blur-xl"
+          className="relative z-20 mx-auto mt-[clamp(1.8rem,5vh,4rem)] flex w-[clamp(18rem,28vw,26.6rem)] items-center justify-center border border-black/[0.065] bg-[#F8F7F3]/88 px-[clamp(1.4rem,2.6vw,2rem)] py-[clamp(1rem,2.2vh,1.5rem)] shadow-[0_24px_70px_rgba(34,33,29,0.045)] backdrop-blur-xl"
         >
           <img src={arqoAssets.logo} alt="ARQO" className="h-auto w-full object-contain" loading="lazy" decoding="async" />
         </div>
 
         <div
           ref={finalPhraseRef}
-          className="absolute bottom-[4vh] left-1/2 z-20 w-full max-w-5xl -translate-x-1/2 px-8 text-center"
+          className="relative z-20 mx-auto mt-[clamp(1.4rem,4vh,3rem)] w-full max-w-5xl px-4 text-center"
         >
-          <p className="arqo-heading text-balance text-3xl font-medium leading-[1.08] tracking-[-0.035em] text-[#171715] xl:text-3xl">
+          <p className="arqo-heading text-balance text-[clamp(1.65rem,2.3vw,2rem)] font-medium leading-[1.08] tracking-[-0.035em] text-[#171715]">
             {finalPhrase.split(' ').map((word, wordIndex, words) => (
               <span key={`${word}-${wordIndex}`} className="inline-block whitespace-nowrap">
                 {Array.from(word).map((char, charIndex) => (
@@ -297,7 +297,7 @@ function ConceptCard({
       ref={ref}
       className={[
         'relative overflow-hidden border border-black/[0.065] bg-[#F8F7F3]/94 p-7 shadow-[0_24px_70px_rgba(34,33,29,0.045)] backdrop-blur-xl sm:p-9',
-        'lg:h-[min(40vh,24rem)] lg:min-h-[20rem]',
+        'lg:h-[clamp(15.5rem,34vh,23rem)]',
         className,
       ]
         .filter(Boolean)
@@ -311,11 +311,11 @@ function ConceptCard({
         </div>
       )}
       <div className="relative z-10">
-        <p className="arqo-heading text-7xl font-medium leading-none tracking-[-0.055em] text-[#171715] sm:text-8xl lg:text-[clamp(5rem,7vw,8rem)]">
+        <p className="arqo-heading text-7xl font-medium leading-none tracking-[-0.055em] text-[#171715] sm:text-8xl lg:text-[clamp(4.4rem,6.2vw,8rem)]">
           {title}
         </p>
-        <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.34em] text-[#817D73]">{eyebrow}</p>
-        <div className="mt-6 grid gap-3 text-base font-medium text-[#4E4B45]">
+        <p className="mt-[clamp(1rem,2vh,1.5rem)] text-[11px] font-semibold uppercase tracking-[0.34em] text-[#817D73]">{eyebrow}</p>
+        <div className="mt-[clamp(1rem,2vh,1.5rem)] grid gap-[clamp(0.55rem,1.1vh,0.75rem)] text-[clamp(0.9rem,1.1vw,1rem)] font-medium text-[#4E4B45]">
           {bullets.map((bullet) => (
             <span key={bullet} data-concept-bullet className="flex items-center gap-3 border-t border-black/[0.07] pt-3">
               <span className="h-1 w-1 rounded-full bg-[#8F8778]" />
@@ -323,7 +323,7 @@ function ConceptCard({
             </span>
           ))}
         </div>
-        <p className="mt-7 max-w-md text-base leading-8 text-[#625F57] lg:text-[15px] lg:leading-7 xl:text-base xl:leading-8">{body}</p>
+        <p className="mt-[clamp(1rem,2vh,1.75rem)] max-w-md text-base leading-8 text-[#625F57] lg:text-[clamp(0.82rem,1vw,1rem)] lg:leading-[1.65]">{body}</p>
       </div>
     </article>
   );
