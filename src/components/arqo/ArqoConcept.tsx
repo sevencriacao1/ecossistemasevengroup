@@ -144,8 +144,8 @@ function ArqoConceptDesktop() {
 
           <svg
             ref={connectorRef}
-            className="pointer-events-none absolute left-[18%] right-[18%] top-1/2 z-10 h-8 -translate-y-1/2 overflow-visible text-[#8F8778]"
-            viewBox="0 0 1000 16"
+            className="pointer-events-none absolute left-1/2 top-[46%] z-10 h-8 w-[clamp(18rem,27vw,29rem)] -translate-x-1/2 -translate-y-1/2 overflow-visible text-[#8F8778]"
+            viewBox="0 0 460 16"
             preserveAspectRatio="none"
             aria-hidden="true"
           >
@@ -153,7 +153,7 @@ function ArqoConceptDesktop() {
               className="arqo-dash-flow"
               x1="0"
               y1="8"
-              x2="1000"
+              x2="460"
               y2="8"
               stroke="currentColor"
               strokeWidth="0.55"
@@ -176,15 +176,15 @@ function ArqoConceptDesktop() {
 
         <svg
           ref={branchConnectorRef}
-          className="pointer-events-none absolute left-1/2 top-[60%] z-10 h-[clamp(3.8rem,8svh,6.4rem)] w-[min(25vw,24rem)] -translate-x-1/2 overflow-visible text-[#8F8778]"
-          viewBox="0 0 320 180"
+          className="pointer-events-none absolute left-1/2 top-[55%] z-10 h-[clamp(7rem,15svh,11rem)] w-[clamp(24rem,38vw,40rem)] -translate-x-[28%] overflow-visible text-[#8F8778]"
+          viewBox="0 0 640 220"
           fill="none"
           aria-hidden="true"
         >
           <path
             data-logo-connector
             className="arqo-dash-flow"
-            d="M320 0 L320 58 L160 58 L160 180"
+            d="M600 0 L600 64 L160 64 L160 220"
             stroke="currentColor"
             strokeWidth="0.8"
             strokeLinecap="round"
