@@ -133,6 +133,40 @@
   animation: arqoDashFlow 1.8s linear infinite;
 }
 
+@keyframes arqoCloudFloat {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(var(--cloud-x, 8px), var(--cloud-y, -10px), 0);
+  }
+}
+
+.arqo-cloud-token {
+  animation: arqoCloudFloat var(--cloud-duration, 6s) ease-in-out var(--cloud-delay, 0s) infinite;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+@keyframes arqoClarityPulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale3d(1, 1, 1);
+  }
+  50% {
+    opacity: 0.62;
+    transform: scale3d(1.24, 1.24, 1);
+  }
+}
+
+.arqo-clarity-pulse {
+  animation: arqoClarityPulse 4.8s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
 @media (max-width: 767px) {
   .backdrop-blur-xl,
   .backdrop-blur-2xl,

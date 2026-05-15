@@ -1,5 +1,5 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { useRef } from 'react';
+import { CSSProperties, useRef } from 'react';
 import { ArqoSection, StableTextReveal } from './ArqoPrimitives';
 
 const cloudOptions = [
@@ -54,21 +54,22 @@ export function ArqoCuratedClarity() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[#969084]">Antes</p>
             <div className="absolute inset-0 top-16">
               {cloudOptions.map((item, index) => (
-                <motion.span
+                <span
                   key={`${item}-${index}`}
-                  className="absolute rounded-full border border-black/[0.055] bg-white/48 px-4 py-2 text-sm font-medium text-[#6D6A62]"
-                  initial={false}
-                  animate={{ y: [0, index % 2 ? 12 : -12, 0], x: [0, index % 3 ? -8 : 8, 0] }}
-                  transition={{ duration: 5.4 + index * 0.16, repeat: Infinity, ease: 'easeInOut' }}
+                  className="arqo-cloud-token absolute rounded-full border border-black/[0.055] bg-white/48 px-4 py-2 text-sm font-medium text-[#6D6A62]"
                   style={{
                     left: `${4 + (index * 23) % 78}%`,
                     top: `${4 + (index * 13) % 78}%`,
                     filter: `blur(${0.7 + (index % 4) * 0.55}px)`,
                     opacity: (0.18 + (index % 5) * 0.1) * 5,
-                  }}
+                    '--cloud-x': `${index % 3 ? -8 : 8}px`,
+                    '--cloud-y': `${index % 2 ? 12 : -12}px`,
+                    '--cloud-duration': `${5.4 + index * 0.16}s`,
+                    '--cloud-delay': `${index * -0.37}s`,
+                  } as CSSProperties}
                 >
                   {item}
-                </motion.span>
+                </span>
               ))}
             </div>
             <div className="absolute inset-0 bg-[linear-gradient(rgba(23,23,21,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(23,23,21,0.035)_1px,transparent_1px)] bg-[size:26px_26px] opacity-40" />
@@ -83,11 +84,7 @@ export function ArqoCuratedClarity() {
               <div className="mt-16 h-px w-full bg-white/16" />
               <div className="mx-auto mt-8 flex h-44 w-44 items-center justify-center rounded-full border border-white/18">
                 <div className="flex h-24 w-24 items-center justify-center rounded-full border border-white/24">
-                  <motion.div
-                    animate={{ scale: [1, 1.24, 1], opacity: [1, 0.62, 1] }}
-                    transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut' }}
-                    className="h-3 w-3 rounded-full bg-white"
-                  />
+                  <div className="arqo-clarity-pulse h-3 w-3 rounded-full bg-white" />
                 </div>
               </div>
             </div>
