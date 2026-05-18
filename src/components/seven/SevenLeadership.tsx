@@ -18,14 +18,14 @@ function LeadershipSpread({ leader, index }: { leader: (typeof leaders)[number];
       >
         {String(index + 1).padStart(2, '0')}
       </motion.span>
-      <div className="relative z-10 mx-auto grid min-h-[calc(100svh-12rem)] max-w-7xl items-center gap-10 lg:grid-cols-[minmax(340px,0.92fr)_minmax(0,1.08fr)]">
+      <div className="relative z-10 mx-auto grid min-h-[calc(100svh-12rem)] max-w-7xl items-center gap-10 min-[1366px]:grid-cols-[minmax(340px,0.92fr)_minmax(0,1.08fr)]">
         <motion.div style={{ y: imageY }} className={index % 2 === 1 ? 'lg:order-2' : ''}>
           <AssetFrame
             src={leader.image}
             alt={`Foto de ${leader.name}`}
             initials={leader.initials}
             label={leader.role}
-            className="min-h-[360px] shadow-[0_34px_100px_rgba(17,17,20,0.16)] sm:min-h-[460px] lg:min-h-[min(640px,calc(100svh-12rem))]"
+            className="min-h-[340px] shadow-[0_34px_100px_rgba(17,17,20,0.16)] sm:min-h-[460px] min-[1366px]:min-h-[min(640px,calc(100svh-12rem))]"
           />
         </motion.div>
         <div className="relative">

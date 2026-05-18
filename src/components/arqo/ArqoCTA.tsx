@@ -224,7 +224,7 @@ export function ArqoCTA() {
         <div className="relative z-10 mx-auto flex min-h-[calc(100svh-10rem)] w-full max-w-7xl flex-col items-center justify-center text-center">
           <div className="mb-14 h-px w-full max-w-3xl bg-gradient-to-r from-transparent via-white/22 to-transparent" />
           <img src={arqoAssets.logoWhite} alt="ARQO" className="mx-auto h-auto w-[min(204px,46vw)] object-contain" loading="lazy" decoding="async" />
-          <h2 className="arqo-heading mx-auto mt-14 max-w-4xl text-balance text-4xl font-medium leading-[1.06] tracking-[-0.04em] text-white sm:text-6xl">
+          <h2 className="arqo-heading mx-auto mt-14 max-w-4xl text-balance text-[2.15rem] font-medium leading-[1.08] tracking-[-0.035em] text-white sm:text-6xl">
             Clareza, critério e direção para escolhas de alto valor.
           </h2>
 
@@ -258,7 +258,7 @@ export function ArqoCTA() {
         <div className="relative z-10 flex flex-col items-center text-center">
           <div className="border border-white/10 bg-white/[0.055] px-8 py-10 shadow-[0_34px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:px-14 sm:py-14">
             <img src={arqoAssets.logoWhite} alt="ARQO" className="mx-auto h-auto w-[min(178px,44vw)] object-contain opacity-95" loading="lazy" decoding="async" />
-            <h2 className="arqo-heading mt-8 max-w-4xl text-center text-4xl font-medium leading-[0.98] tracking-[-0.045em] sm:text-6xl lg:text-7xl">
+            <h2 className="arqo-heading mt-8 max-w-4xl text-center text-[2.2rem] font-medium leading-[1.04] tracking-[-0.04em] sm:text-6xl min-[1366px]:text-7xl">
               Seja muito bem-vindo
               <br />
               <span className="text-[#BAA072]">à nossa equipe.</span>

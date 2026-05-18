@@ -4,7 +4,7 @@ import { cultureItems } from './arqoContent';
 export function ArqoCulture() {
   return (
     <ArqoSection className="bg-white">
-      <div className="grid gap-14 lg:grid-cols-[0.42fr_0.58fr] lg:items-center">
+      <div className="grid gap-14 min-[1366px]:grid-cols-[0.42fr_0.58fr] min-[1366px]:items-center">
         <ArqoTitle
           eyebrow="Cultura ARQO"
           title="Tudo comunica valor."

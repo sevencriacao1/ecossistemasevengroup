@@ -10,7 +10,7 @@ export function SevenPainPoints() {
           title="Hoje, não basta apenas construir."
           description="Empreendimentos de alta performance exigem estratégia, posicionamento e execução. A resposta da Seven nasce exatamente onde a operação tradicional perde força."
         />
-        <div className="mt-14 grid gap-4 lg:grid-cols-3">
+        <div className="mt-14 grid gap-4 md:grid-cols-2 min-[1366px]:grid-cols-3">
           {painPoints.map((item) => (
             <Reveal key={item.pain}>
               <div className="h-full rounded-[30px] border border-black/[0.06] bg-[#F7F7F8] p-6 transition duration-300 hover:-translate-y-1 hover:bg-white hover:shadow-[0_24px_70px_rgba(17,17,20,0.08)]">

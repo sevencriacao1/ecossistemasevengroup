@@ -31,7 +31,7 @@ export function SevenAbout() {
           title="Inteligência, percepção de valor e execução no mesmo ecossistema."
           description="A Seven atua desde a concepção do empreendimento até sua performance comercial, integrando as frentes que fazem um produto imobiliário ganhar mercado."
         />
-        <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-14 grid gap-4 sm:grid-cols-2 min-[1366px]:grid-cols-5">
           {expertise.map((item, index) => (
             <Reveal key={item.title} delay={index * 0.03}>
               <ExpertiseFlipCard icon={item.icon} title={item.title} />

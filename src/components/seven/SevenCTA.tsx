@@ -186,7 +186,7 @@ export function SevenCTA() {
           <Reveal>
             <div className="rounded-[42px] border border-black/[0.06] bg-white p-8 text-center shadow-[0_34px_100px_rgba(17,17,20,0.10)] sm:p-12 lg:p-16">
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#E76912]">Seven Group</p>
-              <h2 className="mx-auto mt-5 max-w-4xl text-balance text-5xl font-semibold leading-[0.92] tracking-[-0.065em] text-[#111114] sm:text-7xl">
+              <h2 className="mx-auto mt-5 max-w-4xl text-balance text-[2.35rem] font-semibold leading-[0.98] tracking-[-0.05em] text-[#111114] sm:text-7xl">
                 Da estratégia ao movimento de mercado.
               </h2>
               <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
@@ -245,7 +245,7 @@ export function SevenCTA() {
               loading="lazy"
               decoding="async"
             />
-            <h2 className="mt-7 max-w-4xl whitespace-nowrap text-center text-4xl font-semibold leading-[0.95] tracking-[-0.055em] sm:text-6xl lg:text-7xl">
+            <h2 className="mt-7 max-w-4xl text-center text-4xl font-semibold leading-[0.98] tracking-[-0.045em] sm:text-6xl min-[1366px]:whitespace-nowrap min-[1366px]:text-7xl">
               Seja muito bem-vindo
               <br />
               à nossa equipe.

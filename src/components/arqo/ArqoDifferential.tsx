@@ -4,7 +4,7 @@ import { differentialWords } from './arqoContent';
 export function ArqoDifferential() {
   return (
     <ArqoSection className="bg-[#EFEEE8]">
-      <div className="grid gap-14 lg:grid-cols-[0.42fr_0.58fr]">
+      <div className="grid gap-14 min-[1366px]:grid-cols-[0.42fr_0.58fr]">
         <ArqoTitle
           eyebrow="O Diferencial ARQO"
           title="O cliente não compra apenas um imóvel."

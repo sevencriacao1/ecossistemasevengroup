@@ -11,7 +11,7 @@ export function ArqoDeliverables() {
         align="center"
       />
 
-      <div className="mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-16 grid gap-4 sm:grid-cols-2 min-[1366px]:grid-cols-4">
         {deliverables.map((item) => (
           <ArqoCard key={item.title} className="min-h-[190px]">
             <ArqoIconBadge icon={item.icon} />

@@ -40,18 +40,18 @@ export function Login() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-black px-5 py-10 text-[#2A2A2A] selection:bg-[#ff6a00]/25">
+    <main className="flex min-h-screen items-center justify-center bg-black px-4 py-6 text-[#2A2A2A] selection:bg-[#ff6a00]/25 sm:px-5 sm:py-10">
       <motion.section
         initial={{ opacity: 0, y: 18, scale: 0.985 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        className="grid w-full max-w-[970px] gap-8 rounded-[28px] bg-[#F7F7F7] p-6 shadow-[0_28px_80px_rgba(0,0,0,0.45)] sm:p-8 lg:grid-cols-[1.08fr_1fr] lg:gap-14"
+        className="grid w-full max-w-[970px] gap-7 rounded-[24px] bg-[#F7F7F7] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.45)] sm:gap-8 sm:rounded-[28px] sm:p-8 lg:grid-cols-[1.08fr_1fr] lg:gap-14"
       >
-        <div className="relative min-h-[360px] overflow-hidden rounded-[22px] bg-[#050505] sm:min-h-[500px]">
+        <div className="relative min-h-[220px] overflow-hidden rounded-[20px] bg-[#050505] sm:min-h-[500px] sm:rounded-[22px]">
           <img
             src="/assets/login/bg-login.webp"
             alt=""
-            className="h-full min-h-[360px] w-full object-cover sm:min-h-[500px]"
+            className="h-full min-h-[220px] w-full object-cover sm:min-h-[500px]"
             aria-hidden="true"
             loading="eager"
             fetchPriority="high"

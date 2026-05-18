@@ -4,8 +4,8 @@ import { strategicStructures } from './arqoContent';
 export function ArqoStructures() {
   return (
     <ArqoSection id="estruturas" className="bg-[#F8F7F3]">
-      <div className="grid gap-14 lg:grid-cols-[0.38fr_0.62fr]">
-        <div className="lg:sticky lg:top-32 lg:h-fit">
+      <div className="grid gap-14 min-[1366px]:grid-cols-[0.38fr_0.62fr]">
+        <div className="min-[1366px]:sticky min-[1366px]:top-32 min-[1366px]:h-fit">
           <ArqoTitle eyebrow="Estruturas Estratégicas" title="Estruturas que organizam valor antes da venda." />
         </div>
 

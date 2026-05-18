@@ -10,8 +10,8 @@ export function SevenMindset() {
 
   return (
     <section ref={ref} className="relative bg-white px-5 py-24 sm:px-8 lg:px-10">
-      <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.9fr_1.1fr]">
-        <motion.div style={{ opacity: quoteOpacity }} className="lg:sticky lg:top-28 lg:h-fit">
+      <div className="mx-auto grid max-w-7xl gap-12 min-[1366px]:grid-cols-[0.9fr_1.1fr]">
+        <motion.div style={{ opacity: quoteOpacity }} className="min-[1366px]:sticky min-[1366px]:top-28 min-[1366px]:h-fit">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#E76912]">Nossa mentalidade</p>
           <ScrollTextReveal
             text="Alta performance é regra, não exceção."

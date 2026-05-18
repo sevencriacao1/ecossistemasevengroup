@@ -11,7 +11,7 @@ export function SevenCommitment() {
           description="O trabalho da Seven eleva o nível estratégico dos lançamentos, organiza a venda, gera oportunidades e cria projetos valorizados."
           align="center"
         />
-        <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-14 grid gap-4 sm:grid-cols-2 min-[1366px]:grid-cols-5">
           {cityCommitments.map((item) => (
             <Reveal key={item.title}>
               <div className="h-full rounded-[28px] border border-black/[0.06] bg-[#F7F7F8] p-5 text-center">

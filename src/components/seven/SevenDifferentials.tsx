@@ -10,7 +10,7 @@ export function SevenDifferentials() {
           title="Uma estrutura criada para reduzir improviso e aumentar velocidade."
           description="A Seven integra inteligência de mercado, diagnóstico, criação, tráfego, CRM, comercial e estratégia dentro do mesmo desenho operacional."
         />
-        <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-14 grid gap-4 sm:grid-cols-2 min-[1366px]:grid-cols-5">
           {differentials.map((item) => (
             <Reveal key={item.title}>
               <PremiumCard className="h-full min-h-[240px]">

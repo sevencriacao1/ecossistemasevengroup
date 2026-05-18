@@ -20,7 +20,7 @@ export function SevenPillars() {
                 whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
                 viewport={{ once: false, amount: 0.25 }}
                 transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-                className="sticky rounded-[34px] border border-black/[0.06] bg-white p-6 shadow-[0_30px_100px_rgba(17,17,20,0.14)] sm:p-8 lg:grid lg:grid-cols-[0.6fr_1.4fr] lg:gap-10"
+                className="sticky rounded-[34px] border border-black/[0.06] bg-white p-6 shadow-[0_30px_100px_rgba(17,17,20,0.14)] sm:p-8 min-[1366px]:grid min-[1366px]:grid-cols-[0.6fr_1.4fr] min-[1366px]:gap-10"
                 style={{ top: `${92 + Math.min(index, 6) * 12}px`, zIndex: 10 + index }}
               >
                 <div className="flex flex-col justify-between gap-8">

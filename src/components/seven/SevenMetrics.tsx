@@ -19,7 +19,7 @@ export function SevenMetrics() {
           title="Presença em mais de 30 cidades e 9 estados brasileiros."
           description="A Seven atua no Sul, Sudeste, Centro-Oeste e Nordeste, com operação física em Dourados/MS e Santa Maria/RS."
         />
-        <div className="mt-14 grid gap-4 lg:grid-cols-2">
+        <div className="mt-14 grid gap-4 min-[1366px]:grid-cols-2">
           {addresses.map((item) => {
             const address = splitAddress(item);
 

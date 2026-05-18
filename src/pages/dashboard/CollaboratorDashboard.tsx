@@ -449,9 +449,9 @@ export function CollaboratorDashboard() {
         </div>
       </header>
 
-      <section className="mx-auto grid max-w-7xl gap-5 px-4 py-5 sm:px-8 lg:gap-6 lg:py-7 xl:grid-cols-[minmax(280px,340px)_minmax(0,1fr)]">
-        <aside className="grid grid-cols-2 gap-3 xl:block xl:space-y-4">
-          <article className="col-span-2 rounded-[28px] border border-white/70 bg-[#111114] p-5 text-white shadow-[0_20px_48px_rgba(17,17,20,0.18)] xl:hidden">
+      <section className="mx-auto grid max-w-7xl gap-5 px-4 py-5 sm:px-8 lg:gap-6 lg:py-7 min-[1366px]:grid-cols-[minmax(280px,340px)_minmax(0,1fr)]">
+        <aside className="grid grid-cols-2 gap-3 min-[1366px]:block min-[1366px]:space-y-4">
+          <article className="col-span-2 rounded-[28px] border border-white/70 bg-[#111114] p-5 text-white shadow-[0_20px_48px_rgba(17,17,20,0.18)] min-[1366px]:hidden">
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/54">Progresso geral</p>
             <div className="mt-4 flex items-end justify-between gap-4">
               <div>

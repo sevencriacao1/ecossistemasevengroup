@@ -22,7 +22,7 @@ export function ArqoInvestorJourney() {
 
       const mm = gsap.matchMedia();
 
-      mm.add('(min-width: 1024px)', () => {
+      mm.add('(min-width: 1366px)', () => {
         gsap.set(progress, { scaleY: 0, transformOrigin: '50% 0%' });
         gsap.set(glow, { scaleY: 0, autoAlpha: 0.1, transformOrigin: '50% 0%' });
         gsap.set(cards, {
@@ -97,7 +97,7 @@ export function ArqoInvestorJourney() {
     <section
       id="jornada"
       ref={sectionRef}
-      className="relative overflow-hidden bg-[#F8F7F3] px-5 py-28 text-[#171715] sm:px-8 lg:px-10 lg:py-36 xl:py-44"
+      className="relative overflow-hidden bg-[#F8F7F3] px-5 py-24 text-[#171715] sm:px-8 lg:px-10 lg:py-36 xl:py-44"
     >
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(22,22,21,0.026)_1px,transparent_1px),linear-gradient(90deg,rgba(22,22,21,0.022)_1px,transparent_1px)] bg-[size:68px_68px] opacity-70" />
 
@@ -107,14 +107,14 @@ export function ArqoInvestorJourney() {
           <StableTextReveal
             text="Antes do imóvel, existe uma decisão."
             as="h2"
-            className="arqo-heading text-balance text-5xl font-medium leading-[1.02] tracking-[-0.05em] text-[#171715] sm:text-6xl lg:text-7xl"
+            className="arqo-heading text-balance text-[2.55rem] font-medium leading-[1.04] tracking-[-0.045em] text-[#171715] sm:text-6xl lg:text-7xl"
           />
           <p className="mt-8 max-w-2xl text-lg leading-8 text-[#625F57]">
             A ARQO desacelera o excesso para que a escolha ganhe método, leitura e consequência.
           </p>
         </div>
 
-        <div className="relative mt-24 lg:mt-32 xl:mt-36">
+        <div className="relative mt-16 lg:mt-32 xl:mt-36">
           <div className="absolute bottom-0 left-[1.35rem] top-0 w-px bg-black/[0.08]" />
           <div
             ref={glowRef}

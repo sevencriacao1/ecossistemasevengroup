@@ -10,8 +10,8 @@ const blocks = [
 export function ArqoWhoWeAre() {
   return (
     <ArqoSection id="quem-somos" className="bg-[#F8F7F3]">
-      <div className="grid gap-14 lg:grid-cols-[0.42fr_0.58fr]">
-        <div className="lg:sticky lg:top-32 lg:h-fit">
+      <div className="grid gap-14 min-[1366px]:grid-cols-[0.42fr_0.58fr]">
+        <div className="min-[1366px]:sticky min-[1366px]:top-32 min-[1366px]:h-fit">
           <ArqoTitle
             eyebrow="Quem Somos"
             title="Inteligência imobiliária construída para transformar excesso em clareza."

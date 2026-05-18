@@ -42,7 +42,7 @@ export function SectionHeader({
   return (
     <Reveal className={cn('mx-auto max-w-4xl', align === 'center' && 'text-center')}>
       <p className="mb-4 text-xs font-semibold uppercase tracking-[0.28em] text-[#E76912]">{eyebrow}</p>
-      <ScrollTextReveal text={title} className="text-balance text-4xl font-semibold leading-[0.98] tracking-[-0.055em] sm:text-5xl lg:text-6xl" />
+      <ScrollTextReveal text={title} className="text-balance text-[2.05rem] font-semibold leading-[1.02] tracking-[-0.045em] sm:text-5xl lg:text-6xl" />
       {description && (
         <p className={cn('mt-6 text-base leading-8 text-[#67676F] sm:text-lg', align === 'center' ? 'mx-auto max-w-3xl' : 'max-w-3xl')}>
           {description}
@@ -195,7 +195,7 @@ export function AnchorButton({ href, children, dark = false }: { href: string; c
     <a
       href={href}
       className={cn(
-        'inline-flex min-h-[52px] items-center justify-center rounded-full px-6 text-sm font-semibold transition duration-300',
+        'inline-flex min-h-[52px] items-center justify-center rounded-full px-6 text-center text-sm font-semibold transition duration-300 max-sm:w-full',
         dark
           ? 'bg-[#111114] text-white shadow-[0_18px_44px_rgba(17,17,20,0.20)] hover:bg-black'
           : 'border border-black/[0.08] bg-white/70 text-[#111114] backdrop-blur-xl hover:bg-white'

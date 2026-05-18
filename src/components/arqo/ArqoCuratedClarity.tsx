@@ -33,7 +33,7 @@ export function ArqoCuratedClarity() {
 
   return (
     <ArqoSection id="curadoria" className="bg-white py-28 lg:py-40">
-      <div ref={ref} className="relative grid gap-16 lg:grid-cols-[0.42fr_0.58fr] lg:items-center">
+      <div ref={ref} className="relative grid gap-16 min-[1366px]:grid-cols-[0.42fr_0.58fr] min-[1366px]:items-center">
         <div>
           <p className="mb-7 text-[11px] font-semibold uppercase tracking-[0.38em] text-[#7B786E]">Curadoria</p>
           <StableTextReveal

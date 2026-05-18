@@ -93,7 +93,7 @@ export function ArqoSection({
   className?: string;
 }) {
   return (
-    <section id={id} className={cn('relative overflow-hidden px-5 py-24 sm:px-8 lg:px-10 lg:py-32', className)}>
+    <section id={id} className={cn('relative overflow-hidden px-5 py-20 sm:px-8 lg:px-10 lg:py-32', className)}>
       <div className="relative z-10 mx-auto max-w-7xl">{children}</div>
     </section>
   );
@@ -120,7 +120,7 @@ export function ArqoEditorialPause({
       ref={ref}
       id={id}
       className={cn(
-        'relative overflow-hidden px-5 py-32 sm:px-8 lg:px-10 lg:py-44',
+        'relative overflow-hidden px-5 py-24 sm:px-8 lg:px-10 lg:py-44',
         tone === 'light' && 'bg-white text-[#171715]',
         tone === 'warm' && 'bg-[#F8F7F3] text-[#171715]',
         tone === 'dark' && 'bg-[#171715] text-white'
@@ -136,7 +136,7 @@ export function ArqoEditorialPause({
       >
         <p
           className={cn(
-            'arqo-heading text-balance text-4xl font-medium leading-[1.04] tracking-[-0.035em] sm:text-6xl lg:text-7xl',
+            'arqo-heading text-balance text-[2.15rem] font-medium leading-[1.08] tracking-[-0.035em] sm:text-6xl lg:text-7xl',
             tone === 'dark' ? 'text-white' : 'text-[#171715]'
           )}
         >
@@ -166,7 +166,7 @@ export function ArqoTitle({
       <StableTextReveal
         text={title}
         as="h2"
-        className="arqo-heading text-balance text-4xl font-medium leading-[1.02] tracking-[-0.045em] text-[#161615] sm:text-5xl lg:text-6xl"
+        className="arqo-heading text-balance text-[2.1rem] font-medium leading-[1.06] tracking-[-0.04em] text-[#161615] sm:text-5xl lg:text-6xl"
       />
       {subtitle && (
         <p className={cn('mt-7 text-base leading-8 text-[#6D6A62] sm:text-lg', align === 'center' ? 'mx-auto max-w-3xl' : 'max-w-3xl')}>
@@ -250,7 +250,7 @@ export function ArqoButton({
   onClick?: () => void;
 }) {
   const className = cn(
-    'group relative inline-flex min-h-[52px] items-center justify-center overflow-hidden rounded-full px-6 text-sm font-semibold transition duration-500',
+    'group relative inline-flex min-h-[52px] items-center justify-center overflow-hidden rounded-full px-6 text-center text-sm font-semibold transition duration-500 max-sm:w-full',
     dark
       ? 'bg-[#181816] text-white shadow-[0_18px_44px_rgba(18,18,16,0.18)] hover:bg-black hover:shadow-[0_22px_58px_rgba(18,18,16,0.22)]'
       : 'border border-black/[0.08] bg-white/74 text-[#181816] backdrop-blur-xl hover:border-black/[0.14] hover:bg-white hover:shadow-[0_18px_42px_rgba(34,33,29,0.08)]'

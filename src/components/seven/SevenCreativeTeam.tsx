@@ -10,10 +10,10 @@ export function SevenCreativeTeam() {
           title="Branding, autoridade, estética e presença digital."
           description="A equipe criativa conecta visual, campanha, conteúdo e comunicação institucional sem competir com a estratégia central da operação."
         />
-        <div className="mt-14 grid gap-5 lg:grid-cols-2">
+        <div className="mt-14 grid gap-5 min-[1366px]:grid-cols-2">
             {creativeTeam.map((member) => (
               <Reveal key={member.name}>
-                <PremiumCard className="flex h-full min-h-[auto] flex-col lg:min-h-[560px]">
+                <PremiumCard className="flex h-full min-h-[auto] flex-col min-[1366px]:min-h-[560px]">
                   <div className="mb-6 grid grid-cols-3 gap-3">
                     {member.images.map((image, index) => (
                       <AssetFrame

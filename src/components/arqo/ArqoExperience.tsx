@@ -36,7 +36,7 @@ export function ArqoExperience() {
 
   return (
     <ArqoSection className="bg-white">
-      <div ref={ref} className="relative grid gap-12 lg:grid-cols-[0.48fr_0.52fr] lg:items-center">
+      <div ref={ref} className="relative grid gap-12 min-[1366px]:grid-cols-[0.48fr_0.52fr] min-[1366px]:items-center">
         <div>
           <ArqoTitle
             eyebrow="Experiência e Percepção"

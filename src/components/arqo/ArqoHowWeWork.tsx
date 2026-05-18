@@ -5,8 +5,8 @@ import { profileItems } from './arqoContent';
 export function ArqoHowWeWork() {
   return (
     <ArqoSection id="metodo" className="bg-[#F8F7F3]">
-      <div className="grid gap-14 lg:grid-cols-[0.42fr_0.58fr] lg:items-start">
-        <div className="lg:sticky lg:top-32">
+      <div className="grid gap-14 min-[1366px]:grid-cols-[0.42fr_0.58fr] min-[1366px]:items-start">
+        <div className="min-[1366px]:sticky min-[1366px]:top-32">
           <ArqoTitle
             eyebrow="Como Atuamos"
             title="Não forçamos vendas. Direcionamos escolhas."

@@ -14,11 +14,11 @@ const selectLogo = '/assets/arqo/Logo%20Arqo%20Select.svg';
 export function ArqoConcept() {
   const [isDesktop, setIsDesktop] = useState(() => {
     if (typeof window === 'undefined') return false;
-    return window.matchMedia('(min-width: 1024px)').matches;
+    return window.matchMedia('(min-width: 1366px)').matches;
   });
 
   useEffect(() => {
-    const query = window.matchMedia('(min-width: 1024px)');
+    const query = window.matchMedia('(min-width: 1366px)');
     const update = () => setIsDesktop(query.matches);
 
     update();
@@ -126,28 +126,28 @@ function ArqoConceptDesktop() {
       <section id="conceito" ref={sectionRef} className="relative min-h-[100svh] overflow-hidden bg-white text-[#171715]">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(22,22,21,0.028)_1px,transparent_1px),linear-gradient(90deg,rgba(22,22,21,0.024)_1px,transparent_1px)] bg-[size:64px_64px] opacity-70" />
 
-      <div className="relative z-10 mx-auto grid min-h-[100svh] max-w-[94rem] grid-rows-[auto_auto_auto_auto] items-center px-8 pb-[clamp(1.75rem,3svh,3rem)] pt-[clamp(5.75rem,10svh,7.5rem)] xl:px-10">
-        <div className="mx-auto w-full max-w-4xl px-4 text-center">
+      <div className="arqo-concept-desktop-shell relative z-10 mx-auto grid min-h-[100svh] max-w-[94rem] grid-rows-[auto_auto_auto_auto] items-center px-8 pb-[clamp(1.75rem,3svh,3rem)] pt-[clamp(5.75rem,10svh,7.5rem)] xl:px-10">
+        <div className="arqo-concept-desktop-heading mx-auto w-full max-w-4xl px-4 text-center">
           <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.36em] text-[#7B786E]">O Conceito da ARQO</p>
           <StableTextReveal
             text="Arquitetura aplicada à decisão."
             as="h2"
-            className="arqo-heading text-balance text-[clamp(2.3rem,4vw,3.6rem)] font-medium leading-[1.02] tracking-[-0.045em] text-[#161615]"
+            className="arqo-concept-desktop-title arqo-heading text-balance text-[clamp(2.3rem,4vw,3.6rem)] font-medium leading-[1.02] tracking-[-0.045em] text-[#161615]"
           />
           <p className="mx-auto mt-3 max-w-3xl text-[clamp(0.9rem,1.2vw,1rem)] leading-7 text-[#6D6A62]">
             A ARQO nasce da união entre arquitetura e direção estratégica.
           </p>
         </div>
 
-        <div className="relative mx-auto mt-[clamp(1.25rem,2.6svh,2.1rem)] flex w-full max-w-6xl flex-col items-center">
+        <div className="arqo-concept-flow relative mx-auto mt-[clamp(1.25rem,2.6svh,2.1rem)] flex w-full max-w-6xl flex-col items-center">
           <div
             ref={logoCardRef}
-            className="relative z-20 flex w-[clamp(18rem,28vw,26.6rem)] items-center justify-center border border-black/[0.065] bg-[#F8F7F3]/88 px-[clamp(1.4rem,2.6vw,2rem)] py-[clamp(0.85rem,1.8svh,1.35rem)] shadow-[0_24px_70px_rgba(34,33,29,0.045)] backdrop-blur-xl"
+            className="arqo-concept-logo-card relative z-20 flex w-[clamp(18rem,28vw,26.6rem)] items-center justify-center border border-black/[0.065] bg-[#F8F7F3]/88 px-[clamp(1.4rem,2.6vw,2rem)] py-[clamp(0.85rem,1.8svh,1.35rem)] shadow-[0_24px_70px_rgba(34,33,29,0.045)] backdrop-blur-xl"
           >
             <img src={arqoAssets.logo} alt="ARQO" className="h-auto w-full object-contain" loading="lazy" decoding="async" />
           </div>
 
-          <div className="relative mt-[clamp(2.6rem,5svh,4.25rem)] grid w-full grid-cols-2 items-stretch gap-6 xl:gap-12">
+          <div className="arqo-concept-card-grid relative mt-[clamp(2.6rem,5svh,4.25rem)] grid w-full grid-cols-2 items-stretch gap-6 xl:gap-12">
             <svg
               ref={ecosystemConnectorRef}
               className="pointer-events-none absolute left-1/2 top-0 z-10 h-[clamp(3.4rem,6svh,5rem)] w-[clamp(24rem,40vw,45rem)] -translate-x-1/2 -translate-y-full overflow-visible text-[#8F8778]"
@@ -227,7 +227,7 @@ function ArqoConceptDesktop() {
 
         <div
           ref={finalPhraseRef}
-          className="relative z-20 mx-auto mt-[clamp(1rem,2.4svh,2rem)] w-full max-w-5xl px-4 text-center"
+          className="arqo-concept-final relative z-20 mx-auto mt-[clamp(1rem,2.4svh,2rem)] w-full max-w-5xl px-4 text-center"
         >
           <p className="arqo-heading text-balance text-[clamp(1.65rem,2.3vw,2rem)] font-medium leading-[1.08] tracking-[-0.035em] text-[#171715]">
             {finalPhrase.split(' ').map((word, wordIndex, words) => (
@@ -250,55 +250,8 @@ function ArqoConceptDesktop() {
 }
 
 function ArqoConceptMobile() {
-  const sectionRef = useRef<HTMLElement | null>(null);
-  const incorpCardRef = useRef<HTMLElement | null>(null);
-  const selectCardRef = useRef<HTMLElement | null>(null);
-
-  useGSAP(
-    () => {
-      const section = sectionRef.current;
-      const incorpCard = incorpCardRef.current;
-      const selectCard = selectCardRef.current;
-
-      if (!section || !incorpCard || !selectCard) return;
-
-      const incorpFlipper = incorpCard.querySelector<HTMLElement>('[data-card-flipper]');
-      const selectFlipper = selectCard.querySelector<HTMLElement>('[data-card-flipper]');
-      const backContentNodes = gsap.utils.toArray<HTMLElement>(section.querySelectorAll('[data-card-back-content]'));
-
-      if (!incorpFlipper || !selectFlipper) return;
-
-      gsap.set([incorpFlipper, selectFlipper], { rotateY: 0, transformStyle: 'preserve-3d' });
-      gsap.set(backContentNodes, { autoAlpha: 0, y: 14 });
-
-      const timeline = gsap.timeline({
-        defaults: { ease: 'power2.out' },
-        scrollTrigger: {
-          trigger: section,
-          start: 'top 35%',
-          end: 'bottom 70%',
-          scrub: 1,
-          invalidateOnRefresh: true,
-        },
-      });
-
-      timeline
-        .to(incorpFlipper, { rotateY: 180, duration: 0.24, ease: 'power2.inOut' }, 0.18)
-        .to(selectFlipper, { rotateY: 180, duration: 0.24, ease: 'power2.inOut' }, 0.3)
-        .to(backContentNodes, { autoAlpha: 1, y: 0, stagger: 0.04, duration: 0.18 }, 0.5);
-
-      scheduleScrollTriggerRefresh();
-
-      return () => {
-        timeline.scrollTrigger?.kill();
-        timeline.kill();
-      };
-    },
-    { scope: sectionRef }
-  );
-
   return (
-    <section id="conceito" ref={sectionRef} className="relative overflow-x-hidden bg-white px-5 py-28 text-[#171715] sm:px-8">
+    <section id="conceito" className="relative overflow-x-hidden bg-white px-5 py-24 text-[#171715] sm:px-8">
       <div className="mx-auto max-w-4xl text-center">
         <p className="mb-6 text-[11px] font-semibold uppercase tracking-[0.36em] text-[#7B786E]">O Conceito da ARQO</p>
         <StableTextReveal
@@ -344,8 +297,7 @@ function ArqoConceptMobile() {
       </div>
 
       <div className="mx-auto grid max-w-xl gap-8">
-        <FlipConceptCard
-          ref={incorpCardRef}
+        <MobileConceptCard
           title="ARQO Housing"
           headline="Inteligência de venda para o seu imóvel."
           bullets={incorpBullets}
@@ -356,12 +308,8 @@ function ArqoConceptMobile() {
           backFocus="Objetivo: maximizar o potencial do ativo."
           backLogo={housingLogo}
           centerIcon={imovelIcon}
-          orbitIcon={userIcon}
-          orbitCount={6}
-          variant="incorp"
         />
-        <FlipConceptCard
-          ref={selectCardRef}
+        <MobileConceptCard
           title="ARQO Select"
           headline="Sua assessoria de busca personalizada."
           bullets={selectBullets}
@@ -372,10 +320,6 @@ function ArqoConceptMobile() {
           backFocus="Objetivo: aumentar a assertividade e a segurança da escolha."
           backLogo={selectLogo}
           centerIcon={userIcon}
-          orbitIcon={imovelIcon}
-          orbitCount={6}
-          variant="select"
-          orbit
         />
       </div>
 
@@ -383,6 +327,72 @@ function ArqoConceptMobile() {
         {finalPhrase}
       </p>
     </section>
+  );
+}
+
+function MobileConceptCard({
+  title,
+  headline,
+  bullets,
+  body,
+  focus,
+  backTitle,
+  backText,
+  backFocus,
+  backLogo,
+  centerIcon,
+}: {
+  title: string;
+  headline: string;
+  bullets: string[];
+  body: string;
+  focus: string;
+  backTitle: string;
+  backText: string;
+  backFocus: string;
+  backLogo: string;
+  centerIcon: string;
+}) {
+  return (
+    <article className="overflow-hidden border border-black/[0.075] bg-[#F8F7F3]/94 shadow-[0_24px_70px_rgba(34,33,29,0.055)]">
+      <div className="relative overflow-hidden px-5 py-6 sm:px-7 sm:py-8">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(22,22,21,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(22,22,21,0.034)_1px,transparent_1px)] bg-[size:42px_42px] opacity-55" />
+        <div className="relative z-10">
+          <div className="flex items-start justify-between gap-4">
+            <img src={backLogo} alt="" className="h-8 w-auto max-w-[10rem] object-contain opacity-90 [filter:brightness(0)]" loading="lazy" decoding="async" />
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center border border-black/[0.075] bg-white/62 shadow-[0_18px_44px_rgba(34,33,29,0.08)] backdrop-blur-xl">
+              <img src={centerIcon} alt="" className="h-6 w-6 object-contain opacity-80" loading="lazy" decoding="async" />
+            </span>
+          </div>
+
+          <p className="arqo-heading mt-8 text-[2.25rem] font-medium leading-[0.96] tracking-[-0.045em] text-[#171715] sm:text-5xl">
+            {title}
+          </p>
+          <p className="mt-4 text-lg font-medium leading-snug tracking-[-0.012em] text-[#4C4942]">{headline}</p>
+
+          <div className="mt-5 flex flex-wrap gap-2">
+            {bullets.map((bullet) => (
+              <span key={bullet} className="border border-black/[0.07] bg-white/58 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-[#6D675C]">
+                {bullet}
+              </span>
+            ))}
+          </div>
+
+          <p className="mt-6 text-base leading-7 text-[#625F57]">{body}</p>
+          <p className="mt-5 border-t border-black/[0.07] pt-4 text-sm font-semibold leading-6 text-[#34312B]">
+            {focus}
+          </p>
+        </div>
+      </div>
+
+      <div className="border-t border-black/[0.07] bg-white/62 px-5 py-5 sm:px-7">
+        <p className="arqo-heading text-xl font-medium leading-tight tracking-[-0.03em] text-[#171715]">
+          {backTitle.replace('|', ' ')}
+        </p>
+        <p className="mt-3 text-sm leading-7 text-[#625F57]">{backText}</p>
+        <p className="mt-4 text-sm font-semibold leading-6 text-[#34312B]">{backFocus}</p>
+      </div>
+    </article>
   );
 }
 
@@ -425,7 +435,7 @@ function FlipConceptCard({
     <article
       ref={ref}
       className={[
-        'relative min-h-[43rem] [perspective:1400px] sm:min-h-[39rem] lg:min-h-[clamp(31rem,54svh,34rem)]',
+        'arqo-concept-flip-card relative min-h-[43rem] [perspective:1400px] sm:min-h-[39rem] min-[1366px]:min-h-[clamp(31rem,54svh,34rem)]',
         className,
       ]
         .filter(Boolean)
@@ -462,7 +472,7 @@ function FlipConceptCard({
 
         <div className="absolute inset-0 overflow-hidden border border-black/[0.065] bg-[#F8F7F3]/96 p-6 shadow-[0_24px_70px_rgba(34,33,29,0.045)] [backface-visibility:hidden] [transform:rotateY(180deg)] backdrop-blur-xl sm:p-8">
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(22,22,21,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(22,22,21,0.034)_1px,transparent_1px)] bg-[size:42px_42px] opacity-70" />
-          <div className="relative z-10 grid h-full content-center gap-6 lg:grid-cols-[minmax(12rem,0.85fr)_minmax(0,1fr)] lg:items-center lg:gap-6 xl:grid-cols-[minmax(13rem,0.85fr)_minmax(0,1fr)]">
+          <div className="relative z-10 grid h-full content-center gap-6 min-[1366px]:grid-cols-[minmax(12rem,0.85fr)_minmax(0,1fr)] min-[1366px]:items-center min-[1366px]:gap-6 xl:grid-cols-[minmax(13rem,0.85fr)_minmax(0,1fr)]">
             <div className="relative z-10 flex min-w-0 justify-center">
               <OrbitalConceptIllustration
                 centerIcon={centerIcon}

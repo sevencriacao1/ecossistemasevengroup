@@ -1822,8 +1822,8 @@ export function AdminDashboard() {
           </button>
         </div>
       </header>
-      <div className="grid min-h-screen lg:grid-cols-[minmax(240px,280px)_minmax(0,1fr)]">
-        <aside className="hidden flex-col border-b border-[#E4E4E8] bg-white px-5 py-5 shadow-[8px_0_28px_rgba(17,17,20,0.04)] lg:flex lg:min-h-screen lg:border-b-0 lg:border-r">
+      <div className="grid min-h-screen lg:grid-cols-[minmax(208px,236px)_minmax(0,1fr)] min-[1366px]:grid-cols-[minmax(240px,280px)_minmax(0,1fr)]">
+        <aside className="hidden flex-col border-b border-[#E4E4E8] bg-white px-4 py-5 shadow-[8px_0_28px_rgba(17,17,20,0.04)] lg:flex lg:min-h-screen lg:border-b-0 lg:border-r min-[1366px]:px-5">
           <div>
             <button type="button" onClick={() => navigate('/home')} className="flex items-center gap-3 text-left">
               <img src="/assets/seven/Logo%20N.webp" alt="" className="h-9 w-9 object-contain" />
@@ -1868,8 +1868,8 @@ export function AdminDashboard() {
           </button>
         </aside>
 
-        <section className="min-w-0 px-4 py-5 sm:px-8 lg:px-10 lg:py-6">
-          <header className="mb-5 rounded-[28px] border border-white/70 bg-white/82 p-5 shadow-[0_18px_42px_rgba(17,17,20,0.06)] backdrop-blur-2xl md:flex md:flex-col md:gap-4 lg:mb-7 lg:flex-row lg:items-end lg:justify-between lg:rounded-none lg:border-b lg:border-l-0 lg:border-r-0 lg:border-t-0 lg:bg-transparent lg:p-0 lg:pb-6 lg:shadow-none lg:backdrop-blur-0">
+        <section className="min-w-0 px-4 py-5 sm:px-8 lg:px-6 lg:py-6 min-[1366px]:px-10">
+          <header className="mb-5 rounded-[28px] border border-white/70 bg-white/82 p-5 shadow-[0_18px_42px_rgba(17,17,20,0.06)] backdrop-blur-2xl md:flex md:flex-col md:gap-4 lg:mb-7 min-[1366px]:flex-row min-[1366px]:items-end min-[1366px]:justify-between min-[1366px]:rounded-none min-[1366px]:border-b min-[1366px]:border-l-0 min-[1366px]:border-r-0 min-[1366px]:border-t-0 min-[1366px]:bg-transparent min-[1366px]:p-0 min-[1366px]:pb-6 min-[1366px]:shadow-none min-[1366px]:backdrop-blur-0">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">Admin</p>
               <h1 className="mt-2 text-[2rem] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-4xl">
@@ -1888,7 +1888,7 @@ export function AdminDashboard() {
             <div className="flex min-h-[360px] items-center justify-center rounded-[28px] bg-white/82 text-[#8A8A92] shadow-[0_18px_42px_rgba(17,17,20,0.05)] lg:bg-transparent lg:shadow-none">Carregando dashboard...</div>
           ) : route === 'inicio' ? (
             <div className="space-y-6 lg:space-y-7">
-              <section className="hidden grid-cols-2 gap-3 lg:grid lg:grid-cols-4">
+              <section className="hidden grid-cols-2 gap-3 lg:grid lg:grid-cols-2 min-[1366px]:grid-cols-4">
                 {[
                   { label: 'Colaboradores', value: collaborators.length, icon: Users },
                   { label: 'Cursos', value: courses.length, icon: BookOpen },
@@ -1923,7 +1923,7 @@ export function AdminDashboard() {
               />
             </div>
           ) : route === 'cursos' ? (
-            <div className="grid gap-5 xl:grid-cols-[minmax(280px,320px)_minmax(0,1fr)] xl:gap-7">
+            <div className="grid gap-5 min-[1366px]:grid-cols-[minmax(280px,320px)_minmax(0,1fr)] min-[1366px]:gap-7">
               <aside className="space-y-3 lg:space-y-4">
                 <Button type="button" onClick={openCourseCreator} className="w-full rounded-[18px] py-3 lg:rounded-md">
                   <Plus className="mr-2 h-4 w-4" /> Criar curso
@@ -2666,7 +2666,7 @@ function ProgressDashboard({
   }, [selectedUserId, users]);
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]">
+    <div className="grid gap-5 min-[1366px]:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]">
       <Panel className="overflow-hidden">
         <header className="border-b border-[#ECECEF] p-5">
           <h2 className="font-semibold">Colaboradores</h2>
@@ -2906,7 +2906,7 @@ function CollaboratorGroup({
         </label>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 min-[1366px]:grid-cols-3">
         {pageUsers.map((user) => {
           const userProgress = progressForUser(user, progress, courses);
           const imageUrl = profileImages[user.id];

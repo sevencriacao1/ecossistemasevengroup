@@ -23,7 +23,7 @@ function StepRow({
         style={{ scaleX: lineScale, transformOrigin: 'left' }}
         className="absolute left-0 right-0 top-0 hidden h-px bg-[#E76912] lg:block"
       />
-      <div className="grid items-stretch gap-4 pt-12 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid items-stretch gap-4 pt-12 sm:grid-cols-2 min-[1366px]:grid-cols-4">
         {steps.map((step, index) => (
           <Reveal key={step.title} delay={index * 0.04}>
             <motion.article

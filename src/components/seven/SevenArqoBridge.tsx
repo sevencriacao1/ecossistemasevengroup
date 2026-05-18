@@ -18,7 +18,7 @@ export function SevenArqoBridge() {
       <div className="pointer-events-none absolute left-1/2 top-0 h-full w-px bg-black/[0.055]" />
 
       <div className="relative z-10 mx-auto max-w-7xl">
-        <div className="grid gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
+        <div className="grid gap-12 min-[1366px]:grid-cols-[0.95fr_1.05fr] min-[1366px]:items-start">
           <Reveal>
             <div className="max-w-xl">
               <p className="mb-4 text-xs font-semibold uppercase tracking-[0.28em] text-[#8B8176]">Dentro do ecossistema</p>
@@ -62,7 +62,7 @@ export function SevenArqoBridge() {
           </Reveal>
         </div>
 
-        <div className="mt-14 grid gap-5 lg:grid-cols-[0.9fr_1.1fr] lg:items-stretch">
+        <div className="mt-14 grid gap-5 min-[1366px]:grid-cols-[0.9fr_1.1fr] min-[1366px]:items-stretch">
           <Reveal>
             <article className="h-full border border-black/[0.07] bg-[#FAFAFA] p-7 sm:p-8">
               <div className="flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.08] text-[#A17046]">
