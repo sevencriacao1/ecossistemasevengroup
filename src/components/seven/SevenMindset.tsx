@@ -9,7 +9,7 @@ export function SevenMindset() {
   const quoteOpacity = useTransform(scrollYProgress, [0, 0.45, 1], [0.45, 1, 0.72]);
 
   return (
-    <section ref={ref} className="bg-white px-5 py-24 sm:px-8 lg:px-10">
+    <section ref={ref} className="relative bg-white px-5 py-24 sm:px-8 lg:px-10">
       <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.9fr_1.1fr]">
         <motion.div style={{ opacity: quoteOpacity }} className="lg:sticky lg:top-28 lg:h-fit">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#E76912]">Nossa mentalidade</p>

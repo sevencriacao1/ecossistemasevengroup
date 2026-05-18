@@ -1,12 +1,15 @@
-import { ArrowUp, Home, Layers3 } from 'lucide-react';
+import { ArrowUp, BookOpen, Home, Layers3 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { WheelEvent, useEffect, useId, useState } from 'react';
+import { WheelEvent, useEffect, useId, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnchorButton, Reveal } from './SevenPrimitives';
 
 const signatureSource = '/assets/seven/assign_gilson%2005.svg';
+const sevenLogo = '/assets/seven/Logo%20Seven%20Group.webp';
 const signatureDurations = [1.12, 0.92, 0.94, 1.06, 1.16, 0.26, 0.26];
 const signatureStrokeWidths = [92, 58, 74, 58, 34, 28, 28];
+const easterEggScrollThreshold = 560;
+const easterEggScrollWindowMs = 1100;
 
 interface SignaturePath {
   d: string;
@@ -143,20 +146,36 @@ function SignatureReveal({ active }: { active: boolean }) {
 export function SevenCTA() {
   const navigate = useNavigate();
   const [welcomeVisible, setWelcomeVisible] = useState(false);
-  const [scrollIntent, setScrollIntent] = useState(0);
+  const scrollIntentRef = useRef({ amount: 0, lastAt: 0 });
 
   const handleCtaWheel = (event: WheelEvent<HTMLElement>) => {
+    const resetIntent = () => {
+      scrollIntentRef.current = { amount: 0, lastAt: 0 };
+    };
+
     if (event.deltaY <= 0) {
-      setScrollIntent(0);
+      resetIntent();
       return;
     }
 
-    const nextIntent = scrollIntent + 1;
-    setScrollIntent(nextIntent);
+    const page = document.documentElement;
+    const isAtPageEnd = window.innerHeight + window.scrollY >= page.scrollHeight - 2;
 
-    if (nextIntent >= 3) {
-      event.preventDefault();
+    if (!isAtPageEnd) {
+      resetIntent();
+      return;
+    }
+
+    const now = window.performance.now();
+    const elapsed = now - scrollIntentRef.current.lastAt;
+    const previousAmount = elapsed > easterEggScrollWindowMs ? 0 : scrollIntentRef.current.amount;
+    const nextAmount = previousAmount + event.deltaY;
+
+    scrollIntentRef.current = { amount: nextAmount, lastAt: now };
+
+    if (nextAmount >= easterEggScrollThreshold) {
       setWelcomeVisible(true);
+      resetIntent();
     }
   };
 
@@ -178,6 +197,14 @@ export function SevenCTA() {
                 >
                   <Home className="mr-2 h-4 w-4" />
                   Voltar ao ecossistema
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/dashboard')}
+                  className="inline-flex min-h-[52px] items-center justify-center rounded-full bg-[#E76912] px-6 text-sm font-semibold text-[#111114] shadow-[0_18px_44px_rgba(231,105,18,0.24)] transition hover:bg-[#ff7a1a]"
+                >
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  Acessar as aulas
                 </button>
                 <AnchorButton href="#pilares">
                   <Layers3 className="mr-2 h-4 w-4" />
@@ -211,8 +238,14 @@ export function SevenCTA() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_38%,rgba(231,105,18,0.22),transparent_30%),radial-gradient(circle_at_18%_78%,rgba(255,255,255,0.08),transparent_22%)]" />
         <Reveal className="relative z-10 flex flex-col items-center">
           <div className="rounded-[38px] border border-white/10 bg-white/[0.055] px-8 py-10 text-center shadow-[0_34px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:px-14 sm:py-14">
-            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[#FF9B45]">Seven Group</p>
-            <h2 className="mt-5 max-w-4xl whitespace-nowrap text-center text-4xl font-semibold leading-[0.95] tracking-[-0.055em] sm:text-6xl lg:text-7xl">
+            <img
+              src={sevenLogo}
+              alt="Seven Group"
+              className="mx-auto h-auto w-[min(210px,48vw)] object-contain [filter:brightness(0)_invert(1)]"
+              loading="lazy"
+              decoding="async"
+            />
+            <h2 className="mt-7 max-w-4xl whitespace-nowrap text-center text-4xl font-semibold leading-[0.95] tracking-[-0.055em] sm:text-6xl lg:text-7xl">
               Seja muito bem-vindo
               <br />
               à nossa equipe.

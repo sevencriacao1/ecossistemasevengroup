@@ -674,6 +674,7 @@ export function AdminDashboard() {
   const [feedback, setFeedback] = useState('');
   const [error, setError] = useState('');
   const [modal, setModal] = useState<ModalName>(null);
+  const [pendingDeleteUser, setPendingDeleteUser] = useState<UserProfile | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState('');
   const [selectedModuleId, setSelectedModuleId] = useState('');
   const [editingCourse, setEditingCourse] = useState<CourseTree | null>(null);
@@ -703,6 +704,7 @@ export function AdminDashboard() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [regeneratingCertificateKey, setRegeneratingCertificateKey] = useState('');
   const [deletingCertificateKey, setDeletingCertificateKey] = useState('');
+  const [deletingUserId, setDeletingUserId] = useState('');
   const [userForm, setUserForm] = useState(emptyUserForm);
 
   const refresh = async () => {
@@ -945,6 +947,11 @@ export function AdminDashboard() {
     resetUserDraft();
     setQuizModule(null);
     setUploadProgress(0);
+  };
+
+  const closeDeleteUserModal = () => {
+    if (deletingUserId) return;
+    setPendingDeleteUser(null);
   };
 
   const withUploadProgress = async <T,>(uploadTask: () => Promise<T>) => {
@@ -1227,18 +1234,25 @@ export function AdminDashboard() {
       return;
     }
 
-    const label = user.full_name || user.username || user.email || 'este usuário';
-    if (!window.confirm(`Excluir definitivamente ${label}? Esta ação remove o usuário do Supabase.`)) return;
+    setPendingDeleteUser(user);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!pendingDeleteUser) return;
 
     try {
-      await deleteManagedUser(user.id);
-      if (user.avatar_url) {
-        await removeStorageObject('profile-images', user.avatar_url);
+      setDeletingUserId(pendingDeleteUser.id);
+      await deleteManagedUser(pendingDeleteUser.id);
+      if (pendingDeleteUser.avatar_url) {
+        await removeStorageObject('profile-images', pendingDeleteUser.avatar_url);
       }
       await refresh();
-      setFeedback('Usuário excluído do Supabase.');
+      setFeedback('Usuário foi excluído do banco de dados.');
+      setPendingDeleteUser(null);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Não foi possível excluir o usuário.');
+    } finally {
+      setDeletingUserId('');
     }
   };
 
@@ -2006,6 +2020,61 @@ export function AdminDashboard() {
               <Button type="submit" className="w-full rounded-[18px] py-3 lg:rounded-md">{modal === 'user' ? 'Criar usuário' : 'Salvar alterações'}</Button>
             </FormActions>
           </form>
+        </Modal>
+      )}
+      {pendingDeleteUser && (
+        <Modal title="Confirmar exclusão" onClose={closeDeleteUserModal}>
+          <div className="grid gap-5">
+            <div className="rounded-[22px] border border-red-100 bg-red-50/80 p-5 lg:rounded-lg">
+              <div className="flex items-start gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[16px] bg-red-100 text-red-600 lg:rounded-md">
+                  <Trash2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-red-600">Ação definitiva</p>
+                  <h3 className="mt-2 text-2xl font-semibold tracking-[-0.035em] text-[#111114]">
+                    Excluir usuário do banco de dados?
+                  </h3>
+                  <p className="mt-3 text-sm leading-6 text-[#666670]">
+                    Esta operação remove o cadastro de acesso e não pode ser desfeita pela dashboard.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[22px] border border-[#ECECEF] bg-[#FAFAFB] p-4 lg:rounded-lg">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8A8A92]">Usuário selecionado</p>
+              <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-semibold text-[#111114]">{pendingDeleteUser.full_name || pendingDeleteUser.username}</p>
+                  <p className="text-sm text-[#73737C]">{pendingDeleteUser.email || pendingDeleteUser.username}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <span className="rounded-full border border-[#E6E6EA] bg-white px-3 py-1 text-xs font-semibold text-[#666670]">{pendingDeleteUser.role}</span>
+                  <span className="rounded-full border border-[#E6E6EA] bg-white px-3 py-1 text-xs font-semibold text-[#666670]">{pendingDeleteUser.company}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={closeDeleteUserModal}
+                disabled={Boolean(deletingUserId)}
+                className="inline-flex min-h-[52px] items-center justify-center rounded-[18px] border border-[#E6E6EA] bg-white px-5 text-sm font-semibold text-[#424248] transition hover:bg-[#F7F7F8] disabled:cursor-not-allowed disabled:opacity-50 lg:rounded-md"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => void confirmDeleteUser()}
+                disabled={Boolean(deletingUserId)}
+                className="inline-flex min-h-[52px] items-center justify-center rounded-[18px] bg-red-600 px-5 text-sm font-semibold text-white shadow-[0_18px_44px_rgba(220,38,38,0.22)] transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60 lg:rounded-md"
+              >
+                {deletingUserId ? 'Excluindo...' : 'Excluir usuário'}
+              </button>
+            </div>
+          </div>
         </Modal>
       )}
       {previewMedia && (

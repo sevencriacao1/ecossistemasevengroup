@@ -22,8 +22,10 @@ import { cn } from '../lib/utils';
 export function SevenGroupPage() {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isHeaderOnDark, setIsHeaderOnDark] = useState(false);
   const inertiaTimer = useRef<number | null>(null);
   const lastWheelDirection = useRef(1);
+  const headerToneRef = useRef(false);
 
   const handleSoftWheel = (event: globalThis.WheelEvent) => {
     lastWheelDirection.current = event.deltaY >= 0 ? 1 : -1;
@@ -52,23 +54,71 @@ export function SevenGroupPage() {
     };
   }, []);
 
+  useEffect(() => {
+    let frame = 0;
+
+    const pointIsOnDarkSection = (y: number) => {
+      const darkSections = Array.from(document.querySelectorAll<HTMLElement>('[data-seven-tone="dark"]'));
+
+      return darkSections.some((section) => {
+        const rect = section.getBoundingClientRect();
+        return rect.top <= y && rect.bottom >= y;
+      });
+    };
+
+    const syncHeaderTone = () => {
+      frame = 0;
+      const nextHeaderTone = pointIsOnDarkSection(88);
+
+      if (headerToneRef.current !== nextHeaderTone) {
+        headerToneRef.current = nextHeaderTone;
+        setIsHeaderOnDark(nextHeaderTone);
+      }
+    };
+
+    const scheduleSync = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(syncHeaderTone);
+    };
+
+    syncHeaderTone();
+    window.addEventListener('scroll', scheduleSync, { passive: true });
+    window.addEventListener('resize', scheduleSync);
+
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', scheduleSync);
+      window.removeEventListener('resize', scheduleSync);
+    };
+  }, []);
+
   return (
     <main
       id="topo"
       className="safe-page-x min-h-screen scroll-smooth bg-[#F7F7F8] text-[#111114] selection:bg-[#ff6a00]/20"
     >
       <header className="fixed left-0 right-0 top-0 z-50 px-4 py-4 sm:px-6">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between rounded-full border border-black/[0.06] bg-white/72 px-4 py-3 shadow-[0_18px_54px_rgba(17,17,20,0.10)] backdrop-blur-2xl">
+        <nav
+          className={cn(
+            'mx-auto flex max-w-7xl items-center justify-between rounded-full border px-4 py-3 backdrop-blur-2xl transition duration-700',
+            isHeaderOnDark
+              ? 'border-white/12 bg-black/72 text-white shadow-none'
+              : 'border-black/[0.06] bg-white/72 text-[#111114] shadow-[0_18px_54px_rgba(17,17,20,0.10)]'
+          )}
+        >
           <button
             type="button"
             onClick={() => navigate('/home')}
-            className="flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-[#111114] transition hover:bg-black/[0.04]"
+            className={cn(
+              'flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition',
+              isHeaderOnDark ? 'text-white hover:bg-white/10' : 'text-[#111114] hover:bg-black/[0.04]'
+            )}
           >
             <ArrowLeft className="h-4 w-4" />
             <img
               src="/assets/seven/Logo%20Seven%20Group.webp"
               alt="Seven Group"
-              className="h-5 w-auto object-contain"
+              className={cn('h-5 w-auto object-contain transition duration-700', isHeaderOnDark && '[filter:brightness(0)_invert(1)]')}
               loading="eager"
               decoding="async"
             />
@@ -79,7 +129,10 @@ export function SevenGroupPage() {
               <a
                 key={item.href}
                 href={item.href}
-                className="rounded-full px-4 py-2 text-sm font-medium text-[#65656D] transition hover:bg-black/[0.04] hover:text-[#111114]"
+                className={cn(
+                  'rounded-full px-4 py-2 text-sm font-medium transition',
+                  isHeaderOnDark ? 'text-white/70 hover:bg-white/10 hover:text-white' : 'text-[#65656D] hover:bg-black/[0.04] hover:text-[#111114]'
+                )}
               >
                 {item.label}
               </a>
@@ -89,7 +142,10 @@ export function SevenGroupPage() {
           <button
             type="button"
             onClick={() => setIsMenuOpen((current) => !current)}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-[#111114] text-white lg:hidden"
+            className={cn(
+              'flex h-10 w-10 items-center justify-center rounded-full lg:hidden',
+              isHeaderOnDark ? 'bg-white text-[#111114]' : 'bg-[#111114] text-white'
+            )}
             aria-label="Abrir navegação"
           >
             <Menu className="h-4 w-4" />

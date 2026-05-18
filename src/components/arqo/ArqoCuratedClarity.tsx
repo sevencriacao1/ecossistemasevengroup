@@ -1,6 +1,6 @@
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useTransform } from 'framer-motion';
 import { CSSProperties, useRef } from 'react';
-import { ArqoSection, StableTextReveal } from './ArqoPrimitives';
+import { ArqoSection, StableTextReveal, useArqoElementScrollProgress } from './ArqoPrimitives';
 
 const cloudOptions = [
   'Preço',
@@ -26,14 +26,14 @@ const cloudOptions = [
 
 export function ArqoCuratedClarity() {
   const ref = useRef<HTMLDivElement | null>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start 92%', 'end 56%'] });
+  const scrollYProgress = useArqoElementScrollProgress(ref, 0.92, 0.56);
   const blur = useTransform(scrollYProgress, [0, 0.18], ['blur(2px)', 'blur(0px)']);
   const opacity = useTransform(scrollYProgress, [0, 0.2], [0.72, 1]);
   const beforeOpacity = useTransform(scrollYProgress, [0, 0.24], [1, 0.42]);
 
   return (
     <ArqoSection id="curadoria" className="bg-white py-28 lg:py-40">
-      <div ref={ref} className="grid gap-16 lg:grid-cols-[0.42fr_0.58fr] lg:items-center">
+      <div ref={ref} className="relative grid gap-16 lg:grid-cols-[0.42fr_0.58fr] lg:items-center">
         <div>
           <p className="mb-7 text-[11px] font-semibold uppercase tracking-[0.38em] text-[#7B786E]">Curadoria</p>
           <StableTextReveal

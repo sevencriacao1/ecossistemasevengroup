@@ -1,15 +1,15 @@
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useTransform } from 'framer-motion';
 import { useRef } from 'react';
-import { ArqoSection, ArqoTitle, StableTextReveal } from './ArqoPrimitives';
+import { ArqoSection, ArqoTitle, StableTextReveal, useArqoElementScrollProgress } from './ArqoPrimitives';
 
 export function ArqoEssence() {
   const ref = useRef<HTMLDivElement | null>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start 80%', 'end 24%'] });
+  const scrollYProgress = useArqoElementScrollProgress(ref, 0.8, 0.24);
   const rotate = useTransform(scrollYProgress, [0, 1], [0, 26]);
 
   return (
-    <ArqoSection id="essencia" className="bg-white py-16 lg:py-20">
-      <div ref={ref} className="relative overflow-hidden rounded-[36px] border border-black/[0.07] bg-[#F8F7F3] px-6 py-16 sm:px-10 lg:px-16 lg:py-20">
+    <ArqoSection id="essencia" className="bg-[#EFEEE8] py-16 lg:py-20">
+      <div ref={ref} className="relative overflow-hidden rounded-[36px] border border-black/[0.07] bg-white/72 px-6 py-16 shadow-[0_24px_80px_rgba(34,33,29,0.055)] backdrop-blur-2xl sm:px-10 lg:px-16 lg:py-20">
         <motion.div style={{ rotate }} className="pointer-events-none absolute right-[-8rem] top-[-8rem] h-96 w-96 rounded-full border border-black/[0.055]">
           <div className="absolute inset-12 rounded-full border border-black/[0.045]" />
           <div className="absolute inset-24 rounded-full border border-black/[0.04]" />

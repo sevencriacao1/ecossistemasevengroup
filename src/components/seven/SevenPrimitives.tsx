@@ -58,7 +58,7 @@ export function ScrollTextReveal({ text, className }: { text: string; className?
   const words = text.split(' ');
 
   return (
-    <h2 ref={ref} className={cn('text-[#111114]', className)}>
+    <h2 ref={ref} style={{ position: 'relative' }} className={cn('text-[#111114]', className)}>
       {words.map((word, wordIndex) => {
         const previousChars = words.slice(0, wordIndex).join('').length + wordIndex;
         const totalChars = text.length;

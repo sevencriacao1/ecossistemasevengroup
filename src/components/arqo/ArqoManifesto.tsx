@@ -1,12 +1,12 @@
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useTransform } from 'framer-motion';
 import { useRef } from 'react';
-import { ArqoSection, StableTextReveal } from './ArqoPrimitives';
+import { ArqoSection, StableTextReveal, useArqoElementScrollProgress } from './ArqoPrimitives';
 
 const excessLines = ['Excesso de opções.', 'Excesso de pressão.', 'Excesso de informação.'];
 
 export function ArqoManifesto() {
   const ref = useRef<HTMLDivElement | null>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start 82%', 'end 18%'] });
+  const scrollYProgress = useArqoElementScrollProgress(ref, 0.82, 0.18);
   const axisScale = useTransform(scrollYProgress, [0.08, 0.72], [0.08, 1]);
   const excessY = useTransform(scrollYProgress, [0, 1], [24, -18]);
   const clarityY = useTransform(scrollYProgress, [0.18, 1], [34, -10]);
@@ -38,10 +38,10 @@ export function ArqoManifesto() {
               </div>
 
               <div className="relative overflow-hidden border-l border-black/[0.08] pl-6">
-                <p className="text-sm leading-7 text-[#6D6A62]">Percebemos que o mercado criou excesso.</p>
-                <p className="arqo-heading mt-6 text-balance text-3xl font-medium leading-[1.05] tracking-[-0.04em] text-[#171715] sm:text-4xl">
+                <p className="arqo-heading text-balance text-3xl font-medium leading-[1.05] tracking-[-0.04em] text-[#171715] sm:text-4xl">
                   Nasceu para organizar decisões.
                 </p>
+                <p className="mt-6 text-sm leading-7 text-[#6D6A62]">Percebemos que o mercado criou excesso.</p>
               </div>
             </div>
 

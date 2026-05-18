@@ -1,6 +1,6 @@
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useTransform } from 'framer-motion';
 import { useRef } from 'react';
-import { ArqoSection, ArqoTitle } from './ArqoPrimitives';
+import { ArqoSection, ArqoTitle, useArqoElementScrollProgress } from './ArqoPrimitives';
 
 function ArqoExperienceImage({
   src,
@@ -31,12 +31,12 @@ function ArqoExperienceImage({
 
 export function ArqoExperience() {
   const ref = useRef<HTMLDivElement | null>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start 84%', 'end 24%'] });
+  const scrollYProgress = useArqoElementScrollProgress(ref, 0.84, 0.24);
   const y = useTransform(scrollYProgress, [0, 1], [36, -32]);
 
   return (
     <ArqoSection className="bg-white">
-      <div ref={ref} className="grid gap-12 lg:grid-cols-[0.48fr_0.52fr] lg:items-center">
+      <div ref={ref} className="relative grid gap-12 lg:grid-cols-[0.48fr_0.52fr] lg:items-center">
         <div>
           <ArqoTitle
             eyebrow="Experiência e Percepção"

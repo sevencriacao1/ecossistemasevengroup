@@ -167,6 +167,66 @@
   will-change: transform, opacity;
 }
 
+@keyframes arqo-orbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes arqo-orbit-counter {
+  from {
+    transform: rotate(calc(-1 * var(--angle, 0deg)));
+  }
+  to {
+    transform: rotate(calc(-360deg - var(--angle, 0deg)));
+  }
+}
+
+.arqo-orbit-ring {
+  animation: arqo-orbit 24s linear infinite;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+.arqo-orbit-item {
+  --orbit-radius: 5rem;
+  transform: rotate(var(--angle, 0deg)) translateX(var(--orbit-radius));
+  transform-origin: 0 0;
+}
+
+.arqo-orbit-counter {
+  animation: arqo-orbit-counter 24s linear infinite;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+@keyframes arqo-bridge-signal {
+  0%,
+  100% {
+    left: 0%;
+    opacity: 0.22;
+  }
+  18% {
+    opacity: 0.55;
+  }
+  50% {
+    left: 100%;
+    opacity: 0.55;
+  }
+  68% {
+    opacity: 0.18;
+  }
+}
+
+@media (min-width: 1024px) {
+  .arqo-orbit-item {
+    --orbit-radius: 5.15rem;
+  }
+}
+
 @media (max-width: 767px) {
   .backdrop-blur-xl,
   .backdrop-blur-2xl,

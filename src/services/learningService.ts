@@ -60,6 +60,39 @@ function asStatus(value: unknown): UserStatus {
   return value === 'inativo' ? 'inativo' : 'ativo';
 }
 
+async function getSupabaseFunctionErrorMessage(error: unknown) {
+  const fallback = error instanceof Error ? error.message : 'Edge Function retornou erro.';
+  const context = typeof error === 'object' && error && 'context' in error
+    ? (error as { context?: unknown }).context
+    : null;
+
+  if (context instanceof Response) {
+    try {
+      const payload = await context.clone().json() as { error?: unknown; message?: unknown };
+      const message = typeof payload.error === 'string'
+        ? payload.error
+        : typeof payload.message === 'string'
+          ? payload.message
+          : '';
+
+      if (message) return message;
+    } catch {
+      try {
+        const message = await context.clone().text();
+        if (message) return message;
+      } catch {
+        return fallback;
+      }
+    }
+  }
+
+  return fallback;
+}
+
+async function throwSupabaseFunctionError(error: unknown): Promise<never> {
+  throw new Error(await getSupabaseFunctionErrorMessage(error));
+}
+
 function asQuizQuestionType(value: unknown): QuizQuestionType {
   return value === 'multiple' ? 'multiple' : 'single';
 }
@@ -264,7 +297,7 @@ export async function createManagedUser(values: {
     },
   });
 
-  if (error) throw error;
+  if (error) await throwSupabaseFunctionError(error);
   return data;
 }
 
@@ -273,7 +306,7 @@ export async function listManagedAuthUsers() {
     body: { action: 'list' },
   });
 
-  if (error) throw error;
+  if (error) await throwSupabaseFunctionError(error);
   return (data?.users ?? []) as ManagedAuthUser[];
 }
 
@@ -282,7 +315,7 @@ export async function syncManagedUserProfile(id: string) {
     body: { action: 'sync_profile', id },
   });
 
-  if (error) throw error;
+  if (error) await throwSupabaseFunctionError(error);
   return data;
 }
 
@@ -312,16 +345,20 @@ export async function updateManagedUser(values: {
     },
   });
 
-  if (error) throw error;
+  if (error) await throwSupabaseFunctionError(error);
   return data;
 }
 
 export async function deleteManagedUser(id: string) {
+  if (!id) {
+    throw new Error('Usuário sem ID. Não foi possível excluir.');
+  }
+
   const { data, error } = await supabase.functions.invoke('admin-users', {
     body: { action: 'delete', id },
   });
 
-  if (error) throw error;
+  if (error) await throwSupabaseFunctionError(error);
   return data;
 }
 

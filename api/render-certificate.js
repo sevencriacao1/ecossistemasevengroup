@@ -1,4 +1,5 @@
 import puppeteer from 'puppeteer';
+import { existsSync } from 'node:fs';
 
 const WIDTH = 1600;
 const HEIGHT = 1100;
@@ -13,6 +14,23 @@ function escapeHtml(value = '') {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+function resolveBrowserExecutablePath() {
+  const candidates = [
+    process.env.PUPPETEER_EXECUTABLE_PATH,
+    process.env.CHROME_PATH,
+    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+    '/usr/bin/google-chrome',
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+  ].filter(Boolean);
+
+  return candidates.find((candidate) => existsSync(candidate));
 }
 
 function createValidationCode(userName, courseName, completedAt) {
@@ -261,8 +279,10 @@ export default async function handler(request, response) {
   try {
     const values = request.body || {};
     const html = buildCertificateHtml(values);
+    const executablePath = resolveBrowserExecutablePath();
     browser = await puppeteer.launch({
       headless: 'new',
+      ...(executablePath ? { executablePath } : {}),
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
     });
     const page = await browser.newPage();

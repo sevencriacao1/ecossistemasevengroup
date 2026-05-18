@@ -7,17 +7,14 @@ import { ArqoCuratedClarity } from '../components/arqo/ArqoCuratedClarity';
 import { ArqoCulture } from '../components/arqo/ArqoCulture';
 import { ArqoDeliverables } from '../components/arqo/ArqoDeliverables';
 import { ArqoDifferential } from '../components/arqo/ArqoDifferential';
-import { ArqoEmotionalClose } from '../components/arqo/ArqoEmotionalClose';
 import { ArqoEssence } from '../components/arqo/ArqoEssence';
 import { ArqoExperience } from '../components/arqo/ArqoExperience';
-import { ArqoExperienceStatement } from '../components/arqo/ArqoExperienceStatement';
 import { ArqoHero } from '../components/arqo/ArqoHero';
 import { ArqoHowWeWork } from '../components/arqo/ArqoHowWeWork';
-import { ArqoInvestmentView } from '../components/arqo/ArqoInvestmentView';
 import { ArqoInvestorJourney } from '../components/arqo/ArqoInvestorJourney';
 import { ArqoManifesto } from '../components/arqo/ArqoManifesto';
 import { ArqoEditorialPause } from '../components/arqo/ArqoPrimitives';
-import { ArqoStrategicConcept } from '../components/arqo/ArqoStrategicConcept';
+import { ArqoSevenBridge } from '../components/arqo/ArqoSevenBridge';
 import { ArqoStructures } from '../components/arqo/ArqoStructures';
 import { ArqoThinking } from '../components/arqo/ArqoThinking';
 import { ArqoWhoWeAre } from '../components/arqo/ArqoWhoWeAre';
@@ -110,7 +107,7 @@ export function ArqoPage() {
           className={cn(
             'mx-auto flex max-w-7xl items-center justify-between rounded-full border px-4 py-3 backdrop-blur-2xl transition duration-700',
             isHeaderOnDark
-              ? 'border-white/12 bg-black/12 text-white shadow-none'
+              ? 'border-white/12 bg-[#080807]/72 text-white shadow-none'
               : 'border-black/[0.06] bg-white/72 text-[#161615] shadow-[0_18px_54px_rgba(34,33,29,0.08)]'
           )}
         >
@@ -181,17 +178,14 @@ export function ArqoPage() {
       <ArqoInvestorJourney />
       <ArqoCuratedClarity />
       <ArqoHowWeWork />
-      <ArqoInvestmentView />
       <ArqoExperience />
       <ArqoStructures />
-      <ArqoStrategicConcept />
       <ArqoThinking />
       <ArqoDeliverables />
       <ArqoDifferential />
       <ArqoCulture />
-      <ArqoExperienceStatement />
       <ArqoEssence />
-      <ArqoEmotionalClose />
+      <ArqoSevenBridge />
       <ArqoCTA />
 
       <nav

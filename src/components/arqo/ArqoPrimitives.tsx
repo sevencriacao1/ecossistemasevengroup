@@ -1,10 +1,53 @@
-import { ReactNode } from 'react';
-import { motion, MotionValue, useScroll, useTransform, Variants } from 'framer-motion';
+import { ReactNode, RefObject, useEffect } from 'react';
+import { motion, MotionValue, useMotionValue, useTransform, Variants } from 'framer-motion';
 import { LucideIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { cn } from '../../lib/utils';
 
 const arqoEase = [0.16, 1, 0.3, 1] as const;
+
+export function useArqoElementScrollProgress<T extends HTMLElement>(
+  ref: RefObject<T | null>,
+  startViewport = 0.86,
+  endViewport = 0.44
+) {
+  const progress = useMotionValue(0);
+
+  useEffect(() => {
+    let frame = 0;
+
+    const syncProgress = () => {
+      frame = 0;
+      const element = ref.current;
+      if (!element) return;
+
+      const rect = element.getBoundingClientRect();
+      const startLine = window.innerHeight * startViewport;
+      const endLine = window.innerHeight * endViewport;
+      const distance = startLine - endLine + rect.height;
+      const nextProgress = distance <= 0 ? 1 : (startLine - rect.top) / distance;
+
+      progress.set(Math.min(Math.max(nextProgress, 0), 1));
+    };
+
+    const scheduleSync = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(syncProgress);
+    };
+
+    syncProgress();
+    window.addEventListener('scroll', scheduleSync, { passive: true });
+    window.addEventListener('resize', scheduleSync);
+
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', scheduleSync);
+      window.removeEventListener('resize', scheduleSync);
+    };
+  }, [endViewport, progress, ref, startViewport]);
+
+  return progress;
+}
 
 export const arqoFade: Variants = {
   hidden: { opacity: 0, y: 26 },
@@ -68,7 +111,7 @@ export function ArqoEditorialPause({
   align?: 'center' | 'left';
 }) {
   const ref = useRef<HTMLElement | null>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start 88%', 'end 18%'] });
+  const scrollYProgress = useArqoElementScrollProgress(ref, 0.88, 0.18);
   const y = useTransform(scrollYProgress, [0, 1], [28, -18]);
   const opacity = useTransform(scrollYProgress, [0, 0.35, 0.86, 1], [0.34, 1, 1, 0.62]);
 
@@ -144,14 +187,14 @@ export function StableTextReveal({
   as?: 'h1' | 'h2' | 'p' | 'span';
 }) {
   const ref = useRef<HTMLElement | null>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start 86%', 'end 44%'] });
+  const scrollYProgress = useArqoElementScrollProgress(ref, 0.86, 0.44);
   const Tag = as;
   const setRef = (node: HTMLElement | null) => {
     ref.current = node;
   };
 
   return (
-    <Tag ref={setRef} className={cn('arqo-text-stable', className)}>
+    <Tag ref={setRef} style={{ position: 'relative' }} className={cn('arqo-text-stable', className)}>
       {text.split(' ').map((word, wordIndex, words) => (
         <span key={`${word}-${wordIndex}`} className="inline-block whitespace-nowrap">
           {Array.from(word).map((char, charIndex) => {
@@ -275,7 +318,7 @@ export function ArqoImagePlaceholder({
   className?: string;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start 92%', 'end 18%'] });
+  const scrollYProgress = useArqoElementScrollProgress(ref, 0.92, 0.18);
   const y = useTransform(scrollYProgress, [0, 1], [18, -18]);
 
   return (

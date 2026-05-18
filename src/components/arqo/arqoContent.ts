@@ -51,8 +51,6 @@ export const profileItems: ArqoIconItem[] = [
   { title: 'Prioridades reais', icon: Diamond },
 ];
 
-export const investmentWords = ['Analisa.', 'Filtra.', 'Organiza.', 'Direciona.'];
-
 export const investorJourney = [
   {
     title: 'Entendimento',

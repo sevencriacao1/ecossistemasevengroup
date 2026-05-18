@@ -3,7 +3,7 @@ import { deliverables } from './arqoContent';
 
 export function ArqoDeliverables() {
   return (
-    <ArqoSection className="bg-white">
+    <ArqoSection className="bg-[#F8F7F3]">
       <ArqoTitle
         eyebrow="O Que a ARQO Entrega"
         title="Estrutura, percepção e direção."

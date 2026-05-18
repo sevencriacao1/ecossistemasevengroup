@@ -3,7 +3,7 @@ import { thinkingPoints } from './arqoContent';
 
 export function ArqoThinking() {
   return (
-    <ArqoSection className="bg-[#F8F7F3]">
+    <ArqoSection className="bg-white">
       <div className="grid gap-14 lg:grid-cols-[0.38fr_0.62fr]">
         <div className="lg:sticky lg:top-32 lg:h-fit">
           <ArqoTitle eyebrow="Como a ARQO Pensa" title="Clareza antes de volume." />
