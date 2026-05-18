@@ -85,8 +85,8 @@ export function ArqoSevenBridge() {
               Por trás da percepção, existe estrutura.
             </h2>
 
-            <div className="my-9 flex flex-col gap-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#7A7469] sm:flex-row sm:items-center">
-              <span>Percepção</span>
+            <div className="my-9 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7A7469] sm:gap-3 sm:text-[11px] sm:tracking-[0.24em]">
+              <span className="shrink-0 whitespace-nowrap">Percepção</span>
               <div className="relative h-6 flex-1 min-w-0" aria-hidden="true">
                 <svg className="absolute inset-0 h-full w-full overflow-visible" viewBox="0 0 320 24" preserveAspectRatio="none">
                   <line
@@ -106,7 +106,7 @@ export function ArqoSevenBridge() {
                   className="absolute left-0 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-[#171715]/55 shadow-[0_0_18px_rgba(23,23,21,0.2)] [animation:arqo-bridge-signal_5.8s_ease-in-out_infinite]"
                 />
               </div>
-              <span>Estrutura</span>
+              <span className="shrink-0 whitespace-nowrap">Estrutura</span>
             </div>
 
             <div className="grid gap-5 text-base leading-8 text-[#605B52] sm:text-lg sm:leading-9">
