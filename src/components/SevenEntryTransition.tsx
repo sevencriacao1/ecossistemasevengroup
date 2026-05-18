@@ -377,10 +377,10 @@ export function SevenEntryTransition({ onLogout, initialChoices = false, notice 
                 <button
                   type="button"
                   onClick={() => setShowChoices(true)}
-                  className="seven-entry-clickable group inline-flex min-h-[56px] max-w-full flex-wrap items-center justify-center rounded-full border border-white/70 bg-[#111114]/90 px-6 text-center text-base font-semibold leading-6 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.24),0_18px_48px_rgba(17,17,20,0.22)] backdrop-blur-2xl transition hover:bg-black sm:px-8"
+                  className="seven-entry-clickable group inline-flex min-h-[52px] max-w-full items-center justify-center whitespace-nowrap rounded-full border border-white/70 bg-[#111114]/90 px-4 text-center text-[0.78rem] font-semibold leading-6 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.24),0_18px_48px_rgba(17,17,20,0.22)] backdrop-blur-2xl transition hover:bg-black min-[390px]:text-[0.84rem] sm:min-h-[56px] sm:px-8 sm:text-base"
                 >
                   Iniciar a Experiência Ecossistema Seven
-                  <ArrowRight className="ml-3 h-4 w-4 transition group-hover:translate-x-1" />
+                  <ArrowRight className="ml-2 h-3.5 w-3.5 shrink-0 transition group-hover:translate-x-1 sm:ml-3 sm:h-4 sm:w-4" />
                 </button>
               ) : (
                 <motion.div
