@@ -1,5 +1,7 @@
 import { supabase } from '../lib/supabase';
 import {
+  AdminAuditCategory,
+  AdminAuditLog,
   AdminMetrics,
   Certificate,
   Company,
@@ -24,6 +26,7 @@ import {
 } from '../types/learning';
 
 type ProfileRow = Record<string, unknown>;
+type AdminAuditLogRow = Record<string, unknown>;
 type SupabaseMaybeError = { code?: string; message?: string; details?: string };
 type QuizQuestionRow = Record<string, unknown>;
 
@@ -132,6 +135,43 @@ function normalizeProfile(row: ProfileRow): UserProfile {
     company: asCompany(row.company ?? row.empresa),
     status: asStatus(row.status),
   };
+}
+
+function normalizeAdminAuditLog(row: AdminAuditLogRow): AdminAuditLog {
+  return {
+    id: asString(row.id),
+    actor_id: asNullableString(row.actor_id),
+    actor_name: asString(row.actor_name, 'Administrador'),
+    category: asAdminAuditCategory(row.category),
+    action: asString(row.action),
+    target_id: asNullableString(row.target_id),
+    target_type: asNullableString(row.target_type),
+    target_name: asNullableString(row.target_name),
+    company: typeof row.company === 'string' ? asCompany(row.company) : null,
+    message: asString(row.message),
+    metadata: typeof row.metadata === 'object' && row.metadata !== null && !Array.isArray(row.metadata)
+      ? row.metadata as Record<string, unknown>
+      : {},
+    reverted_at: asNullableString(row.reverted_at),
+    reverted_by: asNullableString(row.reverted_by),
+    revert_log_id: asNullableString(row.revert_log_id),
+    created_at: asString(row.created_at),
+  };
+}
+
+function asAdminAuditCategory(value: unknown): AdminAuditCategory {
+  if (
+    value === 'admins'
+    || value === 'colaboradores'
+    || value === 'conteudo'
+    || value === 'midia'
+    || value === 'certificados'
+    || value === 'sistema'
+  ) {
+    return value;
+  }
+
+  return 'usuarios';
 }
 
 function buildCourseTree(courses: Course[], modules: LearningModule[], lessons: Lesson[]): CourseTree[] {
@@ -259,6 +299,77 @@ export async function fetchUsers() {
 
   if (error) throw error;
   return (data ?? []).map((row) => normalizeProfile(row as ProfileRow));
+}
+
+export async function fetchAdminAuditLogs() {
+  const { data, error } = await supabase
+    .from('admin_audit_logs')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(500);
+
+  if (error) {
+    if (isMissingRestResource(error)) return [];
+    throw error;
+  }
+
+  return (data ?? []).map((row) => normalizeAdminAuditLog(row as AdminAuditLogRow));
+}
+
+export async function createAdminAuditLog(values: {
+  actorId?: string | null;
+  actorName: string;
+  category: AdminAuditCategory;
+  action: string;
+  targetId?: string | null;
+  targetType?: string | null;
+  targetName?: string | null;
+  company?: Company | null;
+  message: string;
+  metadata?: Record<string, unknown>;
+}) {
+  const { data, error } = await supabase
+    .from('admin_audit_logs')
+    .insert({
+      actor_id: values.actorId ?? null,
+      actor_name: values.actorName,
+      category: values.category,
+      action: values.action,
+      target_id: values.targetId ?? null,
+      target_type: values.targetType ?? null,
+      target_name: values.targetName ?? null,
+      company: values.company ?? null,
+      message: values.message,
+      metadata: values.metadata ?? {},
+    })
+    .select('*')
+    .single();
+
+  if (error) {
+    if (isMissingRestResource(error)) return null;
+    throw error;
+  }
+
+  return normalizeAdminAuditLog(data as AdminAuditLogRow);
+}
+
+export async function markAdminAuditLogReverted(id: string, values: {
+  revertedBy?: string | null;
+  revertLogId?: string | null;
+}) {
+  const { error } = await supabase
+    .from('admin_audit_logs')
+    .update({
+      reverted_at: new Date().toISOString(),
+      reverted_by: values.revertedBy ?? null,
+      revert_log_id: values.revertLogId ?? null,
+    })
+    .eq('id', id);
+
+  if (error) {
+    if (isMissingRestResource(error)) return;
+    throw error;
+  }
 }
 
 export async function updateUserProfile(
@@ -575,17 +686,12 @@ export async function fetchProgress(userId: string, preferModernSchema = false) 
 }
 
 export async function upsertLessonProgress(userId: string, lessonId: string, progress: number) {
-  const completed = progress >= 100;
-  const { error } = await supabase
-    .from('lesson_progress')
-    .upsert({
-      user_id: userId,
-      lesson_id: lessonId,
-      progress,
-      completed,
-      completed_at: completed ? new Date().toISOString() : null,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id,lesson_id' });
+  if (!userId) throw new Error('Usuário não autenticado.');
+
+  const { error } = await supabase.rpc('complete_lesson_progress', {
+    input_lesson_id: lessonId,
+    input_progress: progress,
+  });
 
   if (error) throw error;
 }
@@ -655,8 +761,14 @@ export async function createModule(values: {
   order_index: number;
   has_quiz?: boolean;
 }) {
-  const { error } = await supabase.from('modules').insert(values);
+  const { data, error } = await supabase
+    .from('modules')
+    .insert(values)
+    .select('*')
+    .single();
+
   if (error) throw error;
+  return data as LearningModule;
 }
 
 export async function createLesson(values: {
@@ -669,14 +781,29 @@ export async function createLesson(values: {
   attachment_url?: string | null;
   video_duration_seconds?: number | null;
 }) {
-  const { error } = await supabase.from('lessons').insert(values);
+  const { data, error } = await supabase
+    .from('lessons')
+    .insert(values)
+    .select('*')
+    .single();
+
   if (error) throw error;
+  return data as Lesson;
 }
 
 export async function updateLesson(id: string, values: Partial<Lesson>) {
   const { error } = await supabase
     .from('lessons')
     .update({ ...values, updated_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (error) throw error;
+}
+
+export async function deleteLesson(id: string) {
+  const { error } = await supabase
+    .from('lessons')
+    .delete()
     .eq('id', id);
 
   if (error) throw error;
@@ -935,30 +1062,18 @@ export async function submitQuizAttempt(values: {
   userId: string;
   answers: Record<string, string[]>;
 }) {
-  const { score, passed } = gradeQuiz(values.quiz, values.answers);
-  const failures = await fetchCourseFailures(values.userId);
-  const attemptNumber = (failures.find((failure) => failure.course_id === values.course.id)?.failure_count ?? 0) + 1;
+  if (!values.userId || !values.course.id) throw new Error('Usuário ou curso inválido.');
 
-  const { error } = await supabase.from('quiz_attempts').insert({
-    quiz_id: values.quiz.id,
-    module_id: values.quiz.module_id,
-    course_id: values.course.id,
-    user_id: values.userId,
-    score,
-    passed,
-    answers: values.answers,
-    attempt_number: attemptNumber,
-    completed_at: new Date().toISOString(),
-  });
+  const { data, error } = await supabase
+    .rpc('submit_quiz_attempt', {
+      input_quiz_id: values.quiz.id,
+      input_answers: values.answers,
+    })
+    .single();
 
   if (error) throw error;
-
-  if (!passed) {
-    await registerCourseFailure(values.userId, values.course.id);
-    await resetCourseProgress(values.userId, values.course);
-  }
-
-  return { score, passed };
+  const attempt = data as QuizAttempt;
+  return { score: attempt.score, passed: attempt.passed };
 }
 
 export function calculateCourseWorkloadMinutes(course: CourseTree, quizzes: Quiz[]) {
@@ -992,17 +1107,15 @@ export async function upsertCertificate(values: {
   completedAt: string | null;
   validationCode: string;
 }) {
-  const { data, error } = await supabase.from('certificates').upsert({
-    user_id: values.userId,
-    course_id: values.courseId,
-    certificate_url: values.certificateUrl,
-    workload_minutes: values.workloadMinutes,
-    started_at: values.startedAt,
-    completed_at: values.completedAt,
-    validation_code: values.validationCode,
-    issued_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'user_id,course_id' }).select('*').single();
+  const { data, error } = await supabase.rpc('issue_course_certificate', {
+    input_user_id: values.userId,
+    input_course_id: values.courseId,
+    input_certificate_url: values.certificateUrl,
+    input_workload_minutes: values.workloadMinutes,
+    input_started_at: values.startedAt,
+    input_completed_at: values.completedAt,
+    input_validation_code: values.validationCode,
+  });
 
   if (error) throw error;
   return data as Certificate;

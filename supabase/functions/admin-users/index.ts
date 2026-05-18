@@ -18,6 +18,59 @@ type AdminUserPayload = {
   avatar_url?: string | null;
 };
 
+type RequesterProfile = {
+  role: 'admin' | 'colaborador';
+  status: 'ativo' | 'inativo';
+  full_name?: string | null;
+  username?: string | null;
+  email?: string | null;
+};
+
+type AuditCategory = 'usuarios' | 'admins' | 'colaboradores' | 'conteudo' | 'midia' | 'certificados' | 'sistema';
+
+function displayName(profile: RequesterProfile | null | undefined, fallback = 'Administrador') {
+  return profile?.full_name || profile?.username || profile?.email || fallback;
+}
+
+function userCategory(role: unknown): AuditCategory {
+  return role === 'admin' ? 'admins' : 'colaboradores';
+}
+
+async function insertAuditLog(
+  adminClient: ReturnType<typeof createClient>,
+  values: {
+    actorId: string;
+    actorName: string;
+    category: AuditCategory;
+    action: string;
+    targetId?: string | null;
+    targetType?: string | null;
+    targetName?: string | null;
+    company?: 'Seven' | 'ARQO' | null;
+    message: string;
+    metadata?: Record<string, unknown>;
+  },
+) {
+  const { error } = await adminClient
+    .from('admin_audit_logs')
+    .insert({
+      actor_id: values.actorId,
+      actor_name: values.actorName,
+      category: values.category,
+      action: values.action,
+      target_id: values.targetId ?? null,
+      target_type: values.targetType ?? null,
+      target_name: values.targetName ?? null,
+      company: values.company ?? null,
+      message: values.message,
+      metadata: values.metadata ?? {},
+    });
+
+  if (error) {
+    console.warn('admin-users audit log failed', error.message);
+  }
+}
+
 function profileFromAuthUser(user: {
   id: string;
   email?: string;
@@ -77,11 +130,12 @@ Deno.serve(async (request) => {
 
     const { data: profile, error: profileError } = await adminClient
       .from('profiles')
-      .select('role, status')
+      .select('role, status, full_name, username, email')
       .eq('id', requesterData.user.id)
       .single();
 
-    if (profileError || profile?.role !== 'admin' || profile?.status === 'inativo') {
+    const requesterProfile = profile as RequesterProfile | null;
+    if (profileError || requesterProfile?.role !== 'admin' || requesterProfile?.status === 'inativo') {
       return new Response(JSON.stringify({ error: 'Forbidden' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -140,11 +194,25 @@ Deno.serve(async (request) => {
       const { data: userData, error: userError } = await adminClient.auth.admin.getUserById(payload.id);
       if (userError || !userData.user) throw userError ?? new Error('Auth user was not found.');
 
+      const syncedProfile = profileFromAuthUser(userData.user);
       const { error: syncError } = await adminClient
         .from('profiles')
-        .upsert(profileFromAuthUser(userData.user));
+        .upsert(syncedProfile);
 
       if (syncError) throw syncError;
+
+      await insertAuditLog(adminClient, {
+        actorId: requesterData.user.id,
+        actorName: displayName(requesterProfile),
+        category: userCategory(syncedProfile.role),
+        action: 'sync_profile',
+        targetId: payload.id,
+        targetType: 'profile',
+        targetName: syncedProfile.full_name || syncedProfile.username || syncedProfile.email || payload.id,
+        company: syncedProfile.company,
+        message: `${displayName(requesterProfile)} sincronizou o perfil de ${syncedProfile.full_name || syncedProfile.username || syncedProfile.email || 'um usuario'}.`,
+        metadata: { role: syncedProfile.role, email: syncedProfile.email },
+      });
 
       return new Response(JSON.stringify({ id: payload.id }), {
         status: 200,
@@ -167,6 +235,15 @@ Deno.serve(async (request) => {
         });
       }
 
+      const { data: deletedProfile } = await adminClient
+        .from('profiles')
+        .select('id, email, username, full_name, role, company, status, avatar_url')
+        .eq('id', payload.id)
+        .maybeSingle();
+      const deletedUserName = deletedProfile?.full_name || deletedProfile?.username || deletedProfile?.email || 'um usuario';
+      const deletedRole = deletedProfile?.role ?? 'colaborador';
+      const deletedCompany = deletedProfile?.company === 'ARQO' ? 'ARQO' : 'Seven';
+
       const { error: deleteUserError } = await adminClient.auth.admin.deleteUser(payload.id);
       if (deleteUserError) throw deleteUserError;
 
@@ -176,10 +253,35 @@ Deno.serve(async (request) => {
         .eq('id', payload.id);
       if (deleteProfileError) throw deleteProfileError;
 
+      await insertAuditLog(adminClient, {
+        actorId: requesterData.user.id,
+        actorName: displayName(requesterProfile),
+        category: userCategory(deletedRole),
+        action: 'delete_user',
+        targetId: payload.id,
+        targetType: 'profile',
+        targetName: deletedUserName,
+        company: deletedCompany,
+        message: `${displayName(requesterProfile)} excluiu ${deletedRole === 'admin' ? 'um administrador' : `o(a) colaborador(a) ${deletedUserName}`}.`,
+        metadata: { role: deletedRole, email: deletedProfile?.email ?? null },
+      });
+
       return new Response(JSON.stringify({ id: payload.id }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    const auditAction = payload.action;
+    let previousProfile: Record<string, unknown> | null = null;
+
+    if (payload.action === 'update' && payload.id) {
+      const { data } = await adminClient
+        .from('profiles')
+        .select('id, email, username, full_name, role, company, status, avatar_url')
+        .eq('id', payload.id)
+        .maybeSingle();
+      previousProfile = data;
     }
 
     if (payload.action === 'create') {
@@ -259,6 +361,30 @@ Deno.serve(async (request) => {
       });
 
     if (profileUpsertError) throw profileUpsertError;
+
+    const targetName = payload.full_name || payload.username || payload.email || 'um usuario';
+    const targetRole = payload.role ?? 'colaborador';
+    const targetCompany = payload.company ?? 'Seven';
+    await insertAuditLog(adminClient, {
+      actorId: requesterData.user.id,
+      actorName: displayName(requesterProfile),
+      category: userCategory(targetRole),
+      action: auditAction === 'create' ? 'create_user' : 'update_user',
+      targetId: payload.id,
+      targetType: 'profile',
+      targetName,
+      company: targetCompany,
+      message: auditAction === 'create'
+        ? `${displayName(requesterProfile)} criou um ${targetRole === 'admin' ? 'administrador' : 'usuario'} para empresa ${targetCompany}.`
+        : `${displayName(requesterProfile)} atualizou o cadastro de ${targetName}.`,
+      metadata: {
+        role: targetRole,
+        email: payload.email,
+        previous_role: previousProfile?.role ?? null,
+        previous_company: previousProfile?.company ?? null,
+        status: payload.status ?? 'ativo',
+      },
+    });
 
     return new Response(JSON.stringify({ id: payload.id }), {
       status: 200,

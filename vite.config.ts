@@ -22,7 +22,13 @@ function certificateApiDevPlugin() {
             const certificateApiUrl = `${pathToFileURL(`${server.config.root}/api/render-certificate.js`).href}?t=${Date.now()}`;
             const { default: handler } = await import(certificateApiUrl);
             await handler(
-              { method: 'POST', body: JSON.parse(bodyText) },
+              {
+                method: 'POST',
+                body: JSON.parse(bodyText),
+                headers: {
+                  authorization: req.headers.authorization,
+                },
+              },
               {
                 setHeader: (name: string, value: string) => res.setHeader(name, value),
                 status: (code: number) => {

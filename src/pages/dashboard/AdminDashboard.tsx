@@ -8,6 +8,7 @@ import {
   Trash2,
   Edit3,
   FileText,
+  History,
   Home,
   LogOut,
   Plus,
@@ -22,17 +23,21 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { useAuth } from '../../contexts/AuthContext';
 import { createCertificateValidationCode } from '../../lib/certificateValidation';
+import { supabase } from '../../lib/supabase';
 import {
   calculateCourseWorkloadMinutes,
   calculateReadiness,
+  createAdminAuditLog,
   createCourse,
   createLesson,
   createManagedUser,
   createModule,
   deleteCertificate,
   deleteCourse,
+  deleteLesson,
   deleteManagedUser,
   deleteModule,
+  fetchAdminAuditLogs,
   fetchAllProgress,
   fetchCertificates,
   fetchCourseFailures,
@@ -50,6 +55,7 @@ import {
   getLessonAttachmentUrl,
   getLessonVideoUrl,
   getStorageImageUrl,
+  markAdminAuditLogReverted,
   removeStorageObject,
   saveModuleQuiz,
   uploadCertificatePng,
@@ -59,9 +65,9 @@ import {
   uploadProfileImage,
   upsertCertificate,
 } from '../../services/learningService';
-import { Certificate, Company, CourseFailure, CourseTree, Lesson, LessonProgress, ManagedAuthUser, Quiz, QuizAttempt, QuizOption, QuizQuestionType, UserProfile, UserRole, UserStatus } from '../../types/learning';
+import { AdminAuditCategory, AdminAuditLog, Certificate, Company, CourseFailure, CourseTree, Lesson, LessonProgress, ManagedAuthUser, Quiz, QuizAttempt, QuizOption, QuizQuestionType, UserProfile, UserRole, UserStatus } from '../../types/learning';
 
-type AdminRoute = 'inicio' | 'cursos' | 'progress' | 'settings';
+type AdminRoute = 'inicio' | 'cursos' | 'progress' | 'settings' | 'history';
 type ModalName = 'course' | 'editCourse' | 'module' | 'editModule' | 'lesson' | 'editLesson' | 'user' | 'editUser' | 'quiz' | null;
 type PreviewMedia = {
   title: string;
@@ -80,6 +86,16 @@ type QuizQuestionDraft = {
 const companyOptions: Company[] = ['Seven', 'ARQO'];
 const roleOptions: UserRole[] = ['admin', 'colaborador'];
 const statusOptions: UserStatus[] = ['ativo', 'inativo'];
+const auditFilterOptions: Array<{ id: AdminAuditCategory | 'todos'; label: string }> = [
+  { id: 'todos', label: 'Todos' },
+  { id: 'usuarios', label: 'Usuários' },
+  { id: 'admins', label: 'Admins' },
+  { id: 'colaboradores', label: 'Colaboradores' },
+  { id: 'conteudo', label: 'Conteúdo' },
+  { id: 'midia', label: 'Mídia' },
+  { id: 'certificados', label: 'Certificados' },
+  { id: 'sistema', label: 'Sistema' },
+];
 const inputClass = 'h-10 rounded-md border border-[#D8D8DE] bg-white px-3 py-2 text-sm text-[#111114] placeholder-transparent outline-none transition focus:border-primary focus:ring-primary';
 const textInputClass = 'rounded-md border border-[#D8D8DE] bg-white px-3 py-2 text-sm text-[#111114] placeholder-transparent outline-none transition focus:border-primary';
 const emptyCourseForm = { company: 'Seven' as Company, title: '', description: '', cover_url: '' };
@@ -149,9 +165,19 @@ async function renderCertificateBlob({
 }) {
   const completionDate = completedAt ?? new Date().toISOString();
   const dateFormatter = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+
+  if (!accessToken) {
+    throw new Error('Sessão expirada. Faça login novamente.');
+  }
+
   const response = await fetch('/api/render-certificate', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify({
       userName,
       courseName: course.title,
@@ -186,6 +212,7 @@ function resolveRoute(pathname: string): AdminRoute {
   if (pathname.includes('/cursos')) return 'cursos';
   if (pathname.includes('/progresso')) return 'progress';
   if (pathname.includes('/settings')) return 'settings';
+  if (pathname.includes('/historico')) return 'history';
   return 'inicio';
 }
 
@@ -670,6 +697,7 @@ export function AdminDashboard() {
   const [courseFailures, setCourseFailures] = useState<CourseFailure[]>([]);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [authUsers, setAuthUsers] = useState<ManagedAuthUser[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AdminAuditLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [feedback, setFeedback] = useState('');
   const [error, setError] = useState('');
@@ -705,6 +733,7 @@ export function AdminDashboard() {
   const [regeneratingCertificateKey, setRegeneratingCertificateKey] = useState('');
   const [deletingCertificateKey, setDeletingCertificateKey] = useState('');
   const [deletingUserId, setDeletingUserId] = useState('');
+  const [revertingLogId, setRevertingLogId] = useState('');
   const [userForm, setUserForm] = useState(emptyUserForm);
 
   const refresh = async () => {
@@ -712,13 +741,14 @@ export function AdminDashboard() {
     const nextCourses = await fetchLearningTree();
     const preferModernSchema = nextCourses.some((course) => !course.id.startsWith('legacy-'));
     const moduleIds = nextCourses.flatMap((course) => course.modules.map((moduleItem) => moduleItem.id));
-    const [nextUsers, nextProgress, nextQuizzes, nextAttempts, nextFailures, nextCertificates] = await Promise.all([
+    const [nextUsers, nextProgress, nextQuizzes, nextAttempts, nextFailures, nextCertificates, nextAuditLogs] = await Promise.all([
       fetchUsers(),
       fetchAllProgress(preferModernSchema),
       fetchQuizzes(moduleIds),
       fetchQuizAttempts(),
       fetchCourseFailures(),
       fetchCertificates(),
+      fetchAdminAuditLogs(),
     ]);
     const nextAuthUsers = await listManagedAuthUsers().catch(() => []);
     setCourses(nextCourses);
@@ -728,6 +758,7 @@ export function AdminDashboard() {
     setQuizAttempts(nextAttempts);
     setCourseFailures(nextFailures);
     setCertificates(nextCertificates);
+    setAuditLogs(nextAuditLogs);
     setAuthUsers(nextAuthUsers);
     setSelectedCourseId((current) => current || nextCourses[0]?.id || '');
   };
@@ -905,6 +936,15 @@ export function AdminDashboard() {
   const hasCurrentLessonAttachment = modal === 'editLesson' && Boolean(editingLesson?.attachment_url) && !removeLessonAttachment;
   const hasCurrentProfileImage = modal === 'editUser' && Boolean(userForm.avatarUrl) && !removeProfileImage;
   const hasCurrentCourseCover = modal === 'editCourse' && Boolean(courseForm.cover_url) && !removeCourseCover;
+  const routeTitle = route === 'inicio'
+    ? 'Início'
+    : route === 'cursos'
+      ? 'Cursos'
+      : route === 'progress'
+        ? 'Progresso'
+        : route === 'history'
+          ? 'Histórico'
+          : 'Configurações';
 
   const resetCourseDraft = () => {
     setEditingCourse(null);
@@ -974,9 +1014,105 @@ export function AdminDashboard() {
     setPreviewMedia(media);
   };
 
+  const actorName = profile?.full_name || profile?.username || profile?.email || 'Administrador';
+
+  const recordAuditLog = async (values: {
+    category: AdminAuditCategory;
+    action: string;
+    targetId?: string | null;
+    targetType?: string | null;
+    targetName?: string | null;
+    company?: Company | null;
+    message: string;
+    metadata?: Record<string, unknown>;
+  }) => {
+    try {
+      const createdLog = await createAdminAuditLog({
+        actorId: profile?.id ?? null,
+        actorName,
+        ...values,
+      });
+      setAuditLogs(await fetchAdminAuditLogs());
+      return createdLog;
+    } catch (auditError) {
+      console.warn('Falha ao registrar histórico administrativo.', auditError);
+      return null;
+    }
+  };
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/login', { replace: true });
+  };
+
+  const handleRevertAuditLog = async (log: AdminAuditLog) => {
+    if (!log.target_id || log.reverted_at) return;
+    const label = log.target_name || log.message;
+    if (!window.confirm(`Reverter esta ação do histórico?\n\n${log.message}`)) return;
+
+    try {
+      setRevertingLogId(log.id);
+      const metadata = log.metadata;
+
+      if (log.action === 'create_course') {
+        await deleteCourse(log.target_id);
+      } else if (log.action === 'create_module') {
+        await deleteModule(log.target_id);
+      } else if (log.action === 'create_lesson') {
+        await deleteLesson(log.target_id);
+      } else if (log.action === 'update_course') {
+        const previousCourse = metadataRecord(metadata, 'previous_course');
+        await updateCourse(log.target_id, {
+          company: previousCourse.company === 'ARQO' ? 'ARQO' : 'Seven',
+          title: metadataString(previousCourse, 'title', label),
+          description: metadataString(previousCourse, 'description'),
+          cover_url: metadataNullableString(previousCourse, 'cover_url'),
+          is_active: previousCourse.is_active !== false,
+        });
+      } else if (log.action === 'update_module') {
+        const previousModule = metadataRecord(metadata, 'previous_module');
+        await updateModule(log.target_id, {
+          title: metadataString(previousModule, 'title', label),
+          description: metadataString(previousModule, 'description'),
+          order_index: metadataNumber(previousModule, 'order_index', 1),
+          has_quiz: previousModule.has_quiz === true,
+        });
+      } else if (log.action === 'update_lesson') {
+        const previousLesson = metadataRecord(metadata, 'previous_lesson');
+        await updateLesson(log.target_id, {
+          title: metadataString(previousLesson, 'title', label),
+          description: metadataString(previousLesson, 'description'),
+          content: metadataString(previousLesson, 'content'),
+          order_index: metadataNumber(previousLesson, 'order_index', 1),
+          video_url: metadataNullableString(previousLesson, 'video_url'),
+          video_duration_seconds: metadataNullableNumber(previousLesson, 'video_duration_seconds'),
+          attachment_url: metadataNullableString(previousLesson, 'attachment_url'),
+        });
+      } else {
+        throw new Error('Esta ação ainda não pode ser revertida automaticamente.');
+      }
+
+      const revertLog = await recordAuditLog({
+        category: 'sistema',
+        action: `revert_${log.action}`,
+        targetId: log.target_id,
+        targetType: log.target_type,
+        targetName: log.target_name,
+        company: log.company,
+        message: `${actorName} reverteu a ação: ${log.message}`,
+        metadata: { reverted_log_id: log.id, original_action: log.action },
+      });
+      await markAdminAuditLogReverted(log.id, {
+        revertedBy: profile?.id ?? null,
+        revertLogId: revertLog?.id ?? null,
+      });
+      await refresh();
+      setFeedback('Ação revertida com sucesso.');
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Não foi possível reverter esta ação.');
+    } finally {
+      setRevertingLogId('');
+    }
   };
 
   const submitCourse = async (event: FormEvent) => {
@@ -990,6 +1126,28 @@ export function AdminDashboard() {
         : courseForm.cover_url;
       const createdCourse = await createCourse({ ...courseForm, cover_url: coverUrl });
       setSelectedCourseId(createdCourse.id);
+      await recordAuditLog({
+        category: 'conteudo',
+        action: 'create_course',
+        targetId: createdCourse.id,
+        targetType: 'course',
+        targetName: createdCourse.title,
+        company: createdCourse.company,
+        message: `${actorName} criou o curso ${createdCourse.title} para empresa ${createdCourse.company}.`,
+        metadata: { cover_url: coverUrl },
+      });
+      if (coverUrl) {
+        await recordAuditLog({
+          category: 'midia',
+          action: 'upload_course_cover',
+          targetId: createdCourse.id,
+          targetType: 'course',
+          targetName: createdCourse.title,
+          company: createdCourse.company,
+          message: `${actorName} adicionou uma capa no curso ${createdCourse.title}.`,
+          metadata: { cover_url: coverUrl },
+        });
+      }
       resetCourseDraft();
       await refresh();
       setFeedback('Curso criado com sucesso.');
@@ -1013,6 +1171,38 @@ export function AdminDashboard() {
       if ((removeCourseCover || courseCoverFile) && previousCoverUrl && previousCoverUrl !== coverUrl) {
         await removeStorageObject('course-covers', previousCoverUrl);
       }
+      await recordAuditLog({
+        category: 'conteudo',
+        action: 'update_course',
+        targetId: editingCourse.id,
+        targetType: 'course',
+        targetName: courseForm.title,
+        company: courseForm.company,
+        message: `${actorName} atualizou o curso ${courseForm.title}.`,
+        metadata: {
+          previous_course: {
+            company: editingCourse.company,
+            title: editingCourse.title,
+            description: editingCourse.description ?? '',
+            cover_url: editingCourse.cover_url ?? null,
+            is_active: editingCourse.is_active,
+          },
+        },
+      });
+      if (courseCoverFile || removeCourseCover) {
+        await recordAuditLog({
+          category: 'midia',
+          action: courseCoverFile ? 'upload_course_cover' : 'remove_course_cover',
+          targetId: editingCourse.id,
+          targetType: 'course',
+          targetName: courseForm.title,
+          company: courseForm.company,
+          message: courseCoverFile
+            ? `${actorName} adicionou uma capa no curso ${courseForm.title}.`
+            : `${actorName} removeu a capa do curso ${courseForm.title}.`,
+          metadata: { previous_cover_url: previousCoverUrl, cover_url: coverUrl },
+        });
+      }
       await refresh();
       setFeedback('Curso atualizado.');
       closeModal();
@@ -1026,6 +1216,16 @@ export function AdminDashboard() {
     try {
       await deleteCourse(course.id);
       setSelectedCourseId('');
+      await recordAuditLog({
+        category: 'conteudo',
+        action: 'delete_course',
+        targetId: course.id,
+        targetType: 'course',
+        targetName: course.title,
+        company: course.company,
+        message: `${actorName} excluiu o curso ${course.title}.`,
+        metadata: { modules: course.modules.length },
+      });
       await refresh();
       setFeedback('Curso excluído.');
     } catch (nextError) {
@@ -1037,7 +1237,17 @@ export function AdminDashboard() {
     event.preventDefault();
     if (!selectedCourse) return;
     try {
-      await createModule({ ...moduleForm, course_id: selectedCourse.id, company: selectedCourse.company });
+      const createdModule = await createModule({ ...moduleForm, course_id: selectedCourse.id, company: selectedCourse.company });
+      await recordAuditLog({
+        category: 'conteudo',
+        action: 'create_module',
+        targetId: createdModule.id,
+        targetType: 'module',
+        targetName: createdModule.title,
+        company: selectedCourse.company,
+        message: `${actorName} criou o módulo ${createdModule.title} no curso ${selectedCourse.title}.`,
+        metadata: { course_id: selectedCourse.id, order_index: moduleForm.order_index, has_quiz: moduleForm.has_quiz },
+      });
       resetModuleDraft(moduleForm.order_index + 1);
       await refresh();
       setFeedback('Módulo criado com sucesso.');
@@ -1052,6 +1262,24 @@ export function AdminDashboard() {
     if (!editingModule) return;
     try {
       await updateModule(editingModule.id, moduleForm);
+      await recordAuditLog({
+        category: 'conteudo',
+        action: 'update_module',
+        targetId: editingModule.id,
+        targetType: 'module',
+        targetName: moduleForm.title,
+        company: selectedCourse?.company ?? null,
+        message: `${actorName} atualizou o módulo ${moduleForm.title}.`,
+        metadata: {
+          previous_module: {
+            title: editingModule.title,
+            description: editingModule.description ?? '',
+            order_index: editingModule.order_index,
+            has_quiz: editingModule.has_quiz === true,
+          },
+          has_quiz: moduleForm.has_quiz,
+        },
+      });
       await refresh();
       setFeedback('Módulo atualizado.');
       closeModal();
@@ -1064,6 +1292,16 @@ export function AdminDashboard() {
     if (!window.confirm(`Excluir o módulo "${moduleItem.title}" e suas aulas?`)) return;
     try {
       await deleteModule(moduleItem.id);
+      await recordAuditLog({
+        category: 'conteudo',
+        action: 'delete_module',
+        targetId: moduleItem.id,
+        targetType: 'module',
+        targetName: moduleItem.title,
+        company: selectedCourse?.company ?? null,
+        message: `${actorName} excluiu o módulo ${moduleItem.title}.`,
+        metadata: { lessons: moduleItem.lessons.length },
+      });
       await refresh();
       setFeedback('Módulo excluído.');
     } catch (nextError) {
@@ -1100,6 +1338,16 @@ export function AdminDashboard() {
         isActive: true,
         questions: quizQuestions.map((question, index) => ({ ...question, order_index: index + 1 })),
       });
+      await recordAuditLog({
+        category: 'conteudo',
+        action: 'save_quiz',
+        targetId: quizModule.id,
+        targetType: 'quiz',
+        targetName: quizTitle,
+        company: selectedCourse?.company ?? null,
+        message: `${actorName} salvou a prova ${quizTitle}.`,
+        metadata: { module_id: quizModule.id, questions: quizQuestions.length },
+      });
       await refresh();
       setFeedback('Prova salva com sucesso.');
       closeModal();
@@ -1115,7 +1363,41 @@ export function AdminDashboard() {
       const videoPath = lessonVideo ? await withUploadProgress(() => uploadLessonVideo(lessonVideo, lessonMediaContext)) : null;
       const videoDuration = lessonVideo ? await getVideoFileDuration(lessonVideo) : null;
       const attachmentPath = lessonAttachment ? await withUploadProgress(() => uploadLessonAttachment(lessonAttachment, lessonMediaContext)) : null;
-      await createLesson({ ...lessonForm, module_id: selectedModuleId, video_url: videoPath, attachment_url: attachmentPath, video_duration_seconds: videoDuration });
+      const createdLesson = await createLesson({ ...lessonForm, module_id: selectedModuleId, video_url: videoPath, attachment_url: attachmentPath, video_duration_seconds: videoDuration });
+      await recordAuditLog({
+        category: 'conteudo',
+        action: 'create_lesson',
+        targetId: createdLesson.id,
+        targetType: 'lesson',
+        targetName: createdLesson.title,
+        company: selectedCourse?.company ?? null,
+        message: `${actorName} criou a aula ${createdLesson.title}.`,
+        metadata: { module_id: selectedModuleId, order_index: lessonForm.order_index },
+      });
+      if (videoPath) {
+        await recordAuditLog({
+          category: 'midia',
+          action: 'upload_lesson_video',
+          targetId: createdLesson.id,
+          targetType: 'lesson',
+          targetName: createdLesson.title,
+          company: selectedCourse?.company ?? null,
+          message: `${actorName} adicionou um vídeo na aula ${createdLesson.title}.`,
+          metadata: { video_url: videoPath },
+        });
+      }
+      if (attachmentPath) {
+        await recordAuditLog({
+          category: 'midia',
+          action: 'upload_lesson_attachment',
+          targetId: createdLesson.id,
+          targetType: 'lesson',
+          targetName: createdLesson.title,
+          company: selectedCourse?.company ?? null,
+          message: `${actorName} adicionou um anexo na aula ${createdLesson.title}.`,
+          metadata: { attachment_url: attachmentPath },
+        });
+      }
       resetLessonDraft(lessonForm.order_index + 1);
       await refresh();
       setFeedback('Aula criada com sucesso.');
@@ -1161,6 +1443,54 @@ export function AdminDashboard() {
       if ((removeLessonAttachment || lessonAttachment) && previousAttachmentUrl && previousAttachmentUrl !== attachmentPath) {
         await removeStorageObject('lesson-attachments', previousAttachmentUrl);
       }
+      await recordAuditLog({
+        category: 'conteudo',
+        action: 'update_lesson',
+        targetId: editingLesson.id,
+        targetType: 'lesson',
+        targetName: lessonForm.title,
+        company: selectedCourse?.company ?? null,
+        message: `${actorName} atualizou a aula ${lessonForm.title}.`,
+        metadata: {
+          previous_lesson: {
+            title: editingLesson.title,
+            description: editingLesson.description ?? '',
+            content: editingLesson.content ?? '',
+            order_index: editingLesson.order_index,
+            video_url: previousVideoUrl,
+            video_duration_seconds: editingLesson.video_duration_seconds ?? null,
+            attachment_url: previousAttachmentUrl,
+          },
+        },
+      });
+      if (lessonVideo || removeLessonVideo) {
+        await recordAuditLog({
+          category: 'midia',
+          action: lessonVideo ? 'upload_lesson_video' : 'remove_lesson_video',
+          targetId: editingLesson.id,
+          targetType: 'lesson',
+          targetName: lessonForm.title,
+          company: selectedCourse?.company ?? null,
+          message: lessonVideo
+            ? `${actorName} adicionou um vídeo na aula ${lessonForm.title}.`
+            : `${actorName} removeu o vídeo da aula ${lessonForm.title}.`,
+          metadata: { previous_video_url: previousVideoUrl, video_url: videoPath },
+        });
+      }
+      if (lessonAttachment || removeLessonAttachment) {
+        await recordAuditLog({
+          category: 'midia',
+          action: lessonAttachment ? 'upload_lesson_attachment' : 'remove_lesson_attachment',
+          targetId: editingLesson.id,
+          targetType: 'lesson',
+          targetName: lessonForm.title,
+          company: selectedCourse?.company ?? null,
+          message: lessonAttachment
+            ? `${actorName} adicionou um anexo na aula ${lessonForm.title}.`
+            : `${actorName} removeu o anexo da aula ${lessonForm.title}.`,
+          metadata: { previous_attachment_url: previousAttachmentUrl, attachment_url: attachmentPath },
+        });
+      }
       await refresh();
       setFeedback('Aula atualizada.');
       closeModal();
@@ -1175,7 +1505,19 @@ export function AdminDashboard() {
       const avatarUrl = profileImageFile
         ? await withUploadProgress(() => uploadProfileImage(profileImageFile, { fullName: userForm.fullName || userForm.username, company: userForm.company }))
         : userForm.avatarUrl;
-      await createManagedUser({ ...userForm, avatarUrl });
+      const createdUser = await createManagedUser({ ...userForm, avatarUrl }) as { id?: string } | null;
+      if (avatarUrl) {
+        await recordAuditLog({
+          category: 'midia',
+          action: 'upload_profile_image',
+          targetId: createdUser?.id ?? null,
+          targetType: 'profile',
+          targetName: userForm.fullName || userForm.username,
+          company: userForm.company,
+          message: `${actorName} adicionou uma foto no perfil do(a) ${userForm.role === 'admin' ? 'administrador(a)' : 'colaborador(a)'} ${userForm.fullName || userForm.username}.`,
+          metadata: { avatar_url: avatarUrl, role: userForm.role },
+        });
+      }
       resetUserDraft();
       await refresh();
       setFeedback('Usuário criado pela função segura.');
@@ -1208,6 +1550,20 @@ export function AdminDashboard() {
       });
       if ((removeProfileImage || profileImageFile) && previousAvatarUrl && previousAvatarUrl !== avatarUrl) {
         await removeStorageObject('profile-images', previousAvatarUrl);
+      }
+      if (profileImageFile || removeProfileImage) {
+        await recordAuditLog({
+          category: 'midia',
+          action: profileImageFile ? 'upload_profile_image' : 'remove_profile_image',
+          targetId: editingUser.id,
+          targetType: 'profile',
+          targetName: userForm.fullName || userForm.username,
+          company: userForm.role === 'admin' ? 'Seven' : userForm.company,
+          message: profileImageFile
+            ? `${actorName} adicionou uma foto no perfil do(a) ${userForm.role === 'admin' ? 'administrador(a)' : 'colaborador(a)'} ${userForm.fullName || userForm.username}.`
+            : `${actorName} removeu a foto do perfil de ${userForm.fullName || userForm.username}.`,
+          metadata: { previous_avatar_url: previousAvatarUrl, avatar_url: avatarUrl, role: userForm.role },
+        });
       }
       await refresh();
       setFeedback('Usuário atualizado.');
@@ -1245,6 +1601,16 @@ export function AdminDashboard() {
       await deleteManagedUser(pendingDeleteUser.id);
       if (pendingDeleteUser.avatar_url) {
         await removeStorageObject('profile-images', pendingDeleteUser.avatar_url);
+        await recordAuditLog({
+          category: 'midia',
+          action: 'remove_profile_image',
+          targetId: pendingDeleteUser.id,
+          targetType: 'profile',
+          targetName: pendingDeleteUser.full_name || pendingDeleteUser.username,
+          company: pendingDeleteUser.company,
+          message: `${actorName} removeu a foto do perfil de ${pendingDeleteUser.full_name || pendingDeleteUser.username}.`,
+          metadata: { avatar_url: pendingDeleteUser.avatar_url, role: pendingDeleteUser.role },
+        });
       }
       await refresh();
       setFeedback('Usuário foi excluído do banco de dados.');
@@ -1295,6 +1661,18 @@ export function AdminDashboard() {
         await removeStorageObject('certificates', certificate.certificate_url).catch(() => undefined);
       }
 
+      await recordAuditLog({
+        category: 'certificados',
+        action: certificate ? 'regenerate_certificate' : 'generate_certificate',
+        targetId: nextCertificate.id,
+        targetType: 'certificate',
+        targetName: user.full_name || user.username,
+        company: user.company,
+        message: certificate
+          ? `${actorName} regerou o certificado de ${user.full_name || user.username} no curso ${course.title}.`
+          : `${actorName} gerou o certificado de ${user.full_name || user.username} no curso ${course.title}.`,
+        metadata: { course_id: course.id, certificate_url: certificatePath },
+      });
       setCertificates((current) => [nextCertificate, ...current.filter((item) => !(item.user_id === user.id && item.course_id === course.id))]);
       await refresh();
       setFeedback(certificate ? 'Certificado regerado com sucesso.' : 'Certificado gerado com sucesso.');
@@ -1319,6 +1697,16 @@ export function AdminDashboard() {
         await removeStorageObject('certificates', certificate.certificate_url);
       }
       await deleteCertificate(certificate.id);
+      await recordAuditLog({
+        category: 'certificados',
+        action: 'delete_certificate',
+        targetId: certificate.id,
+        targetType: 'certificate',
+        targetName: user.full_name || user.username,
+        company: user.company,
+        message: `${actorName} excluiu o certificado de ${user.full_name || user.username} no curso ${course.title}.`,
+        metadata: { course_id: course.id, certificate_url: certificate.certificate_url },
+      });
       setCertificates((current) => current.filter((item) => item.id !== certificate.id));
       setFeedback('Certificado apagado do colaborador.');
     } catch (nextError) {
@@ -1420,7 +1808,7 @@ export function AdminDashboard() {
             <span className="min-w-0">
               <span className="block truncate text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Admin</span>
               <span className="block truncate text-lg font-semibold tracking-[-0.04em]">
-                {route === 'inicio' ? 'Início' : route === 'cursos' ? 'Cursos' : route === 'progress' ? 'Progresso' : 'Ajustes'}
+                {routeTitle}
               </span>
             </span>
           </button>
@@ -1451,6 +1839,7 @@ export function AdminDashboard() {
               { id: 'inicio' as const, label: 'Início', href: '/dashboard/admin', icon: BarChart3 },
               { id: 'cursos' as const, label: 'Cursos', href: '/dashboard/admin/cursos', icon: BookOpen },
               { id: 'progress' as const, label: 'Progresso', href: '/dashboard/admin/progresso', icon: Award },
+              { id: 'history' as const, label: 'Histórico', href: '/dashboard/admin/historico', icon: History },
               { id: 'settings' as const, label: 'Configurações', href: '/dashboard/admin/settings', icon: Settings },
             ].map((item) => {
               const Icon = item.icon;
@@ -1484,7 +1873,7 @@ export function AdminDashboard() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">Admin</p>
               <h1 className="mt-2 text-[2rem] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-4xl">
-                {route === 'inicio' ? 'Início' : route === 'cursos' ? 'Cursos' : route === 'progress' ? 'Progresso' : 'Configurações'}
+                {routeTitle}
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-[#666670]">
                 {profile?.full_name || profile?.username}, a plataforma nova segue isolada da home institucional.
@@ -1636,6 +2025,8 @@ export function AdminDashboard() {
               onRegenerateCertificate={handleRegenerateCertificate}
               onDeleteCertificate={handleDeleteCertificate}
             />
+          ) : route === 'history' ? (
+            <AdminAuditHistory logs={auditLogs} revertingLogId={revertingLogId} onRevert={handleRevertAuditLog} />
           ) : (
             <div className="space-y-6 lg:space-y-7">
               {missingProfiles.length > 0 && (
@@ -2085,12 +2476,158 @@ export function AdminDashboard() {
           <AppTabButton active={route === 'inicio'} label="Início" icon={<BarChart3 className="h-4 w-4" />} onClick={() => navigate('/dashboard/admin')} />
           <AppTabButton active={route === 'cursos'} label="Cursos" icon={<BookOpen className="h-4 w-4" />} onClick={() => navigate('/dashboard/admin/cursos')} />
           <AppTabButton active={route === 'progress'} label="Progresso" icon={<Award className="h-4 w-4" />} onClick={() => navigate('/dashboard/admin/progresso')} />
+          <AppTabButton active={route === 'history'} label="Histórico" icon={<History className="h-4 w-4" />} onClick={() => navigate('/dashboard/admin/historico')} />
           <AppTabButton active={route === 'settings'} label="Usuários" icon={<Users className="h-4 w-4" />} onClick={() => navigate('/dashboard/admin/settings')} />
           <AppTabButton label="Home" icon={<Home className="h-4 w-4" />} onClick={() => navigate('/home')} />
         </div>
       </nav>
       <Toast message={error || feedback} type={error ? 'error' : 'success'} />
     </main>
+  );
+}
+
+function auditCategoryLabel(category: AdminAuditCategory) {
+  return auditFilterOptions.find((option) => option.id === category)?.label ?? 'Usuários';
+}
+
+function auditFilterMatches(log: AdminAuditLog, filter: AdminAuditCategory | 'todos') {
+  if (filter === 'todos') return true;
+  if (filter === 'usuarios') return log.category === 'usuarios' || log.category === 'admins' || log.category === 'colaboradores';
+  return log.category === filter;
+}
+
+function formatAuditDate(value: string) {
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value));
+}
+
+function metadataRecord(metadata: Record<string, unknown>, key: string) {
+  const value = metadata[key];
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+function metadataString(metadata: Record<string, unknown>, key: string, fallback = '') {
+  return typeof metadata[key] === 'string' ? metadata[key] as string : fallback;
+}
+
+function metadataNullableString(metadata: Record<string, unknown>, key: string) {
+  return typeof metadata[key] === 'string' ? metadata[key] as string : null;
+}
+
+function metadataNumber(metadata: Record<string, unknown>, key: string, fallback: number) {
+  return typeof metadata[key] === 'number' && Number.isFinite(metadata[key]) ? metadata[key] as number : fallback;
+}
+
+function metadataNullableNumber(metadata: Record<string, unknown>, key: string) {
+  return typeof metadata[key] === 'number' && Number.isFinite(metadata[key]) ? metadata[key] as number : null;
+}
+
+function canRevertAuditLog(log: AdminAuditLog) {
+  if (log.reverted_at || !log.target_id) return false;
+  if (log.action === 'create_course' || log.action === 'create_module' || log.action === 'create_lesson') return true;
+  if (log.action === 'update_course') return Object.keys(metadataRecord(log.metadata, 'previous_course')).length > 0;
+  if (log.action === 'update_module') return Object.keys(metadataRecord(log.metadata, 'previous_module')).length > 0;
+  if (log.action === 'update_lesson') return Object.keys(metadataRecord(log.metadata, 'previous_lesson')).length > 0;
+  return false;
+}
+
+function AdminAuditHistory({
+  logs,
+  revertingLogId,
+  onRevert,
+}: {
+  logs: AdminAuditLog[];
+  revertingLogId: string;
+  onRevert: (log: AdminAuditLog) => Promise<void>;
+}) {
+  const [activeFilter, setActiveFilter] = useState<AdminAuditCategory | 'todos'>('todos');
+  const filteredLogs = logs.filter((log) => auditFilterMatches(log, activeFilter));
+
+  return (
+    <div className="space-y-5">
+      <Panel className="p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Histórico administrativo</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em]">Modificações recentes</h2>
+          </div>
+          <span className="w-fit rounded-full border border-[#E6E6EA] bg-[#FAFAFB] px-3 py-1 text-xs font-semibold text-[#666670]">
+            {filteredLogs.length} registros
+          </span>
+        </div>
+        <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
+          {auditFilterOptions.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => setActiveFilter(option.id)}
+              className={`shrink-0 rounded-full border px-3 py-2 text-xs font-semibold transition ${
+                activeFilter === option.id
+                  ? 'border-primary bg-primary text-white shadow-[0_12px_26px_rgba(223,117,13,0.18)]'
+                  : 'border-[#E6E6EA] bg-white text-[#666670] hover:border-primary/50 hover:text-primary'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </Panel>
+
+      <Panel className="overflow-hidden">
+        {filteredLogs.length > 0 ? (
+          <div className="divide-y divide-[#ECECEF]">
+            {filteredLogs.map((log) => (
+              <article key={log.id} className="grid gap-3 p-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+                <div className="min-w-0">
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
+                      {auditCategoryLabel(log.category)}
+                    </span>
+                    {log.company && <InfoBadge value={log.company} tone="company" />}
+                    {log.reverted_at && (
+                      <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-700">
+                        Revertido
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm font-semibold leading-6 text-[#111114]">{log.message}</p>
+                  <p className="mt-1 text-xs text-[#8A8A92]">
+                    Autor: {log.actor_name}{log.target_name ? ` · Alvo: ${log.target_name}` : ''}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 md:justify-end">
+                  <time className="text-left text-xs font-semibold text-[#8A8A92] md:text-right" dateTime={log.created_at}>
+                    {formatAuditDate(log.created_at)}
+                  </time>
+                  {canRevertAuditLog(log) && (
+                    <button
+                      type="button"
+                      onClick={() => void onRevert(log)}
+                      disabled={revertingLogId === log.id}
+                      className="inline-flex h-9 items-center justify-center rounded-md border border-[#E6E6EA] bg-white px-3 text-xs font-semibold text-[#666670] transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {revertingLogId === log.id ? 'Revertendo...' : 'Reverter'}
+                    </button>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="flex min-h-[220px] flex-col items-center justify-center gap-3 p-6 text-center text-sm text-[#8A8A92]">
+            <History className="h-5 w-5 text-primary" />
+            Nenhuma modificação registrada ainda.
+          </div>
+        )}
+      </Panel>
+    </div>
   );
 }
 

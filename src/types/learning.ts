@@ -1,6 +1,7 @@
 export type Company = 'Seven' | 'ARQO';
 export type UserRole = 'admin' | 'colaborador';
 export type UserStatus = 'ativo' | 'inativo';
+export type AdminAuditCategory = 'usuarios' | 'admins' | 'colaboradores' | 'conteudo' | 'midia' | 'certificados' | 'sistema';
 
 export interface UserProfile {
   id: string;
@@ -22,6 +23,24 @@ export interface ManagedAuthUser {
   company: Company;
   status: UserStatus;
   has_profile: boolean;
+}
+
+export interface AdminAuditLog {
+  id: string;
+  actor_id: string | null;
+  actor_name: string;
+  category: AdminAuditCategory;
+  action: string;
+  target_id: string | null;
+  target_type: string | null;
+  target_name: string | null;
+  company: Company | null;
+  message: string;
+  metadata: Record<string, unknown>;
+  reverted_at: string | null;
+  reverted_by: string | null;
+  revert_log_id: string | null;
+  created_at: string;
 }
 
 export interface Course {

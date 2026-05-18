@@ -1,5 +1,6 @@
 import puppeteer from 'puppeteer';
 import { existsSync } from 'node:fs';
+import { createClient } from '@supabase/supabase-js';
 
 const WIDTH = 1600;
 const HEIGHT = 1100;
@@ -268,6 +269,33 @@ function buildCertificateHtml(values) {
 </html>`;
 }
 
+async function assertAuthenticated(request) {
+  const headers = request.headers || {};
+  const authorization = typeof headers.get === 'function'
+    ? headers.get('authorization')
+    : headers.authorization || headers.Authorization;
+
+  if (!authorization) {
+    throw Object.assign(new Error('Unauthorized'), { statusCode: 401 });
+  }
+
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw Object.assign(new Error('Supabase environment variables are missing.'), { statusCode: 500 });
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authorization } },
+  });
+  const { data, error } = await supabase.auth.getUser();
+
+  if (error || !data.user) {
+    throw Object.assign(new Error('Unauthorized'), { statusCode: 401 });
+  }
+}
+
 export default async function handler(request, response) {
   if (request.method !== 'POST') {
     response.setHeader('Allow', 'POST');
@@ -277,6 +305,7 @@ export default async function handler(request, response) {
 
   let browser;
   try {
+    await assertAuthenticated(request);
     const values = request.body || {};
     const html = buildCertificateHtml(values);
     const executablePath = resolveBrowserExecutablePath();
@@ -299,7 +328,10 @@ export default async function handler(request, response) {
     response.setHeader('Cache-Control', 'no-store');
     response.status(200).send(Buffer.from(png));
   } catch (error) {
-    response.status(500).json({ error: error instanceof Error ? error.message : 'Erro ao renderizar certificado.' });
+    const statusCode = typeof error === 'object' && error && 'statusCode' in error
+      ? Number(error.statusCode)
+      : 500;
+    response.status(Number.isFinite(statusCode) ? statusCode : 500).json({ error: error instanceof Error ? error.message : 'Erro ao renderizar certificado.' });
   } finally {
     if (browser) await browser.close();
   }

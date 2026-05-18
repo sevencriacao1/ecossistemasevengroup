@@ -5,6 +5,7 @@ import { VideoPlayer } from '../../components/VideoPlayer';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
 import { createCertificateValidationCode } from '../../lib/certificateValidation';
+import { supabase } from '../../lib/supabase';
 import {
   calculateCourseWorkloadMinutes,
   fetchCertificates,
@@ -104,9 +105,19 @@ async function createCertificateBlob({
 }) {
   const completionDate = completedAt ?? new Date().toISOString();
   const dateFormatter = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+
+  if (!accessToken) {
+    throw new Error('Sessão expirada. Faça login novamente.');
+  }
+
   const response = await fetch('/api/render-certificate', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify({
       userName,
       courseName: course.title,
