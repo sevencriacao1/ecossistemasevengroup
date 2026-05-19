@@ -45,7 +45,11 @@ import {
   fetchQuizAttempts,
   fetchQuizzes,
   fetchUsers,
+  getCompletedModuleCount,
+  getCourseProgress,
+  getModuleProgress,
   getVideoFileDuration,
+  isCourseCompleted,
   listManagedAuthUsers,
   syncManagedUserProfile,
   updateLesson,
@@ -660,15 +664,23 @@ function AppTabButton({
   );
 }
 
-function progressForUser(user: UserProfile, progress: LessonProgress[], courses: CourseTree[]) {
+function progressForUser(
+  user: UserProfile,
+  progress: LessonProgress[],
+  courses: CourseTree[],
+  quizzes: Quiz[],
+  attempts: QuizAttempt[]
+) {
   const userProgress = progress.filter((item) => item.user_id === user.id);
+  const userAttempts = attempts.filter((item) => item.user_id === user.id);
   const companyCourses = courses.filter((course) => course.company === user.company);
-  const lessons = companyCourses.flatMap((course) => course.modules.flatMap((moduleItem) => moduleItem.lessons));
   const modules = companyCourses.flatMap((course) => course.modules);
-  const completed = userProgress.filter((item) => item.completed).length;
-  const total = lessons.length || modules.length || 1;
-  const percent = lessons.length
-    ? Math.round((completed / total) * 100)
+  const coursePercents = companyCourses.map((course) => getCourseProgress(course, userProgress, quizzes, userAttempts));
+  const completed = companyCourses.reduce((sum, course) => (
+    sum + getCompletedModuleCount(course, userProgress, quizzes, userAttempts)
+  ), 0);
+  const percent = coursePercents.length
+    ? Math.round(coursePercents.reduce((sum, item) => sum + item, 0) / coursePercents.length)
     : Math.round(userProgress.reduce((sum, item) => sum + item.progress, 0) / Math.max(userProgress.length, 1));
   const latest = [...userProgress].sort((a, b) => (b.updated_at || b.created_at).localeCompare(a.updated_at || a.created_at))[0];
   const currentModule = modules.find((moduleItem) => (
@@ -680,7 +692,7 @@ function progressForUser(user: UserProfile, progress: LessonProgress[], courses:
     percent: Number.isFinite(percent) ? percent : 0,
     currentModule: currentModule?.title ?? 'Não iniciado',
     completed,
-    total: lessons.length || modules.length,
+    total: modules.length,
   };
 }
 
@@ -930,7 +942,7 @@ export function AdminDashboard() {
   const missingProfiles = authUsers.filter((authUser) => !authUser.has_profile);
   const totalLessons = courses.reduce((sum, course) => sum + course.modules.reduce((moduleSum, moduleItem) => moduleSum + moduleItem.lessons.length, 0), 0);
   const averageProgress = collaborators.length
-    ? Math.round(collaborators.reduce((sum, user) => sum + progressForUser(user, progress, courses).percent, 0) / collaborators.length)
+    ? Math.round(collaborators.reduce((sum, user) => sum + progressForUser(user, progress, courses, quizzes, quizAttempts).percent, 0) / collaborators.length)
     : 0;
   const hasCurrentLessonVideo = modal === 'editLesson' && Boolean(editingLesson?.video_url) && !removeLessonVideo;
   const hasCurrentLessonAttachment = modal === 'editLesson' && Boolean(editingLesson?.attachment_url) && !removeLessonAttachment;
@@ -1911,6 +1923,8 @@ export function AdminDashboard() {
                 users={collaborators.filter((user) => user.company === 'Seven')}
                 courses={courses}
                 progress={progress}
+                quizzes={quizzes}
+                attempts={quizAttempts}
                 profileImages={profileImages}
               />
               <CollaboratorGroup
@@ -1919,6 +1933,8 @@ export function AdminDashboard() {
                 users={collaborators.filter((user) => user.company === 'ARQO')}
                 courses={courses}
                 progress={progress}
+                quizzes={quizzes}
+                attempts={quizAttempts}
                 profileImages={profileImages}
               />
             </div>
@@ -2017,6 +2033,7 @@ export function AdminDashboard() {
               users={collaborators}
               courses={courses}
               progress={progress}
+              quizzes={quizzes}
               attempts={quizAttempts}
               failures={courseFailures}
               certificates={certificates}
@@ -2635,6 +2652,7 @@ function ProgressDashboard({
   users,
   courses,
   progress,
+  quizzes,
   attempts,
   failures,
   certificates,
@@ -2646,6 +2664,7 @@ function ProgressDashboard({
   users: UserProfile[];
   courses: CourseTree[];
   progress: LessonProgress[];
+  quizzes: Quiz[];
   attempts: QuizAttempt[];
   failures: CourseFailure[];
   certificates: Certificate[];
@@ -2700,12 +2719,14 @@ function ProgressDashboard({
               const courseLessons = course.modules.flatMap((moduleItem) => moduleItem.lessons);
               const courseProgress = progress.filter((item) => item.user_id === selectedUser.id && courseLessons.some((lesson) => lesson.id === item.lesson_id));
               const completed = courseProgress.filter((item) => item.completed).length;
-              const percent = courseLessons.length ? Math.round((completed / courseLessons.length) * 100) : 0;
               const courseAttempts = userAttempts.filter((attempt) => attempt.course_id === course.id);
+              const courseQuizzes = quizzes.filter((quiz) => quiz.is_active && course.modules.some((moduleItem) => moduleItem.id === quiz.module_id));
+              const percent = getCourseProgress(course, courseProgress, courseQuizzes, courseAttempts);
+              const completedModules = getCompletedModuleCount(course, courseProgress, courseQuizzes, courseAttempts);
               const average = courseAttempts.length ? Math.round(courseAttempts.reduce((sum, attempt) => sum + attempt.score, 0) / courseAttempts.length) : 0;
               const failure = userFailures.find((item) => item.course_id === course.id);
               const certificate = userCertificates.find((item) => item.course_id === course.id);
-              const canGenerateCertificate = Boolean(certificate) || percent === 100;
+              const canGenerateCertificate = Boolean(certificate) || isCourseCompleted(course, courseProgress, courseQuizzes, courseAttempts);
               const certificateActionKey = `${selectedUser.id}:${course.id}`;
               const isRegeneratingCertificate = regeneratingCertificateKey === certificateActionKey;
               const isDeletingCertificate = deletingCertificateKey === certificateActionKey;
@@ -2716,6 +2737,7 @@ function ProgressDashboard({
                     <div>
                       <h3 className="text-xl font-semibold">{course.title}</h3>
                       <p className="mt-2 text-sm text-[#777780]">{completed} de {courseLessons.length} aulas concluídas</p>
+                      <p className="mt-1 text-sm text-[#777780]">{completedModules} de {course.modules.length} módulos concluídos</p>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <InfoBadge value={`${percent}%`} tone="company" />
@@ -2757,12 +2779,14 @@ function ProgressDashboard({
                   <div className="mt-5 grid gap-3">
                     {course.modules.map((moduleItem) => {
                       const moduleAttempt = courseAttempts.find((attempt) => attempt.module_id === moduleItem.id);
+                      const moduleProgress = getModuleProgress(moduleItem, courseProgress, courseQuizzes, courseAttempts);
                       return (
                         <div key={moduleItem.id} className="rounded-[16px] border border-[#ECECEF] bg-[#FAFAFB] p-3 text-sm">
                           <div className="flex flex-wrap items-center justify-between gap-3">
                             <span className="font-semibold">{moduleItem.title}</span>
+                            <span className="font-semibold text-primary">{moduleProgress}%</span>
                             <span className={moduleAttempt?.passed ? 'text-emerald-700' : moduleAttempt ? 'text-red-700' : 'text-[#8A8A92]'}>
-                              {moduleAttempt ? `Nota ${moduleAttempt.score}%` : moduleItem.has_quiz ? 'Prova pendente' : 'Sem prova'}
+                              {moduleAttempt ? `Nota ${moduleAttempt.score}%` : courseQuizzes.some((quiz) => quiz.module_id === moduleItem.id) ? 'Prova pendente' : 'Sem prova'}
                             </span>
                           </div>
                         </div>
@@ -2853,6 +2877,8 @@ function CollaboratorGroup({
   users,
   courses,
   progress,
+  quizzes,
+  attempts,
   profileImages,
 }: {
   title: string;
@@ -2860,6 +2886,8 @@ function CollaboratorGroup({
   users: UserProfile[];
   courses: CourseTree[];
   progress: LessonProgress[];
+  quizzes: Quiz[];
+  attempts: QuizAttempt[];
   profileImages: Record<string, string>;
 }) {
   const [sortMode, setSortMode] = useState<'alphabetical' | 'progress'>('alphabetical');
@@ -2868,12 +2896,12 @@ function CollaboratorGroup({
   const sortedUsers = useMemo(() => {
     return [...users].sort((first, second) => {
       if (sortMode === 'progress') {
-        return progressForUser(second, progress, courses).percent - progressForUser(first, progress, courses).percent;
+        return progressForUser(second, progress, courses, quizzes, attempts).percent - progressForUser(first, progress, courses, quizzes, attempts).percent;
       }
 
       return (first.full_name || first.username).localeCompare(second.full_name || second.username);
     });
-  }, [courses, progress, sortMode, users]);
+  }, [attempts, courses, progress, quizzes, sortMode, users]);
   const totalPages = Math.max(1, Math.ceil(sortedUsers.length / pageSize));
   const pageUsers = sortedUsers.slice((page - 1) * pageSize, page * pageSize);
 
@@ -2908,7 +2936,7 @@ function CollaboratorGroup({
 
       <div className="grid gap-4 md:grid-cols-2 min-[1366px]:grid-cols-3">
         {pageUsers.map((user) => {
-          const userProgress = progressForUser(user, progress, courses);
+          const userProgress = progressForUser(user, progress, courses, quizzes, attempts);
           const imageUrl = profileImages[user.id];
           return (
             <article key={user.id} className="min-h-[268px] rounded-[26px] border border-white/70 bg-white/86 p-5 shadow-[0_18px_42px_rgba(17,17,20,0.06)] backdrop-blur-2xl lg:rounded-lg lg:border-[#E6E6EA] lg:bg-white">

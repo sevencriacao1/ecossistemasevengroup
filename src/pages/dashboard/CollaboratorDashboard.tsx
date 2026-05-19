@@ -14,10 +14,14 @@ import {
   fetchProgress,
   fetchQuizAttempts,
   fetchQuizzes,
+  getCompletedModuleCount,
+  getCourseProgress,
   getCertificateUrl,
   getLessonAttachmentUrl,
   getLessonVideoUrl,
+  getModuleProgress,
   getStorageImageUrl,
+  isCourseCompleted,
   submitQuizAttempt,
   uploadCertificatePng,
   upsertCertificate,
@@ -56,13 +60,6 @@ function optimisticCompletedProgress(progress: LessonProgress[], userId: string,
   ];
 }
 
-function getCourseProgress(course: CourseTree, progress: LessonProgress[]) {
-  const lessons = getCourseLessons(course);
-  if (lessons.length === 0) return 0;
-  const completed = lessons.filter((lesson) => getLessonProgress(progress, lesson.id)?.completed).length;
-  return Math.round((completed / lessons.length) * 100);
-}
-
 function getRouteId(pathname: string, segment: 'cursos' | 'aulas' | 'certificados') {
   const parts = pathname.split('/').filter(Boolean);
   const index = parts.indexOf(segment);
@@ -88,6 +85,10 @@ function formatCertificateWorkload(minutes: number) {
   if (hours && remaining) return `${hours}h${remaining.toString().padStart(2, '0')}`;
   if (hours) return `${hours}h`;
   return `${minutes} minutos`;
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
 }
 
 async function createCertificateBlob({
@@ -195,7 +196,9 @@ export function CollaboratorDashboard() {
   const activeLesson = allLessons.find((lesson) => lesson.id === lessonId) ?? null;
   const courseForLesson = courses.find((course) => getCourseLessons(course).some((lesson) => lesson.id === activeLesson?.id)) ?? null;
   const completedCount = progress.filter((item) => item.completed).length;
-  const globalProgress = allLessons.length ? Math.round((completedCount / allLessons.length) * 100) : 0;
+  const globalProgress = courses.length
+    ? Math.round(courses.reduce((sum, course) => sum + getCourseProgress(course, progress, quizzes, quizAttempts), 0) / courses.length)
+    : 0;
   const lastProgress = [...progress].sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''))[0];
   const continueLesson = allLessons.find((lesson) => lesson.id === lastProgress?.lesson_id)
     ?? findFirstLesson(activeCourse)
@@ -313,11 +316,8 @@ export function CollaboratorDashboard() {
     if (!profile) return;
     if (certificates.some((certificate) => certificate.course_id === course.id)) return;
 
-    const lessons = getCourseLessons(course);
-    const allLessonsCompleted = lessons.length > 0 && lessons.every((lesson) => nextProgress.some((item) => item.lesson_id === lesson.id && item.completed));
     const courseQuizzes = quizzes.filter((quiz) => quiz.is_active && course.modules.some((moduleItem) => moduleItem.id === quiz.module_id));
-    const allQuizzesPassed = courseQuizzes.every((quiz) => nextAttempts.some((attempt) => attempt.quiz_id === quiz.id && attempt.passed));
-    if (!allLessonsCompleted || !allQuizzesPassed) return;
+    if (!isCourseCompleted(course, nextProgress, courseQuizzes, nextAttempts)) return;
 
     const workloadMinutes = calculateCourseWorkloadMinutes(course, courseQuizzes);
     const startedAt = getCourseStartDate(course, nextProgress);
@@ -373,7 +373,11 @@ export function CollaboratorDashboard() {
     const nextLesson = lessons[currentIndex + 1];
 
     if (currentCourse) {
-      await ensureCertificate(currentCourse, nextProgress);
+      try {
+        await ensureCertificate(currentCourse, nextProgress);
+      } catch (certificateError) {
+        setError(`A aula foi concluída, mas não foi possível emitir o certificado agora. ${getErrorMessage(certificateError, '')}`.trim());
+      }
       await refresh();
     }
 
@@ -414,7 +418,11 @@ export function CollaboratorDashboard() {
       const nextAttempts = await fetchQuizAttempts(profile.id);
       setQuizAttempts(nextAttempts);
       const nextProgress = activeLesson ? optimisticCompletedProgress(progress, profile.id, activeLesson.id) : progress;
-      await ensureCertificate(courseForLesson, nextProgress, nextAttempts);
+      try {
+        await ensureCertificate(courseForLesson, nextProgress, nextAttempts);
+      } catch (certificateError) {
+        setError(`Prova concluída, mas não foi possível emitir o certificado agora. ${getErrorMessage(certificateError, '')}`.trim());
+      }
       await refresh();
       const lessons = getCourseLessons(courseForLesson);
       const currentIndex = activeLesson ? lessons.findIndex((lesson) => lesson.id === activeLesson.id) : -1;
@@ -591,6 +599,8 @@ export function CollaboratorDashboard() {
                 isLoading={isLoading}
                 courses={courses}
                 progress={progress}
+                quizzes={quizzes}
+                attempts={quizAttempts}
                 coverUrls={coverUrls}
                 onOpenCourse={(course) => navigate(`/dashboard/colaborador/cursos/${course.id}`)}
               />
@@ -613,32 +623,49 @@ export function CollaboratorDashboard() {
                 </Button>
               </div>
               <div className="mt-6 space-y-4">
-                {activeCourse.modules.map((moduleItem) => (
-                  <article key={moduleItem.id} className="rounded-[24px] border border-[#ECECEF] bg-[#FAFAFB] p-4 lg:rounded-lg">
-                    <h2 className="font-semibold">{moduleItem.order_index}. {moduleItem.title}</h2>
-                    <div className="mt-3 grid gap-2">
-                      {moduleItem.lessons.map((lesson) => {
-                        const lessonProgress = getLessonProgress(progress, lesson.id);
-                        return (
-                          <button
-                            type="button"
-                            key={lesson.id}
-                            onClick={() => navigate(`/dashboard/colaborador/aulas/${lesson.id}`)}
-                            className="flex flex-col gap-3 rounded-[18px] border border-[#ECECEF] bg-white px-3 py-3 text-left text-sm transition hover:border-primary/40 sm:flex-row sm:items-center sm:justify-between lg:rounded-md"
-                          >
-                            <span className="flex items-center gap-2">
-                              <PlayCircle className="h-4 w-4 text-primary" />
-                              {lesson.title}
-                            </span>
-                            <span className={lessonProgress?.completed ? 'text-emerald-700' : 'text-[#8A8A92]'}>
-                              {lessonProgress?.completed ? 'concluída' : `${lessonProgress?.progress ?? 0}%`}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </article>
-                ))}
+                {activeCourse.modules.map((moduleItem) => {
+                  const moduleProgress = getModuleProgress(moduleItem, progress, quizzes, quizAttempts);
+                  const moduleQuiz = quizzes.find((quiz) => quiz.module_id === moduleItem.id && quiz.is_active);
+                  const quizPassed = moduleQuiz ? quizAttempts.some((attempt) => attempt.quiz_id === moduleQuiz.id && attempt.passed) : false;
+
+                  return (
+                    <article key={moduleItem.id} className="rounded-[24px] border border-[#ECECEF] bg-[#FAFAFB] p-4 lg:rounded-lg">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <h2 className="font-semibold">{moduleItem.order_index}. {moduleItem.title}</h2>
+                        <span className="text-sm font-semibold text-primary">{moduleProgress}% do módulo</span>
+                      </div>
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#EFEFF2]">
+                        <div className="h-full rounded-full bg-primary" style={{ width: `${moduleProgress}%` }} />
+                      </div>
+                      {moduleQuiz && (
+                        <p className={`mt-3 text-sm font-semibold ${quizPassed ? 'text-emerald-700' : 'text-[#8A8A92]'}`}>
+                          {quizPassed ? 'Prova concluída' : 'Prova pendente'}
+                        </p>
+                      )}
+                      <div className="mt-3 grid gap-2">
+                        {moduleItem.lessons.map((lesson) => {
+                          const lessonProgress = getLessonProgress(progress, lesson.id);
+                          return (
+                            <button
+                              type="button"
+                              key={lesson.id}
+                              onClick={() => navigate(`/dashboard/colaborador/aulas/${lesson.id}`)}
+                              className="flex flex-col gap-3 rounded-[18px] border border-[#ECECEF] bg-white px-3 py-3 text-left text-sm transition hover:border-primary/40 sm:flex-row sm:items-center sm:justify-between lg:rounded-md"
+                            >
+                              <span className="flex items-center gap-2">
+                                <PlayCircle className="h-4 w-4 text-primary" />
+                                {lesson.title}
+                              </span>
+                              <span className={lessonProgress?.completed ? 'text-emerald-700' : 'text-[#8A8A92]'}>
+                                {lessonProgress?.completed ? 'concluída' : `${lessonProgress?.progress ?? 0}%`}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             </section>
           )}
@@ -786,12 +813,16 @@ function CourseCards({
   isLoading,
   courses,
   progress,
+  quizzes,
+  attempts,
   coverUrls,
   onOpenCourse,
 }: {
   isLoading: boolean;
   courses: CourseTree[];
   progress: LessonProgress[];
+  quizzes: Quiz[];
+  attempts: QuizAttempt[];
   coverUrls: Record<string, string>;
   onOpenCourse: (course: CourseTree) => void;
 }) {
@@ -802,7 +833,8 @@ function CourseCards({
       ) : courses.length === 0 ? (
         <p className="text-sm text-[#8A8A92]">Nenhum curso ativo para sua empresa ainda.</p>
       ) : courses.map((course) => {
-        const courseProgress = getCourseProgress(course, progress);
+        const courseProgress = getCourseProgress(course, progress, quizzes, attempts);
+        const completedModules = getCompletedModuleCount(course, progress, quizzes, attempts);
         const coverUrl = coverUrls[course.id];
         return (
           <button
@@ -821,6 +853,7 @@ function CourseCards({
             <div className="p-4">
               <h2 className="text-lg font-semibold leading-tight tracking-[-0.025em]">{course.title}</h2>
               <p className="mt-2 text-sm leading-6 text-[#666670]">{course.description || 'Curso de onboarding interno.'}</p>
+              <p className="mt-3 text-sm text-[#8A8A92]">{completedModules} de {course.modules.length} módulos concluídos</p>
               <div className="mt-4 flex items-center justify-between gap-3">
                 <span className="text-sm font-semibold text-primary">{courseProgress}% concluído</span>
                 <span className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-[#666670] shadow-[0_8px_20px_rgba(17,17,20,0.05)] lg:bg-transparent lg:p-0 lg:shadow-none">Acessar</span>

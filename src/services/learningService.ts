@@ -1071,7 +1071,10 @@ export async function submitQuizAttempt(values: {
     })
     .single();
 
-  if (error) throw error;
+  if (error) {
+    const message = [error.message, error.details, error.hint].filter(Boolean).join(' ');
+    throw new Error(message || 'Nao foi possivel enviar a prova.');
+  }
   const attempt = data as QuizAttempt;
   return { score: attempt.score, passed: attempt.passed };
 }
@@ -1085,6 +1088,56 @@ export function calculateCourseWorkloadMinutes(course: CourseTree, quizzes: Quiz
     .reduce((total, quiz) => total + (quiz.questions.length * quiz.time_per_question_minutes), 0);
 
   return Math.ceil(videoSeconds / 60) + quizMinutes;
+}
+
+export function getModuleProgress(
+  moduleItem: CourseTree['modules'][number],
+  progress: LessonProgress[],
+  quizzes: Quiz[],
+  attempts: QuizAttempt[]
+) {
+  const completedLessons = moduleItem.lessons.filter((lesson) => (
+    progress.some((item) => item.lesson_id === lesson.id && item.completed)
+  )).length;
+  const lessonProgress = moduleItem.lessons.length ? completedLessons / moduleItem.lessons.length : 1;
+  const moduleQuiz = quizzes.find((quiz) => quiz.module_id === moduleItem.id && quiz.is_active);
+
+  if (!moduleQuiz) return Math.round(lessonProgress * 100);
+
+  const quizPassed = attempts.some((attempt) => attempt.quiz_id === moduleQuiz.id && attempt.passed);
+  return Math.round((lessonProgress * 50) + (quizPassed ? 50 : 0));
+}
+
+export function getCourseProgress(
+  course: CourseTree,
+  progress: LessonProgress[],
+  quizzes: Quiz[],
+  attempts: QuizAttempt[]
+) {
+  if (course.modules.length === 0) return 0;
+  const total = course.modules.reduce((sum, moduleItem) => (
+    sum + getModuleProgress(moduleItem, progress, quizzes, attempts)
+  ), 0);
+
+  return Math.round(total / course.modules.length);
+}
+
+export function getCompletedModuleCount(
+  course: CourseTree,
+  progress: LessonProgress[],
+  quizzes: Quiz[],
+  attempts: QuizAttempt[]
+) {
+  return course.modules.filter((moduleItem) => getModuleProgress(moduleItem, progress, quizzes, attempts) === 100).length;
+}
+
+export function isCourseCompleted(
+  course: CourseTree,
+  progress: LessonProgress[],
+  quizzes: Quiz[],
+  attempts: QuizAttempt[]
+) {
+  return course.modules.length > 0 && getCompletedModuleCount(course, progress, quizzes, attempts) === course.modules.length;
 }
 
 export async function uploadCertificatePng(file: Blob, context: { company: Company; courseTitle: string; userName: string; userId: string }) {

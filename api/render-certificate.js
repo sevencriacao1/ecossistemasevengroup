@@ -1,4 +1,5 @@
-import puppeteer from 'puppeteer';
+import chromium from '@sparticuz/chromium';
+import puppeteer from 'puppeteer-core';
 import { existsSync } from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
 
@@ -32,6 +33,29 @@ function resolveBrowserExecutablePath() {
   ].filter(Boolean);
 
   return candidates.find((candidate) => existsSync(candidate));
+}
+
+async function getBrowserLaunchOptions() {
+  const executablePath = resolveBrowserExecutablePath();
+
+  if (executablePath) {
+    return {
+      executablePath,
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+    };
+  }
+
+  return {
+    executablePath: await chromium.executablePath(),
+    headless: chromium.headless,
+    args: [
+      ...chromium.args,
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+    ],
+  };
 }
 
 function createValidationCode(userName, courseName, completedAt) {
@@ -308,12 +332,7 @@ export default async function handler(request, response) {
     await assertAuthenticated(request);
     const values = request.body || {};
     const html = buildCertificateHtml(values);
-    const executablePath = resolveBrowserExecutablePath();
-    browser = await puppeteer.launch({
-      headless: 'new',
-      ...(executablePath ? { executablePath } : {}),
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-    });
+    browser = await puppeteer.launch(await getBrowserLaunchOptions());
     const page = await browser.newPage();
     await page.setViewport({ width: WIDTH, height: HEIGHT, deviceScaleFactor: 2 });
     await page.setContent(html, { waitUntil: 'networkidle0' });
