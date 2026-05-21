@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/render-certificate.js": {
+      "maxDuration": 60
+    }
+  },
   "rewrites": [
     {
       "source": "/((?!api/).*)",
