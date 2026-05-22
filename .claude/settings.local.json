@@ -6,7 +6,10 @@
       "PowerShell(@\\(Get-ChildItem -Path \"E:\\\\Dados do Windows\\\\Documentos\\\\Ecossistema SevenGroup\\\\src\\\\components\" -Force\\) | ForEach-Object { \"$\\($_.Name\\) \\(Container: $\\($_.PSIsContainer\\)\\)\" })",
       "Bash(npm run *)",
       "Bash(start chrome *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(npx tsc *)"
     ]
   }
 }

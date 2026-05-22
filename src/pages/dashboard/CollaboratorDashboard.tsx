@@ -447,6 +447,11 @@ export function CollaboratorDashboard() {
             </span>
           </button>
           <div className="flex items-center gap-2">
+            {profile?.full_name && (
+              <span className="hidden rounded-[14px] border border-white/70 bg-white px-3 py-2 text-xs font-semibold text-[#5F5F66] shadow-[0_10px_26px_rgba(17,17,20,0.06)] sm:flex lg:hidden">
+                Olá, {profile.full_name.split(' ')[0]}
+              </span>
+            )}
             <button type="button" onClick={() => navigate('/home')} aria-label="Home" className="hidden h-10 w-10 items-center justify-center rounded-md border border-[#E1E1E5] text-[#666670] transition hover:border-primary hover:text-primary lg:flex">
               <Home className="h-4 w-4" />
             </button>
@@ -459,27 +464,45 @@ export function CollaboratorDashboard() {
 
       <section className="mx-auto grid max-w-7xl 3xl:max-w-9xl gap-5 px-4 py-5 sm:px-8 lg:gap-6 lg:py-7 min-[1366px]:grid-cols-[minmax(280px,340px)_minmax(0,1fr)]">
         <aside className="grid grid-cols-2 gap-3 min-[1366px]:block min-[1366px]:space-y-4">
-          <article className="col-span-2 rounded-[28px] border border-white/70 bg-[#111114] p-5 text-white shadow-[0_20px_48px_rgba(17,17,20,0.18)] min-[1366px]:hidden">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/54">Progresso geral</p>
-            <div className="mt-4 flex items-end justify-between gap-4">
-              <div>
-                <p className="text-5xl font-semibold tracking-[-0.07em]">{globalProgress}%</p>
-                <p className="mt-2 text-sm leading-6 text-white/62">
-                  {completedCount} de {allLessons.length} aulas concluÃ­das
-                </p>
+          <article className="col-span-2 overflow-hidden rounded-[28px] border border-white/70 bg-[#111114] shadow-[0_20px_48px_rgba(17,17,20,0.18)] min-[1366px]:hidden">
+            <div className="p-5">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/54">Seu progresso</p>
+                <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-semibold text-white/70">{profile?.company ?? 'Seven'}</span>
               </div>
+              <div className="mt-4 flex items-end justify-between gap-4">
+                <div>
+                  <p className="text-5xl font-semibold tracking-[-0.07em] text-white">{globalProgress}%</p>
+                  <p className="mt-2 text-sm leading-6 text-white/62">
+                    {completedCount} de {allLessons.length} aulas concluídas
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => openContinueLesson()}
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-white text-[#111114] transition active:scale-95"
+                  aria-label="Continuar aula"
+                >
+                  <ArrowRight className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/18">
+                <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${Math.min(100, globalProgress)}%` }} />
+              </div>
+            </div>
+            {continueLesson && (
               <button
                 type="button"
                 onClick={() => openContinueLesson()}
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-white text-[#111114]"
-                aria-label="Continuar aula"
+                className="flex w-full items-center justify-between border-t border-white/10 px-5 py-3 text-left transition active:bg-white/5"
               >
-                <ArrowRight className="h-5 w-5" />
+                <span className="flex items-center gap-2 text-xs font-semibold text-white/70">
+                  <PlayCircle className="h-3.5 w-3.5" />
+                  Continuar: {continueLesson.title}
+                </span>
+                <ArrowRight className="h-3.5 w-3.5 text-white/40" />
               </button>
-            </div>
-            <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/18">
-              <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, globalProgress)}%` }} />
-            </div>
+            )}
           </article>
           {[
             { label: 'Empresa', value: profile?.company ?? 'Seven', icon: ShieldCheck },
@@ -587,8 +610,18 @@ export function CollaboratorDashboard() {
               <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{profile?.company}</p>
-                  <h1 className="mt-2 text-[2rem] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-3xl">Cursos disponíveis</h1>
-                  <p className="mt-2 text-sm leading-6 text-[#666670]">Escolha um curso para ver as aulas disponíveis.</p>
+                  <h1 className="mt-2 text-[2rem] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-3xl">
+                    {profile?.full_name ? (
+                      <span className="lg:hidden">Olá, {profile.full_name.split(' ')[0]} 👋</span>
+                    ) : null}
+                    <span className={profile?.full_name ? 'hidden lg:block' : undefined}>Cursos disponíveis</span>
+                  </h1>
+                  <p className="mt-2 text-sm leading-6 text-[#666670]">
+                    {profile?.full_name ? (
+                      <span className="lg:hidden">{globalProgress}% concluído · {courses.length} curso{courses.length !== 1 ? 's' : ''} disponível{courses.length !== 1 ? 'is' : ''}</span>
+                    ) : null}
+                    <span className={profile?.full_name ? 'hidden lg:block' : undefined}>Escolha um curso para ver as aulas disponíveis.</span>
+                  </p>
                 </div>
                 <Button type="button" onClick={() => openContinueLesson()} className="rounded-[18px] py-3 lg:rounded-md">
                   Continuar de onde parou <ArrowRight className="ml-2 h-4 w-4" />
@@ -671,19 +704,23 @@ export function CollaboratorDashboard() {
           )}
 
           {activeLesson && lessonId && (
-            <section className="rounded-[28px] border border-white/70 bg-white/86 p-5 shadow-[0_18px_42px_rgba(17,17,20,0.06)] backdrop-blur-2xl lg:rounded-lg lg:border-[#E6E6EA] lg:bg-white">
-              <button
-                type="button"
-                onClick={() => navigate(courseForLesson ? `/dashboard/colaborador/cursos/${courseForLesson.id}` : '/dashboard/colaborador')}
-                className="mb-4 text-sm font-semibold text-primary"
-              >
-                Voltar ao curso
-              </button>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Aula</p>
-              <h1 className="mt-2 text-[2rem] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-3xl">{activeLesson.title}</h1>
-              <p className="mt-2 text-sm leading-6 text-[#666670]">{activeLesson.description || 'Sem descrição.'}</p>
+            <section className="overflow-hidden rounded-[28px] border border-white/70 bg-white/86 shadow-[0_18px_42px_rgba(17,17,20,0.06)] backdrop-blur-2xl lg:rounded-lg lg:border-[#E6E6EA] lg:bg-white">
+              <div className="flex items-center justify-between gap-3 border-b border-[#F0F0F2] px-5 py-3">
+                <button
+                  type="button"
+                  onClick={() => navigate(courseForLesson ? `/dashboard/colaborador/cursos/${courseForLesson.id}` : '/dashboard/colaborador')}
+                  className="text-sm font-semibold text-primary"
+                >
+                  ← {courseForLesson?.title ?? 'Voltar'}
+                </button>
+                {courseForLesson && (
+                  <span className="text-xs font-semibold text-[#8A8A92]">
+                    {getCompletedModuleCount(courseForLesson, progress, quizzes, quizAttempts)}/{courseForLesson.modules.length} módulos
+                  </span>
+                )}
+              </div>
 
-              <div className="mt-6 overflow-hidden rounded-[24px] border border-[#ECECEF] bg-black lg:rounded-lg">
+              <div className="overflow-hidden bg-black lg:rounded-none">
                 {videoUrl ? (
                   <VideoPlayer src={videoUrl} title={activeLesson.title} className="aspect-video w-full" />
                 ) : (
@@ -693,22 +730,30 @@ export function CollaboratorDashboard() {
                 )}
               </div>
 
-              <div className="mt-5 rounded-[20px] border border-[#ECECEF] bg-[#FAFAFB] p-4 lg:rounded-md">
-                <p className="whitespace-pre-line text-sm leading-7 text-[#55555D]">
-                  {activeLesson.content || 'Conteúdo textual ainda não cadastrado para esta aula.'}
-                </p>
-              </div>
-
-              <div className="mt-5 flex flex-wrap gap-3">
-                {attachmentUrl && (
-                  <a href={attachmentUrl} className="inline-flex items-center rounded-[16px] border border-[#D8D8DE] bg-[#F1F1F3] px-4 py-2 text-sm font-semibold text-[#111114] transition hover:border-primary lg:rounded-md">
-                    <Download className="mr-2 h-4 w-4" />
-                    Baixar anexo
-                  </a>
+              <div className="p-5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Aula</p>
+                <h1 className="mt-2 text-[1.75rem] font-semibold leading-[1.02] tracking-[-0.05em] sm:text-3xl">{activeLesson.title}</h1>
+                {activeLesson.description && (
+                  <p className="mt-2 text-sm leading-6 text-[#666670]">{activeLesson.description}</p>
                 )}
-                <Button type="button" onClick={completeLesson} className="rounded-[18px] py-3 lg:rounded-md">
-                  Concluir aula
-                </Button>
+
+                <div className="mt-5 rounded-[20px] border border-[#ECECEF] bg-[#FAFAFB] p-4 lg:rounded-md">
+                  <p className="whitespace-pre-line text-sm leading-7 text-[#55555D]">
+                    {activeLesson.content || 'Conteúdo textual ainda não cadastrado para esta aula.'}
+                  </p>
+                </div>
+
+                <div className="mt-5 flex flex-wrap gap-3">
+                  {attachmentUrl && (
+                    <a href={attachmentUrl} className="inline-flex items-center rounded-[16px] border border-[#D8D8DE] bg-[#F1F1F3] px-4 py-2 text-sm font-semibold text-[#111114] transition hover:border-primary lg:rounded-md">
+                      <Download className="mr-2 h-4 w-4" />
+                      Baixar anexo
+                    </a>
+                  )}
+                  <Button type="button" onClick={completeLesson} className="rounded-[18px] py-3 lg:rounded-md">
+                    Concluir aula
+                  </Button>
+                </div>
               </div>
             </section>
           )}
@@ -801,6 +846,7 @@ export function CollaboratorDashboard() {
         <div className="mx-auto flex max-w-md gap-1 rounded-[24px] border border-black/[0.04] bg-white/78 p-2">
           <AppTabButton active={!certificatesRoute && !courseId && !lessonId} label="Cursos" icon={<BookOpen className="h-4 w-4" />} onClick={() => navigate('/dashboard/colaborador')} />
           <AppTabButton active={Boolean(lessonId)} label="Aula" icon={<PlayCircle className="h-4 w-4" />} onClick={() => openContinueLesson()} />
+          <AppTabButton active={certificatesRoute} label="Certificados" icon={<Award className="h-4 w-4" />} onClick={() => navigate('/dashboard/colaborador/certificados')} />
           <AppTabButton label="Home" icon={<Home className="h-4 w-4" />} onClick={() => navigate('/home')} />
           <AppTabButton label="Sair" icon={<LogOut className="h-4 w-4" />} onClick={handleSignOut} />
         </div>

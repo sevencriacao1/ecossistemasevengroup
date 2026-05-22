@@ -1818,20 +1818,23 @@ export function AdminDashboard() {
               <img src="/assets/seven/Logo%20N.webp" alt="" className="h-7 w-7 object-contain" />
             </span>
             <span className="min-w-0">
-              <span className="block truncate text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Admin</span>
-              <span className="block truncate text-lg font-semibold tracking-[-0.04em]">
-                {routeTitle}
-              </span>
+              <span className="block truncate text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Painel Admin</span>
+              <span className="block truncate text-lg font-semibold tracking-[-0.04em]">{routeTitle}</span>
             </span>
           </button>
-          <button
-            type="button"
-            onClick={handleSignOut}
-            aria-label="Sair"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[16px] bg-white text-[#666670] shadow-[0_10px_26px_rgba(17,17,20,0.08)]"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            <span className="flex h-9 items-center rounded-[14px] border border-white/70 bg-white px-3 shadow-[0_10px_26px_rgba(17,17,20,0.08)]">
+              <span className="text-[11px] font-semibold text-[#8A8A92]">{profile?.full_name?.split(' ')[0] ?? 'Admin'}</span>
+            </span>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              aria-label="Sair"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[16px] bg-white text-[#666670] shadow-[0_10px_26px_rgba(17,17,20,0.08)]"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </header>
       <div className="grid min-h-screen lg:grid-cols-[minmax(208px,236px)_minmax(0,1fr)] min-[1366px]:grid-cols-[minmax(240px,280px)_minmax(0,1fr)]">
@@ -1900,7 +1903,7 @@ export function AdminDashboard() {
             <div className="flex min-h-[360px] items-center justify-center rounded-[28px] bg-white/82 text-[#8A8A92] shadow-[0_18px_42px_rgba(17,17,20,0.05)] lg:bg-transparent lg:shadow-none">Carregando dashboard...</div>
           ) : route === 'inicio' ? (
             <div className="space-y-6 lg:space-y-7">
-              <section className="hidden grid-cols-2 gap-3 lg:grid lg:grid-cols-2 min-[1366px]:grid-cols-4">
+              <section className="grid grid-cols-2 gap-3 lg:grid-cols-2 min-[1366px]:grid-cols-4">
                 {[
                   { label: 'Colaboradores', value: collaborators.length, icon: Users },
                   { label: 'Cursos', value: courses.length, icon: BookOpen },
@@ -2080,6 +2083,33 @@ export function AdminDashboard() {
           )}
         </section>
       </div>
+
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/70 bg-[#F9F9FB]/88 px-4 pb-[calc(env(safe-area-inset-bottom)+0.65rem)] pt-2 shadow-[0_-18px_44px_rgba(17,17,20,0.12)] backdrop-blur-2xl lg:hidden" aria-label="Navegação admin">
+        <div className="mx-auto flex max-w-md gap-1 rounded-[24px] border border-black/[0.04] bg-white/78 p-2">
+          {([
+            { id: 'inicio' as const, label: 'Início', href: '/dashboard/admin', icon: BarChart3 },
+            { id: 'cursos' as const, label: 'Cursos', href: '/dashboard/admin/cursos', icon: BookOpen },
+            { id: 'progress' as const, label: 'Progresso', href: '/dashboard/admin/progresso', icon: Award },
+            { id: 'history' as const, label: 'Histórico', href: '/dashboard/admin/historico', icon: History },
+            { id: 'settings' as const, label: 'Config', href: '/dashboard/admin/settings', icon: Settings },
+          ] as const).map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => navigate(item.href)}
+                className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[18px] px-1 py-2 text-[10px] font-semibold transition ${
+                  route === item.id ? 'bg-[#111114] text-white shadow-[0_10px_24px_rgba(17,17,20,0.18)]' : 'text-[#777780] hover:bg-[#F4F4F5] hover:text-[#111114]'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                <span className="max-w-full truncate">{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
 
       {(modal === 'course' || modal === 'editCourse') && (
         <Modal title={modal === 'course' ? 'Criar curso' : 'Editar curso'} onClose={closeModal}>
