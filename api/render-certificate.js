@@ -22,6 +22,7 @@ function loadFontDataUri(fileName) {
 }
 
 function buildFontFaces() {
+  console.log('[cert] fonts dir:', FONTS_DIR, '| exists:', existsSync(FONTS_DIR));
   const rules = [];
 
   const playfairWeights = [
