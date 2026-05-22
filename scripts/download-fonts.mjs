@@ -17,9 +17,9 @@ const FONTS = [
     outName: 'playfair',
   },
   {
-    family: 'Lato',
-    weights: ['300', '400', '700'],
-    outName: 'lato',
+    family: 'Space Grotesk',
+    weights: ['300', '400', '500', '600', '700'],
+    outName: 'space-grotesk',
   },
 ];
 

@@ -29,10 +29,12 @@ function buildFontFaces() {
     { weight: '500', file: 'playfair-500.ttf' },
     { weight: '700', file: 'playfair-700.ttf' },
   ];
-  const latoWeights = [
-    { weight: '300', file: 'lato-300.ttf' },
-    { weight: '400', file: 'lato-400.ttf' },
-    { weight: '700', file: 'lato-700.ttf' },
+  const spaceGroteskWeights = [
+    { weight: '300', file: 'space-grotesk-300.ttf' },
+    { weight: '400', file: 'space-grotesk-400.ttf' },
+    { weight: '500', file: 'space-grotesk-500.ttf' },
+    { weight: '600', file: 'space-grotesk-600.ttf' },
+    { weight: '700', file: 'space-grotesk-700.ttf' },
   ];
 
   for (const { weight, file } of playfairWeights) {
@@ -41,10 +43,10 @@ function buildFontFaces() {
       rules.push(`@font-face { font-family: 'Playfair Display'; src: url(${uri}) format('truetype'); font-weight: ${weight}; font-style: normal; }`);
     }
   }
-  for (const { weight, file } of latoWeights) {
+  for (const { weight, file } of spaceGroteskWeights) {
     const uri = loadFontDataUri(file);
     if (uri) {
-      rules.push(`@font-face { font-family: 'Lato'; src: url(${uri}) format('truetype'); font-weight: ${weight}; font-style: normal; }`);
+      rules.push(`@font-face { font-family: 'Space Grotesk'; src: url(${uri}) format('truetype'); font-weight: ${weight}; font-style: normal; }`);
     }
   }
 
@@ -137,7 +139,7 @@ async function buildCertificateSvg(values) {
 
   const fontFaces = buildFontFaces();
   const SERIF = "Playfair Display, Georgia, 'Times New Roman', serif";
-  const SANS = "Lato, Arial, Helvetica, sans-serif";
+  const SANS = "'Space Grotesk', Arial, Helvetica, sans-serif";
 
   const bodyY0 = 742;
   const bodyLineH = 44;
