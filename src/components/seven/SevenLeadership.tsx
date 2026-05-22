@@ -11,14 +11,14 @@ function LeadershipSpread({ leader, index }: { leader: (typeof leaders)[number];
   const background = index % 2 === 0 ? 'bg-white' : 'bg-[#F7F7F8]';
 
   return (
-    <section ref={ref} className={`relative min-h-[100svh] overflow-hidden px-5 py-[clamp(5.5rem,11svh,8rem)] sm:px-8 lg:px-10 ${background}`}>
+    <section ref={ref} className={`relative min-h-[100svh] overflow-hidden px-5 py-[clamp(5.5rem,11svh,8rem)] sm:px-8 lg:px-10 3xl:px-16 ${background}`}>
       <motion.span
         style={{ y: numberY }}
         className="pointer-events-none absolute right-4 top-16 text-[26vw] font-semibold leading-none tracking-[-0.12em] text-black/[0.035]"
       >
         {String(index + 1).padStart(2, '0')}
       </motion.span>
-      <div className="relative z-10 mx-auto grid min-h-[calc(100svh-12rem)] max-w-7xl items-center gap-10 min-[1366px]:grid-cols-[minmax(340px,0.92fr)_minmax(0,1.08fr)]">
+      <div className="relative z-10 mx-auto grid min-h-[calc(100svh-12rem)] max-w-7xl 3xl:max-w-9xl items-center gap-10 min-[1366px]:grid-cols-[minmax(340px,0.92fr)_minmax(0,1.08fr)]">
         <motion.div style={{ y: imageY }} className={index % 2 === 1 ? 'lg:order-2' : ''}>
           <AssetFrame
             src={leader.image}
@@ -68,8 +68,8 @@ function LeadershipSpread({ leader, index }: { leader: (typeof leaders)[number];
 export function SevenLeadership() {
   return (
     <section id="lideranca" className="bg-[#F7F7F8]">
-      <div className="px-5 py-24 sm:px-8 lg:px-10">
-        <div className="mx-auto max-w-7xl">
+      <div className="px-5 py-24 sm:px-8 lg:px-10 3xl:px-16">
+        <div className="mx-auto max-w-7xl 3xl:max-w-9xl">
           <SectionHeader
             eyebrow="Liderança estratégica"
             title="Pessoas que conectam visão, operação e percepção de mercado."

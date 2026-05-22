@@ -24,8 +24,8 @@ function ExpertiseFlipCard({ icon: Icon, title }: { icon: LucideIcon; title: str
 
 export function SevenAbout() {
   return (
-    <section id="quem-somos" className="bg-[#F7F7F8] px-5 py-24 sm:px-8 lg:px-10">
-      <div className="mx-auto max-w-7xl">
+    <section id="quem-somos" className="bg-[#F7F7F8] px-5 py-24 sm:px-8 lg:px-10 3xl:px-16">
+      <div className="mx-auto max-w-7xl 3xl:max-w-9xl">
         <SectionHeader
           eyebrow="Quem é a Seven Group"
           title="Inteligência, percepção de valor e execução no mesmo ecossistema."

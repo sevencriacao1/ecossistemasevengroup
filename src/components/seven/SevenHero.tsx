@@ -11,14 +11,14 @@ export function SevenHero() {
   const opacity = useTransform(scrollYProgress, [0, 0.78], [1, 0.18]);
 
   return (
-    <section ref={ref} className="relative min-h-[100svh] overflow-hidden bg-[#F7F7F8] px-5 py-[clamp(6rem,10svh,8rem)] text-[#111114] sm:px-8 lg:px-10 min-[1366px]:py-[clamp(6.5rem,12svh,9rem)]">
+    <section ref={ref} className="relative min-h-[100svh] overflow-hidden bg-[#F7F7F8] px-5 py-[clamp(6rem,10svh,8rem)] text-[#111114] sm:px-8 lg:px-10 3xl:px-16 min-[1366px]:py-[clamp(6.5rem,12svh,9rem)]">
       <motion.div
         style={{ y, opacity }}
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_24%_20%,rgba(231,105,18,0.16),transparent_26%),radial-gradient(circle_at_78%_18%,rgba(17,17,20,0.06),transparent_23%),linear-gradient(180deg,#ffffff_0%,#f6f6f7_100%)]"
       />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-full bg-[linear-gradient(rgba(17,17,20,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(17,17,20,0.045)_1px,transparent_1px)] bg-[size:72px_72px] [mask-image:linear-gradient(180deg,black,transparent_78%)]" />
 
-      <div className="relative z-10 mx-auto grid min-h-[calc(100svh-12rem)] max-w-7xl items-center gap-10 min-[1366px]:min-h-[calc(100svh-13rem)] min-[1366px]:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)] min-[1366px]:gap-12">
+      <div className="relative z-10 mx-auto grid min-h-[calc(100svh-12rem)] max-w-7xl 3xl:max-w-9xl items-center gap-10 min-[1366px]:min-h-[calc(100svh-13rem)] min-[1366px]:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)] min-[1366px]:gap-12">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}

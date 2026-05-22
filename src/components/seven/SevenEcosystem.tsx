@@ -58,10 +58,10 @@ export function SevenEcosystem() {
       ref={ref}
       id="ecossistema"
       style={{ backgroundColor: bg }}
-      className="relative overflow-hidden px-5 py-28 sm:px-8 lg:px-10"
+      className="relative overflow-hidden px-5 py-28 sm:px-8 lg:px-10 3xl:px-16"
     >
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(17,17,20,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(17,17,20,0.045)_1px,transparent_1px)] bg-[size:84px_84px] [mask-image:radial-gradient(circle_at_center,black,transparent_72%)]" />
-      <div className="relative z-10 mx-auto max-w-7xl">
+      <div className="relative z-10 mx-auto max-w-7xl 3xl:max-w-9xl">
         <SectionHeader
           eyebrow="Nosso ecossistema estratégico"
           title="Da concepção ao sucesso."

@@ -260,8 +260,8 @@ function ArqoConceptDesktop() {
 
 function ArqoConceptMobile() {
   return (
-    <section id="conceito" className="relative overflow-x-hidden bg-white px-5 py-24 text-[#171715] sm:px-8">
-      <div className="mx-auto max-w-4xl text-center">
+    <section id="conceito" className="relative overflow-x-hidden bg-white px-5 py-24 text-[#171715] sm:px-8 3xl:px-16">
+      <div className="mx-auto max-w-4xl 3xl:max-w-6xl text-center">
         <p className="mb-6 text-[11px] font-semibold uppercase tracking-[0.36em] text-[#7B786E]">O Conceito da ARQO</p>
         <StableTextReveal
           text="Arquitetura aplicada à decisão."

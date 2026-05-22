@@ -97,12 +97,12 @@ export function ArqoInvestorJourney() {
     <section
       id="jornada"
       ref={sectionRef}
-      className="relative overflow-hidden bg-[#F8F7F3] px-5 py-24 text-[#171715] sm:px-8 lg:px-10 lg:py-36 xl:py-44"
+      className="relative overflow-hidden bg-[#F8F7F3] px-5 py-24 text-[#171715] sm:px-8 lg:px-10 lg:py-36 xl:py-44 3xl:px-16"
     >
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(22,22,21,0.026)_1px,transparent_1px),linear-gradient(90deg,rgba(22,22,21,0.022)_1px,transparent_1px)] bg-[size:68px_68px] opacity-70" />
 
-      <div className="relative z-10 mx-auto max-w-7xl">
-        <div className="max-w-5xl">
+      <div className="relative z-10 mx-auto max-w-7xl 3xl:max-w-9xl">
+        <div className="max-w-5xl 3xl:max-w-7xl">
           <p className="mb-7 text-[11px] font-semibold uppercase tracking-[0.38em] text-[#7B786E]">Jornada do investidor</p>
           <StableTextReveal
             text="Antes do imóvel, existe uma decisão."

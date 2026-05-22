@@ -3,8 +3,8 @@ import { AssetFrame, IconBadge, PremiumCard, Reveal, SectionHeader } from './Sev
 
 export function SevenCreativeTeam() {
   return (
-    <section className="bg-white px-5 py-24 sm:px-8 lg:px-10">
-      <div className="mx-auto flex min-h-[100svh] max-w-7xl flex-col justify-center">
+    <section className="bg-white px-5 py-24 sm:px-8 lg:px-10 3xl:px-16">
+      <div className="mx-auto flex min-h-[100svh] max-w-7xl 3xl:max-w-9xl flex-col justify-center">
         <SectionHeader
           eyebrow="Equipe criativa"
           title="Branding, autoridade, estética e presença digital."

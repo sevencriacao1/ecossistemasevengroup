@@ -15,7 +15,7 @@ export function ArqoEssence() {
           <div className="absolute inset-24 rounded-full border border-black/[0.04]" />
         </motion.div>
 
-        <div className="relative z-10 mx-auto max-w-5xl text-center">
+        <div className="relative z-10 mx-auto max-w-5xl 3xl:max-w-7xl text-center">
           <ArqoTitle eyebrow="Essência da Marca" title="Fazer o cliente querer antes de entender." align="center" />
           <p className="mx-auto mt-8 max-w-3xl text-lg leading-8 text-[#625F57]">
             A ARQO acredita que percepção antecede explicação. Antes de racionalizar um investimento, o cliente precisa sentir coerência, direção e valor.

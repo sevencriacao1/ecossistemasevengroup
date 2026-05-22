@@ -60,11 +60,11 @@ export function ArqoSevenBridge() {
   );
 
   return (
-    <section ref={sectionRef} className="relative overflow-hidden bg-[#F8F7F3] px-5 py-20 text-[#171715] sm:px-8 lg:px-10 lg:py-28">
+    <section ref={sectionRef} className="relative overflow-hidden bg-[#F8F7F3] px-5 py-20 text-[#171715] sm:px-8 lg:px-10 lg:py-28 3xl:px-16">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(22,22,21,0.026)_1px,transparent_1px),linear-gradient(90deg,rgba(22,22,21,0.022)_1px,transparent_1px)] bg-[size:72px_72px] opacity-75" />
       <div className="pointer-events-none absolute left-1/2 top-10 h-72 w-[min(44rem,86vw)] -translate-x-1/2 rounded-full bg-white/52 blur-3xl" />
 
-      <div className="relative z-10 mx-auto max-w-5xl">
+      <div className="relative z-10 mx-auto max-w-5xl 3xl:max-w-7xl">
         <div
           ref={panelRef}
           className="relative overflow-hidden border border-black/[0.06] bg-white/62 px-6 py-10 shadow-[0_22px_80px_rgba(34,33,29,0.055)] backdrop-blur-2xl sm:px-10 sm:py-12 lg:px-14 lg:py-14"

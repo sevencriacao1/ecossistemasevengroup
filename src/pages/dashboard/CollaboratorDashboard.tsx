@@ -436,7 +436,7 @@ export function CollaboratorDashboard() {
   return (
     <main className="safe-page-x relative min-h-screen bg-[#F2F2F7] pb-28 text-[#111114] lg:bg-[#F7F7F8] lg:pb-0">
       <header className="sticky top-0 z-40 border-b border-white/70 bg-[#F2F2F7]/86 px-5 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-2xl lg:border-[#E4E4E8] lg:bg-white lg:px-0 lg:py-0 lg:backdrop-blur-0">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 lg:px-5 lg:py-5 sm:lg:px-8">
+        <div className="mx-auto flex max-w-7xl 3xl:max-w-9xl flex-wrap items-center justify-between gap-4 lg:px-5 lg:py-5 sm:lg:px-8">
           <button type="button" onClick={() => navigate('/home')} className="flex items-center gap-3 text-left">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[16px] bg-white shadow-[0_10px_26px_rgba(17,17,20,0.08)] lg:h-auto lg:w-auto lg:rounded-none lg:bg-transparent lg:shadow-none">
               <img src="/assets/seven/Logo%20N.webp" alt="" className="h-8 w-8 object-contain lg:h-10 lg:w-10" />
@@ -457,7 +457,7 @@ export function CollaboratorDashboard() {
         </div>
       </header>
 
-      <section className="mx-auto grid max-w-7xl gap-5 px-4 py-5 sm:px-8 lg:gap-6 lg:py-7 min-[1366px]:grid-cols-[minmax(280px,340px)_minmax(0,1fr)]">
+      <section className="mx-auto grid max-w-7xl 3xl:max-w-9xl gap-5 px-4 py-5 sm:px-8 lg:gap-6 lg:py-7 min-[1366px]:grid-cols-[minmax(280px,340px)_minmax(0,1fr)]">
         <aside className="grid grid-cols-2 gap-3 min-[1366px]:block min-[1366px]:space-y-4">
           <article className="col-span-2 rounded-[28px] border border-white/70 bg-[#111114] p-5 text-white shadow-[0_20px_48px_rgba(17,17,20,0.18)] min-[1366px]:hidden">
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/54">Progresso geral</p>

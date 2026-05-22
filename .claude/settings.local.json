@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"E:\\\\Dados do Windows\\\\Documentos\\\\Ecossistema SevenGroup\" -Force)",
+      "Bash(Select-Object Name, PSIsContainer)",
+      "PowerShell(@\\(Get-ChildItem -Path \"E:\\\\Dados do Windows\\\\Documentos\\\\Ecossistema SevenGroup\\\\src\\\\components\" -Force\\) | ForEach-Object { \"$\\($_.Name\\) \\(Container: $\\($_.PSIsContainer\\)\\)\" })",
+      "Bash(npm run *)",
+      "Bash(start chrome *)",
+      "Bash(git add *)"
+    ]
+  }
+}

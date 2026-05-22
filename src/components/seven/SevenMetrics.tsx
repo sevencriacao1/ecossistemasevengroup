@@ -12,8 +12,8 @@ function splitAddress(address: string) {
 
 export function SevenMetrics() {
   return (
-    <section id="estrutura" className="bg-[#F7F7F8] px-5 py-24 sm:px-8 lg:px-10">
-      <div className="mx-auto max-w-7xl">
+    <section id="estrutura" className="bg-[#F7F7F8] px-5 py-24 sm:px-8 lg:px-10 3xl:px-16">
+      <div className="mx-auto max-w-7xl 3xl:max-w-9xl">
         <SectionHeader
           eyebrow="Estrutura nacional"
           title="Presença em mais de 30 cidades e 9 estados brasileiros."

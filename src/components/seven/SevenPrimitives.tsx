@@ -40,11 +40,11 @@ export function SectionHeader({
   align?: 'left' | 'center';
 }) {
   return (
-    <Reveal className={cn('mx-auto max-w-4xl', align === 'center' && 'text-center')}>
+    <Reveal className={cn('mx-auto max-w-4xl 3xl:max-w-6xl', align === 'center' && 'text-center')}>
       <p className="mb-4 text-xs font-semibold uppercase tracking-[0.28em] text-[#E76912]">{eyebrow}</p>
       <ScrollTextReveal text={title} className="text-balance text-[2.05rem] font-semibold leading-[1.02] tracking-[-0.045em] sm:text-5xl lg:text-6xl" />
       {description && (
-        <p className={cn('mt-6 text-base leading-8 text-[#67676F] sm:text-lg', align === 'center' ? 'mx-auto max-w-3xl' : 'max-w-3xl')}>
+        <p className={cn('mt-6 text-base leading-8 text-[#67676F] sm:text-lg', align === 'center' ? 'mx-auto max-w-3xl 3xl:max-w-5xl' : 'max-w-3xl 3xl:max-w-5xl')}>
           {description}
         </p>
       )}

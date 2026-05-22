@@ -11,6 +11,7 @@
     background: #0F0F10;
     font-family: "Space Grotesk", sans-serif;
     cursor: url("/assets/cursors/cursor-default-smaller.png") 1 1, default;
+    font-size: 100%;
   }
 
   body {
@@ -345,6 +346,27 @@
     -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
   }
+}
+
+/* Responsive zoom simulation via fluid font-size scaling */
+@media (min-width: 768px) and (max-width: 1023px) {
+  html { font-size: 87.5%; }
+}
+
+@media (min-width: 1024px) and (max-width: 1365px) {
+  html { font-size: 90%; }
+}
+
+@media (min-width: 1366px) and (max-width: 1919px) {
+  html { font-size: 93.75%; }
+}
+
+@media (min-width: 1920px) and (max-width: 2559px) {
+  html { font-size: 100%; }
+}
+
+@media (min-width: 2560px) {
+  html { font-size: 112.5%; }
 }
 
 @media (max-width: 767px) {

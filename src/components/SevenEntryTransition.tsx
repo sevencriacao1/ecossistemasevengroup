@@ -54,7 +54,8 @@ function ParticleField({ isVisible }: { isVisible: boolean }) {
 
     const resize = () => {
       const isCompact = window.innerWidth < 768;
-      const ratio = Math.min(window.devicePixelRatio || 1, isCompact ? 1.25 : 1.5);
+      const isUltraWide = window.innerWidth >= 1920;
+      const ratio = Math.min(window.devicePixelRatio || 1, isCompact ? 1.25 : isUltraWide ? 2 : 1.5);
       width = window.innerWidth;
       height = window.innerHeight;
       canvas.width = width * ratio;
@@ -72,7 +73,11 @@ function ParticleField({ isVisible }: { isVisible: boolean }) {
     const createParticles = () => {
       particles.length = 0;
       const isCompact = width < 768;
-      const spacing = Math.max(isCompact ? 34 : 26, Math.min(isCompact ? 48 : 40, width / (isCompact ? 30 : 44)));
+      const isUltraWide = width >= 1920;
+      const spacing = Math.max(
+        isCompact ? 34 : isUltraWide ? 22 : 26,
+        Math.min(isCompact ? 48 : isUltraWide ? 34 : 40, width / (isCompact ? 30 : isUltraWide ? 56 : 44))
+      );
       const cols = Math.ceil(width / spacing) + 8;
       const rows = Math.ceil(height / spacing) + 8;
 

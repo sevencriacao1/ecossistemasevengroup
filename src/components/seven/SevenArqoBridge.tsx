@@ -13,11 +13,11 @@ export function SevenArqoBridge() {
   const lineScale = useTransform(scrollYProgress, [0.16, 0.72], [0, 1]);
 
   return (
-    <section ref={ref} className="relative overflow-hidden bg-[#F4F4F2] px-5 py-24 sm:px-8 lg:px-10">
+    <section ref={ref} className="relative overflow-hidden bg-[#F4F4F2] px-5 py-24 sm:px-8 lg:px-10 3xl:px-16">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(17,17,20,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(17,17,20,0.035)_1px,transparent_1px)] bg-[size:72px_72px] [mask-image:linear-gradient(90deg,transparent,black_18%,black_82%,transparent)]" />
       <div className="pointer-events-none absolute left-1/2 top-0 h-full w-px bg-black/[0.055]" />
 
-      <div className="relative z-10 mx-auto max-w-7xl">
+      <div className="relative z-10 mx-auto max-w-7xl 3xl:max-w-9xl">
         <div className="grid gap-12 min-[1366px]:grid-cols-[0.95fr_1.05fr] min-[1366px]:items-start">
           <Reveal>
             <div className="max-w-xl">

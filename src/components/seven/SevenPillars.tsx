@@ -4,8 +4,8 @@ import { IconBadge, SectionHeader } from './SevenPrimitives';
 
 export function SevenPillars() {
   return (
-    <section id="pilares" className="bg-[#F7F7F8] px-5 py-24 sm:px-8 lg:px-10">
-      <div className="mx-auto max-w-7xl">
+    <section id="pilares" className="bg-[#F7F7F8] px-5 py-24 sm:px-8 lg:px-10 3xl:px-16">
+      <div className="mx-auto max-w-7xl 3xl:max-w-9xl">
         <SectionHeader
           eyebrow="Os sete pilares"
           title="Sete frentes que transformam produto em movimento de mercado."

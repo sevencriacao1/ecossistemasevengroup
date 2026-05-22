@@ -105,7 +105,7 @@ export function ArqoPage() {
       <header className="fixed left-0 right-0 top-0 z-50 px-4 py-4 sm:px-6">
         <nav
           className={cn(
-            'browser-stable-surface mx-auto flex max-w-7xl items-center justify-between rounded-full border px-4 py-3 backdrop-blur-2xl transition duration-700',
+            'browser-stable-surface mx-auto flex max-w-7xl 3xl:max-w-9xl items-center justify-between rounded-full border px-4 py-3 backdrop-blur-2xl transition duration-700',
             isHeaderOnDark
               ? 'border-white/12 bg-[#080807]/72 text-white shadow-none'
               : 'border-black/[0.06] bg-white/72 text-[#161615] shadow-[0_18px_54px_rgba(34,33,29,0.08)]'
@@ -153,7 +153,7 @@ export function ArqoPage() {
 
         <div
           className={cn(
-            'browser-stable-surface mx-auto mt-2 grid max-w-7xl gap-1 overflow-hidden rounded-[24px] border border-black/[0.06] bg-white/88 p-2 shadow-[0_18px_54px_rgba(34,33,29,0.08)] backdrop-blur-2xl transition-all lg:hidden',
+            'browser-stable-surface mx-auto mt-2 grid max-w-7xl 3xl:max-w-9xl gap-1 overflow-hidden rounded-[24px] border border-black/[0.06] bg-white/88 p-2 shadow-[0_18px_54px_rgba(34,33,29,0.08)] backdrop-blur-2xl transition-all lg:hidden',
             isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 border-transparent p-0 opacity-0'
           )}
         >

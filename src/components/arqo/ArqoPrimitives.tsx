@@ -93,8 +93,8 @@ export function ArqoSection({
   className?: string;
 }) {
   return (
-    <section id={id} className={cn('relative overflow-hidden px-5 py-20 sm:px-8 lg:px-10 lg:py-32', className)}>
-      <div className="relative z-10 mx-auto max-w-7xl">{children}</div>
+    <section id={id} className={cn('relative overflow-hidden px-5 py-20 sm:px-8 lg:px-10 lg:py-32 3xl:px-16', className)}>
+      <div className="relative z-10 mx-auto max-w-7xl 3xl:max-w-9xl">{children}</div>
     </section>
   );
 }
@@ -120,7 +120,7 @@ export function ArqoEditorialPause({
       ref={ref}
       id={id}
       className={cn(
-        'relative overflow-hidden px-5 py-24 sm:px-8 lg:px-10 lg:py-44',
+        'relative overflow-hidden px-5 py-24 sm:px-8 lg:px-10 lg:py-44 3xl:px-16',
         tone === 'light' && 'bg-white text-[#171715]',
         tone === 'warm' && 'bg-[#F8F7F3] text-[#171715]',
         tone === 'dark' && 'bg-[#171715] text-white'
@@ -130,7 +130,7 @@ export function ArqoEditorialPause({
       <motion.div
         style={{ y, opacity }}
         className={cn(
-          'relative z-10 mx-auto max-w-6xl',
+          'relative z-10 mx-auto max-w-6xl 3xl:max-w-8xl',
           align === 'center' ? 'text-center' : 'text-left'
         )}
       >
@@ -161,7 +161,7 @@ export function ArqoTitle({
   className?: string;
 }) {
   return (
-    <ArqoReveal className={cn('mx-auto max-w-4xl', align === 'center' && 'text-center', className)}>
+    <ArqoReveal className={cn('mx-auto max-w-4xl 3xl:max-w-6xl', align === 'center' && 'text-center', className)}>
       {eyebrow && <p className="mb-6 text-[11px] font-semibold uppercase tracking-[0.36em] text-[#7B786E]">{eyebrow}</p>}
       <StableTextReveal
         text={title}
@@ -169,7 +169,7 @@ export function ArqoTitle({
         className="arqo-heading text-balance text-[2.1rem] font-medium leading-[1.06] tracking-[-0.04em] text-[#161615] sm:text-5xl lg:text-6xl"
       />
       {subtitle && (
-        <p className={cn('mt-7 text-base leading-8 text-[#6D6A62] sm:text-lg', align === 'center' ? 'mx-auto max-w-3xl' : 'max-w-3xl')}>
+        <p className={cn('mt-7 text-base leading-8 text-[#6D6A62] sm:text-lg', align === 'center' ? 'mx-auto max-w-3xl 3xl:max-w-5xl' : 'max-w-3xl 3xl:max-w-5xl')}>
           {subtitle}
         </p>
       )}

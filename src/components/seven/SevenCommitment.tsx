@@ -3,8 +3,8 @@ import { IconBadge, Reveal, SectionHeader } from './SevenPrimitives';
 
 export function SevenCommitment() {
   return (
-    <section id="compromisso" className="bg-white px-5 py-24 sm:px-8 lg:px-10">
-      <div className="mx-auto max-w-7xl">
+    <section id="compromisso" className="bg-white px-5 py-24 sm:px-8 lg:px-10 3xl:px-16">
+      <div className="mx-auto max-w-7xl 3xl:max-w-9xl">
         <SectionHeader
           eyebrow="Compromisso com as cidades"
           title="Quando entramos em um mercado, buscamos fortalecer a cidade."

@@ -9,8 +9,8 @@ export function SevenMindset() {
   const quoteOpacity = useTransform(scrollYProgress, [0, 0.45, 1], [0.45, 1, 0.72]);
 
   return (
-    <section ref={ref} className="relative bg-white px-5 py-24 sm:px-8 lg:px-10">
-      <div className="mx-auto grid max-w-7xl gap-12 min-[1366px]:grid-cols-[0.9fr_1.1fr]">
+    <section ref={ref} className="relative bg-white px-5 py-24 sm:px-8 lg:px-10 3xl:px-16">
+      <div className="mx-auto grid max-w-7xl 3xl:max-w-9xl gap-12 min-[1366px]:grid-cols-[0.9fr_1.1fr]">
         <motion.div style={{ opacity: quoteOpacity }} className="min-[1366px]:sticky min-[1366px]:top-28 min-[1366px]:h-fit">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#E76912]">Nossa mentalidade</p>
           <ScrollTextReveal

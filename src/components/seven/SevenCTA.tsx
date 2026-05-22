@@ -181,8 +181,8 @@ export function SevenCTA() {
 
   return (
     <>
-      <section onWheel={handleCtaWheel} className="bg-[#F7F7F8] px-5 py-24 sm:px-8 lg:px-10">
-        <div className="mx-auto max-w-7xl">
+      <section onWheel={handleCtaWheel} className="bg-[#F7F7F8] px-5 py-24 sm:px-8 lg:px-10 3xl:px-16">
+        <div className="mx-auto max-w-7xl 3xl:max-w-9xl">
           <Reveal>
             <div className="rounded-[42px] border border-black/[0.06] bg-white p-8 text-center shadow-[0_34px_100px_rgba(17,17,20,0.10)] sm:p-12 lg:p-16">
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#E76912]">Seven Group</p>

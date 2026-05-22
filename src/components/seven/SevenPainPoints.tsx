@@ -3,8 +3,8 @@ import { Reveal, SectionHeader } from './SevenPrimitives';
 
 export function SevenPainPoints() {
   return (
-    <section className="bg-white px-5 py-24 sm:px-8 lg:px-10">
-      <div className="mx-auto max-w-7xl">
+    <section className="bg-white px-5 py-24 sm:px-8 lg:px-10 3xl:px-16">
+      <div className="mx-auto max-w-7xl 3xl:max-w-9xl">
         <SectionHeader
           eyebrow="Dores do mercado"
           title="Hoje, não basta apenas construir."

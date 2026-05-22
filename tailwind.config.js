@@ -10,6 +10,14 @@ module.exports = {
       fontFamily: {
         sans: ['"Space Grotesk"', 'sans-serif'],
       },
+      screens: {
+        '3xl': '1920px',
+        '4xl': '2560px',
+      },
+      maxWidth: {
+        '8xl': '88rem',
+        '9xl': '96rem',
+      },
       colors: {
         background: '#0F0F10',
         primary: {
