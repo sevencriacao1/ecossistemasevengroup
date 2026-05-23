@@ -1918,36 +1918,180 @@ export function AdminDashboard() {
           </header>
 
           {isLoading ? (
-            <div className="space-y-6 lg:space-y-7" aria-busy="true" aria-label="Carregando dashboard">
-              <div className="grid grid-cols-2 gap-3 min-[1366px]:grid-cols-4">
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <div key={index} className="animate-pulse rounded-[24px] border border-[#E6E6EA] bg-white p-5 lg:rounded-lg">
+            route === 'cursos' ? (
+              /* skeleton: cursos */
+              <div className="grid gap-5 min-[1366px]:grid-cols-[minmax(280px,320px)_minmax(0,1fr)] min-[1366px]:gap-7" aria-busy="true">
+                <aside className="space-y-3 lg:space-y-4">
+                  <div className="animate-pulse h-11 w-full rounded-[18px] bg-[#ECECEF] lg:rounded-md" />
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <div key={index} className="animate-pulse overflow-hidden rounded-[22px] border border-[#E6E6EA] bg-white lg:rounded-lg">
+                      <div className="aspect-[16/7] w-full bg-[#F0F0F2]" />
+                      <div className="space-y-2 p-4">
+                        <div className="h-4 w-12 rounded bg-[#ECECEF]" />
+                        <div className="h-5 w-40 rounded bg-[#ECECEF]" />
+                        <div className="h-3 w-28 rounded bg-[#F0F0F2]" />
+                        <div className="h-1.5 w-full rounded-full bg-[#F0F0F2]" />
+                      </div>
+                    </div>
+                  ))}
+                </aside>
+                <div className="animate-pulse rounded-[26px] border border-[#E6E6EA] bg-white p-5 lg:rounded-lg">
+                  <div className="space-y-3">
+                    <div className="h-4 w-16 rounded bg-[#ECECEF]" />
+                    <div className="h-8 w-56 rounded bg-[#ECECEF]" />
+                    <div className="h-4 w-full rounded bg-[#F0F0F2]" />
+                    <div className="h-4 w-3/4 rounded bg-[#F0F0F2]" />
+                  </div>
+                  <div className="mt-8 space-y-4">
+                    {Array.from({ length: 3 }).map((_, index) => (
+                      <div key={index} className="rounded-[22px] border border-[#ECECEF] bg-[#FAFAFB] p-4 lg:rounded-lg">
+                        <div className="h-5 w-48 rounded bg-[#ECECEF]" />
+                        <div className="mt-3 space-y-2">
+                          <div className="h-4 w-full rounded bg-[#F0F0F2]" />
+                          <div className="h-4 w-5/6 rounded bg-[#F0F0F2]" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : route === 'progress' ? (
+              /* skeleton: progresso */
+              <div className="grid gap-5 min-[1366px]:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]" aria-busy="true">
+                <div className="animate-pulse overflow-hidden rounded-[26px] border border-[#E6E6EA] bg-white lg:rounded-lg">
+                  <div className="border-b border-[#ECECEF] p-5 space-y-2">
+                    <div className="h-5 w-32 rounded bg-[#ECECEF]" />
+                    <div className="h-4 w-44 rounded bg-[#F0F0F2]" />
+                    <div className="flex gap-1.5 pt-1">
+                      {Array.from({ length: 4 }).map((_, index) => (
+                        <div key={index} className="h-6 w-20 rounded-full bg-[#ECECEF]" />
+                      ))}
+                    </div>
+                  </div>
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div key={index} className="border-b border-[#F0F0F2] px-5 py-4 space-y-1.5">
+                      <div className="h-4 w-36 rounded bg-[#ECECEF]" />
+                      <div className="h-3 w-20 rounded bg-[#F0F0F2]" />
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-5">
+                  <div className="animate-pulse rounded-[26px] border border-[#E6E6EA] bg-white p-5 lg:rounded-lg space-y-3">
+                    <div className="h-4 w-24 rounded bg-[#ECECEF]" />
+                    <div className="h-7 w-48 rounded bg-[#ECECEF]" />
+                    <div className="h-4 w-32 rounded bg-[#F0F0F2]" />
+                  </div>
+                  {Array.from({ length: 2 }).map((_, index) => (
+                    <div key={index} className="animate-pulse rounded-[26px] border border-[#E6E6EA] bg-white p-5 lg:rounded-lg">
+                      <div className="h-6 w-48 rounded bg-[#ECECEF]" />
+                      <div className="mt-3 space-y-2">
+                        <div className="h-4 w-40 rounded bg-[#F0F0F2]" />
+                        <div className="h-4 w-36 rounded bg-[#F0F0F2]" />
+                      </div>
+                      <div className="mt-4 h-2 w-full rounded-full bg-[#ECECEF]" />
+                      <div className="mt-5 space-y-2">
+                        {Array.from({ length: 3 }).map((__, jndex) => (
+                          <div key={jndex} className="h-10 w-full rounded-[16px] bg-[#F0F0F2]" />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : route === 'history' ? (
+              /* skeleton: histórico */
+              <div className="space-y-5" aria-busy="true">
+                <div className="animate-pulse rounded-[26px] border border-[#E6E6EA] bg-white p-5 lg:rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-2">
+                      <div className="h-3 w-36 rounded bg-[#ECECEF]" />
+                      <div className="h-7 w-52 rounded bg-[#ECECEF]" />
+                    </div>
+                    <div className="h-6 w-20 rounded-full bg-[#F0F0F2]" />
+                  </div>
+                  <div className="mt-5 flex gap-2">
+                    {Array.from({ length: 7 }).map((_, index) => (
+                      <div key={index} className="h-8 w-16 shrink-0 rounded-full bg-[#F0F0F2]" />
+                    ))}
+                  </div>
+                </div>
+                <div className="animate-pulse rounded-[26px] border border-[#E6E6EA] bg-white lg:rounded-lg">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div key={index} className="flex items-start gap-3 border-b border-[#ECECEF] p-5 last:border-b-0">
+                      <div className="h-5 w-5 shrink-0 rounded-full bg-[#ECECEF]" />
+                      <div className="flex-1 space-y-2">
+                        <div className="flex gap-2">
+                          <div className="h-5 w-20 rounded-full bg-[#ECECEF]" />
+                          <div className="h-5 w-14 rounded-full bg-[#F0F0F2]" />
+                        </div>
+                        <div className="h-4 w-full rounded bg-[#F0F0F2]" />
+                        <div className="h-3 w-40 rounded bg-[#F0F0F2]" />
+                      </div>
+                      <div className="h-4 w-24 shrink-0 rounded bg-[#F0F0F2]" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : route === 'settings' ? (
+              /* skeleton: configurações */
+              <div className="space-y-6 lg:space-y-7" aria-busy="true">
+                <div className="animate-pulse overflow-hidden rounded-[26px] border border-[#E6E6EA] bg-white lg:rounded-lg">
+                  <div className="flex items-center gap-3 border-b border-[#ECECEF] px-5 py-4">
                     <div className="h-5 w-5 rounded bg-[#ECECEF]" />
-                    <div className="mt-4 h-7 w-16 rounded bg-[#ECECEF]" />
-                    <div className="mt-2 h-3 w-24 rounded bg-[#F0F0F2]" />
+                    <div className="h-5 w-24 rounded bg-[#ECECEF]" />
                   </div>
-                ))}
-              </div>
-              <div className="grid gap-4 md:grid-cols-2 min-[1366px]:grid-cols-3">
-                {Array.from({ length: 6 }).map((_, index) => (
-                  <div key={index} className="animate-pulse rounded-[26px] border border-[#E6E6EA] bg-white p-5 lg:rounded-lg">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="h-20 w-20 rounded-[22px] bg-[#ECECEF] lg:rounded-lg" />
-                      <div className="h-6 w-14 rounded bg-[#F0F0F2]" />
-                    </div>
-                    <div className="mt-5 space-y-2">
-                      <div className="h-5 w-36 rounded bg-[#ECECEF]" />
-                      <div className="h-4 w-28 rounded bg-[#F0F0F2]" />
-                    </div>
-                    <div className="mt-5 space-y-3">
-                      <div className="h-4 w-full rounded bg-[#F0F0F2]" />
-                      <div className="h-4 w-full rounded bg-[#F0F0F2]" />
-                    </div>
-                    <div className="mt-5 h-2 w-full rounded-full bg-[#ECECEF]" />
+                  <div className="hidden border-b border-[#ECECEF] px-5 py-3 md:flex gap-4">
+                    {Array.from({ length: 4 }).map((_, index) => (
+                      <div key={index} className="h-3 w-20 rounded bg-[#F0F0F2]" />
+                    ))}
                   </div>
-                ))}
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <div key={index} className="flex items-center justify-between gap-4 border-b border-[#F0F0F2] px-5 py-4 last:border-b-0">
+                      <div className="space-y-1.5">
+                        <div className="h-4 w-36 rounded bg-[#ECECEF]" />
+                        <div className="h-3 w-28 rounded bg-[#F0F0F2]" />
+                      </div>
+                      <div className="flex gap-2">
+                        <div className="h-9 w-9 rounded bg-[#F0F0F2]" />
+                        <div className="h-9 w-9 rounded bg-[#F0F0F2]" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : (
+              /* skeleton: início (default) */
+              <div className="space-y-6 lg:space-y-7" aria-busy="true" aria-label="Carregando dashboard">
+                <div className="grid grid-cols-2 gap-3 min-[1366px]:grid-cols-4">
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <div key={index} className="animate-pulse rounded-[24px] border border-[#E6E6EA] bg-white p-5 lg:rounded-lg">
+                      <div className="h-5 w-5 rounded bg-[#ECECEF]" />
+                      <div className="mt-4 h-7 w-16 rounded bg-[#ECECEF]" />
+                      <div className="mt-2 h-3 w-24 rounded bg-[#F0F0F2]" />
+                    </div>
+                  ))}
+                </div>
+                <div className="grid gap-4 md:grid-cols-2 min-[1366px]:grid-cols-3">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div key={index} className="animate-pulse rounded-[26px] border border-[#E6E6EA] bg-white p-5 lg:rounded-lg">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="h-20 w-20 rounded-[22px] bg-[#ECECEF] lg:rounded-lg" />
+                        <div className="h-6 w-14 rounded bg-[#F0F0F2]" />
+                      </div>
+                      <div className="mt-5 space-y-2">
+                        <div className="h-5 w-36 rounded bg-[#ECECEF]" />
+                        <div className="h-4 w-28 rounded bg-[#F0F0F2]" />
+                      </div>
+                      <div className="mt-5 space-y-3">
+                        <div className="h-4 w-full rounded bg-[#F0F0F2]" />
+                        <div className="h-4 w-full rounded bg-[#F0F0F2]" />
+                      </div>
+                      <div className="mt-5 h-2 w-full rounded-full bg-[#ECECEF]" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
           ) : route === 'inicio' ? (
             <div className="space-y-6 lg:space-y-7">
               <section className="grid grid-cols-2 gap-3 lg:grid-cols-2 min-[1366px]:grid-cols-4">
