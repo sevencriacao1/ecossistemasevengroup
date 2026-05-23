@@ -3,7 +3,6 @@ import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import satori from 'satori';
-import { Resvg } from '@resvg/resvg-js';
 import sharp from 'sharp';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -280,8 +279,7 @@ async function renderCertificatePng(values) {
   const svg = await satori(element, { width: WIDTH, height: HEIGHT, fonts });
   console.log('[cert] satori SVG length:', svg.length);
 
-  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: WIDTH } });
-  const png = resvg.render().asPng();
+  const png = await sharp(Buffer.from(svg)).png().toBuffer();
   console.log('[cert] PNG size:', png.length);
   return png;
 }
