@@ -1,8 +1,10 @@
 import { FormEvent, ReactNode, useEffect, useMemo, useState } from 'react';
 import {
+  AlertTriangle,
   BarChart3,
   BookOpen,
   Award,
+  CheckCircle2,
   ClipboardList,
   Eye,
   Trash2,
@@ -25,6 +27,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { createCertificateValidationCode } from '../../lib/certificateValidation';
 import { supabase } from '../../lib/supabase';
 import {
+  buildHealthIssues,
   calculateCourseWorkloadMinutes,
   calculateReadiness,
   createAdminAuditLog,
@@ -736,6 +739,7 @@ export function AdminDashboard() {
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [removeProfileImage, setRemoveProfileImage] = useState(false);
   const [profileImages, setProfileImages] = useState<Record<string, string>>({});
+  const [courseCoverUrls, setCourseCoverUrls] = useState<Record<string, string>>({});
   const [courseCoverPreview, setCourseCoverPreview] = useState('');
   const [profileImagePreview, setProfileImagePreview] = useState('');
   const [lessonVideoPreview, setLessonVideoPreview] = useState('');
@@ -802,6 +806,19 @@ export function AdminDashboard() {
 
     void loadProfileImages();
   }, [users]);
+
+  useEffect(() => {
+    const loadCourseCoverUrls = async () => {
+      const entries = await Promise.all(
+        courses
+          .filter((course) => course.cover_url)
+          .map(async (course) => [course.id, await getStorageImageUrl('course-covers', course.cover_url)] as const)
+      );
+      setCourseCoverUrls(Object.fromEntries(entries));
+    };
+
+    void loadCourseCoverUrls();
+  }, [courses]);
 
   useEffect(() => {
     if (courseCoverFile) {
@@ -944,6 +961,7 @@ export function AdminDashboard() {
   const averageProgress = collaborators.length
     ? Math.round(collaborators.reduce((sum, user) => sum + progressForUser(user, progress, courses, quizzes, quizAttempts).percent, 0) / collaborators.length)
     : 0;
+  const healthIssues = buildHealthIssues(courses, users);
   const hasCurrentLessonVideo = modal === 'editLesson' && Boolean(editingLesson?.video_url) && !removeLessonVideo;
   const hasCurrentLessonAttachment = modal === 'editLesson' && Boolean(editingLesson?.attachment_url) && !removeLessonAttachment;
   const hasCurrentProfileImage = modal === 'editUser' && Boolean(userForm.avatarUrl) && !removeProfileImage;
@@ -1900,7 +1918,36 @@ export function AdminDashboard() {
           </header>
 
           {isLoading ? (
-            <div className="flex min-h-[360px] items-center justify-center rounded-[28px] bg-white/82 text-[#8A8A92] shadow-[0_18px_42px_rgba(17,17,20,0.05)] lg:bg-transparent lg:shadow-none">Carregando dashboard...</div>
+            <div className="space-y-6 lg:space-y-7" aria-busy="true" aria-label="Carregando dashboard">
+              <div className="grid grid-cols-2 gap-3 min-[1366px]:grid-cols-4">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div key={index} className="animate-pulse rounded-[24px] border border-[#E6E6EA] bg-white p-5 lg:rounded-lg">
+                    <div className="h-5 w-5 rounded bg-[#ECECEF]" />
+                    <div className="mt-4 h-7 w-16 rounded bg-[#ECECEF]" />
+                    <div className="mt-2 h-3 w-24 rounded bg-[#F0F0F2]" />
+                  </div>
+                ))}
+              </div>
+              <div className="grid gap-4 md:grid-cols-2 min-[1366px]:grid-cols-3">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <div key={index} className="animate-pulse rounded-[26px] border border-[#E6E6EA] bg-white p-5 lg:rounded-lg">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="h-20 w-20 rounded-[22px] bg-[#ECECEF] lg:rounded-lg" />
+                      <div className="h-6 w-14 rounded bg-[#F0F0F2]" />
+                    </div>
+                    <div className="mt-5 space-y-2">
+                      <div className="h-5 w-36 rounded bg-[#ECECEF]" />
+                      <div className="h-4 w-28 rounded bg-[#F0F0F2]" />
+                    </div>
+                    <div className="mt-5 space-y-3">
+                      <div className="h-4 w-full rounded bg-[#F0F0F2]" />
+                      <div className="h-4 w-full rounded bg-[#F0F0F2]" />
+                    </div>
+                    <div className="mt-5 h-2 w-full rounded-full bg-[#ECECEF]" />
+                  </div>
+                ))}
+              </div>
+            </div>
           ) : route === 'inicio' ? (
             <div className="space-y-6 lg:space-y-7">
               <section className="grid grid-cols-2 gap-3 lg:grid-cols-2 min-[1366px]:grid-cols-4">
@@ -1920,6 +1967,31 @@ export function AdminDashboard() {
                   );
                 })}
               </section>
+              {healthIssues.some((issue) => issue.severity !== 'ok') && (
+                <section className="overflow-hidden rounded-[24px] border border-[#E6E6EA] bg-white shadow-[0_16px_38px_rgba(17,17,20,0.05)] lg:rounded-lg">
+                  <header className="border-b border-[#ECECEF] px-5 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Saúde do conteúdo</p>
+                    <h2 className="mt-1 text-base font-semibold tracking-[-0.02em]">Itens que precisam de atenção</h2>
+                  </header>
+                  <div className="divide-y divide-[#F0F0F2]">
+                    {healthIssues.map((issue) => (
+                      <div key={issue.id} className="flex items-start gap-3 px-5 py-4">
+                        {issue.severity === 'critical' ? (
+                          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+                        ) : issue.severity === 'warning' ? (
+                          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                        ) : (
+                          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-[#111114]">{issue.label}</p>
+                          <p className="mt-0.5 text-xs leading-5 text-[#8A8A92]">{issue.action}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
               <CollaboratorGroup
                 title="Colaboradores Seven Group"
                 company="Seven"
@@ -1949,16 +2021,33 @@ export function AdminDashboard() {
                 </Button>
                 {courses.map((course) => {
                   const readiness = calculateReadiness(course);
+                  const lessonCount = course.modules.reduce((sum, moduleItem) => sum + moduleItem.lessons.length, 0);
+                  const coverUrl = courseCoverUrls[course.id];
                   return (
                     <button
                       type="button"
                       key={course.id}
                       onClick={() => setSelectedCourseId(course.id)}
-                      className={`w-full rounded-[22px] border p-4 text-left transition lg:rounded-lg ${selectedCourse?.id === course.id ? 'border-primary bg-white shadow-[0_16px_34px_rgba(223,117,13,0.14)] ring-2 ring-primary/10' : 'border-white/70 bg-white/78 shadow-[0_12px_28px_rgba(17,17,20,0.04)] hover:border-primary/40'}`}
+                      className={`w-full overflow-hidden rounded-[22px] border text-left transition lg:rounded-lg ${selectedCourse?.id === course.id ? 'border-primary bg-white shadow-[0_16px_34px_rgba(223,117,13,0.14)] ring-2 ring-primary/10' : 'border-white/70 bg-white/78 shadow-[0_12px_28px_rgba(17,17,20,0.04)] hover:border-primary/40'}`}
                     >
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{course.company}</p>
-                      <h2 className="mt-2 font-semibold">{course.title}</h2>
-                      <p className="mt-2 text-xs text-[#8A8A92]">Prontidão {readiness.score}%</p>
+                      {coverUrl && (
+                        <div className="aspect-[16/7] w-full overflow-hidden bg-[#F0F0F2]">
+                          <img src={coverUrl} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
+                        </div>
+                      )}
+                      <div className="p-4">
+                        <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] ${course.company === 'ARQO' ? 'bg-[#F2EBDD] text-[#8A6722]' : 'bg-primary/10 text-primary'}`}>
+                          {course.company}
+                        </span>
+                        <h2 className="mt-2 font-semibold">{course.title}</h2>
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          <p className="text-xs text-[#8A8A92]">{course.modules.length} módulo{course.modules.length !== 1 ? 's' : ''} · {lessonCount} aula{lessonCount !== 1 ? 's' : ''}</p>
+                          <p className="text-xs font-semibold text-[#8A8A92]">{readiness.score}%</p>
+                        </div>
+                        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#EFEFF2]">
+                          <div className="h-full rounded-full bg-primary/60" style={{ width: `${readiness.score}%` }} />
+                        </div>
+                      </div>
                     </button>
                   );
                 })}
@@ -2027,7 +2116,18 @@ export function AdminDashboard() {
                     </div>
                   </>
                 ) : (
-                  <p className="text-sm text-[#666670]">Crie um curso para iniciar o ambiente de configuração.</p>
+                  <div className="flex min-h-[260px] flex-col items-center justify-center gap-4 text-center">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-[20px] border border-[#E6E6EA] bg-[#FAFAFB]">
+                      <BookOpen className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-[#111114]">Nenhum curso criado ainda</p>
+                      <p className="mt-1 text-sm text-[#8A8A92]">Crie o primeiro curso para estruturar o conteúdo da plataforma.</p>
+                    </div>
+                    <button type="button" onClick={openCourseCreator} className="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(223,117,13,0.2)] transition hover:bg-primary/90">
+                      <Plus className="h-4 w-4" /> Criar primeiro curso
+                    </button>
+                  </div>
                 )}
               </Panel>
             </div>
@@ -2046,7 +2146,7 @@ export function AdminDashboard() {
               onDeleteCertificate={handleDeleteCertificate}
             />
           ) : route === 'history' ? (
-            <AdminAuditHistory logs={auditLogs} revertingLogId={revertingLogId} onRevert={handleRevertAuditLog} />
+            <AdminAuditHistory logs={auditLogs} revertingLogId={revertingLogId} onRevert={handleRevertAuditLog} profileImages={profileImages} />
           ) : (
             <div className="space-y-6 lg:space-y-7">
               {missingProfiles.length > 0 && (
@@ -2576,6 +2676,27 @@ function metadataNullableNumber(metadata: Record<string, unknown>, key: string) 
   return typeof metadata[key] === 'number' && Number.isFinite(metadata[key]) ? metadata[key] as number : null;
 }
 
+function groupLogsByDate(logs: AdminAuditLog[]): Array<{ label: string; logs: AdminAuditLog[] }> {
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const startOfYesterday = startOfToday - 86400000;
+  const startOfWeek = startOfToday - (now.getDay() || 7) * 86400000;
+
+  const groups: Record<string, AdminAuditLog[]> = { Hoje: [], Ontem: [], 'Esta semana': [], Anteriores: [] };
+
+  for (const log of logs) {
+    const time = new Date(log.created_at).getTime();
+    if (time >= startOfToday) groups['Hoje'].push(log);
+    else if (time >= startOfYesterday) groups['Ontem'].push(log);
+    else if (time >= startOfWeek) groups['Esta semana'].push(log);
+    else groups['Anteriores'].push(log);
+  }
+
+  return Object.entries(groups)
+    .filter(([, items]) => items.length > 0)
+    .map(([label, items]) => ({ label, logs: items }));
+}
+
 function canRevertAuditLog(log: AdminAuditLog) {
   if (log.reverted_at || !log.target_id) return false;
   if (log.action === 'create_course' || log.action === 'create_module' || log.action === 'create_lesson') return true;
@@ -2589,13 +2710,16 @@ function AdminAuditHistory({
   logs,
   revertingLogId,
   onRevert,
+  profileImages,
 }: {
   logs: AdminAuditLog[];
   revertingLogId: string;
   onRevert: (log: AdminAuditLog) => Promise<void>;
+  profileImages: Record<string, string>;
 }) {
   const [activeFilter, setActiveFilter] = useState<AdminAuditCategory | 'todos'>('todos');
   const filteredLogs = logs.filter((log) => auditFilterMatches(log, activeFilter));
+  const groupedLogs = groupLogsByDate(filteredLogs);
 
   return (
     <div className="space-y-5">
@@ -2627,53 +2751,74 @@ function AdminAuditHistory({
         </div>
       </Panel>
 
-      <Panel className="overflow-hidden">
-        {filteredLogs.length > 0 ? (
-          <div className="divide-y divide-[#ECECEF]">
-            {filteredLogs.map((log) => (
-              <article key={log.id} className="grid gap-3 p-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
-                <div className="min-w-0">
-                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
-                      {auditCategoryLabel(log.category)}
-                    </span>
-                    {log.company && <InfoBadge value={log.company} tone="company" />}
-                    {log.reverted_at && (
-                      <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-700">
-                        Revertido
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm font-semibold leading-6 text-[#111114]">{log.message}</p>
-                  <p className="mt-1 text-xs text-[#8A8A92]">
-                    Autor: {log.actor_name}{log.target_name ? ` · Alvo: ${log.target_name}` : ''}
-                  </p>
+      {groupedLogs.length > 0 ? (
+        <div className="space-y-4">
+          {groupedLogs.map((group) => (
+            <div key={group.label}>
+              <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#8A8A92]">{group.label}</p>
+              <Panel className="overflow-hidden">
+                <div className="divide-y divide-[#ECECEF]">
+                  {group.logs.map((log) => {
+                    const actorImage = Object.entries(profileImages).find(([, url]) => url && log.actor_name && url.includes(log.actor_id ?? ''));
+                    return (
+                      <article key={log.id} className="grid gap-3 p-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+                        <div className="min-w-0">
+                          <div className="mb-2 flex flex-wrap items-center gap-2">
+                            <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
+                              {auditCategoryLabel(log.category)}
+                            </span>
+                            {log.company && <InfoBadge value={log.company} tone="company" />}
+                            {log.reverted_at && (
+                              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-700">
+                                Revertido
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm font-semibold leading-6 text-[#111114]">{log.message}</p>
+                          <div className="mt-2 flex items-center gap-2">
+                            <div className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#F0F0F2] text-[9px] font-semibold text-primary">
+                              {actorImage ? (
+                                <img src={actorImage[1]} alt="" className="h-full w-full object-cover" />
+                              ) : (
+                                (log.actor_name || 'A').slice(0, 1).toUpperCase()
+                              )}
+                            </div>
+                            <p className="text-xs text-[#8A8A92]">
+                              {log.actor_name}{log.target_name ? ` · ${log.target_name}` : ''}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 md:justify-end">
+                          <time className="text-left text-xs font-semibold text-[#8A8A92] md:text-right" dateTime={log.created_at}>
+                            {formatAuditDate(log.created_at)}
+                          </time>
+                          {canRevertAuditLog(log) && (
+                            <button
+                              type="button"
+                              onClick={() => void onRevert(log)}
+                              disabled={revertingLogId === log.id}
+                              className="inline-flex h-9 items-center justify-center rounded-md border border-[#E6E6EA] bg-white px-3 text-xs font-semibold text-[#666670] transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {revertingLogId === log.id ? 'Revertendo...' : 'Reverter'}
+                            </button>
+                          )}
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
-                <div className="flex flex-wrap items-center gap-2 md:justify-end">
-                  <time className="text-left text-xs font-semibold text-[#8A8A92] md:text-right" dateTime={log.created_at}>
-                    {formatAuditDate(log.created_at)}
-                  </time>
-                  {canRevertAuditLog(log) && (
-                    <button
-                      type="button"
-                      onClick={() => void onRevert(log)}
-                      disabled={revertingLogId === log.id}
-                      className="inline-flex h-9 items-center justify-center rounded-md border border-[#E6E6EA] bg-white px-3 text-xs font-semibold text-[#666670] transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {revertingLogId === log.id ? 'Revertendo...' : 'Reverter'}
-                    </button>
-                  )}
-                </div>
-              </article>
-            ))}
-          </div>
-        ) : (
+              </Panel>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <Panel className="overflow-hidden">
           <div className="flex min-h-[220px] flex-col items-center justify-center gap-3 p-6 text-center text-sm text-[#8A8A92]">
             <History className="h-5 w-5 text-primary" />
             Nenhuma modificação registrada ainda.
           </div>
-        )}
-      </Panel>
+        </Panel>
+      )}
     </div>
   );
 }
@@ -2704,7 +2849,23 @@ function ProgressDashboard({
   onDeleteCertificate: (user: UserProfile, course: CourseTree, certificate: Certificate) => Promise<void>;
 }) {
   const [selectedUserId, setSelectedUserId] = useState(users[0]?.id ?? '');
-  const selectedUser = users.find((user) => user.id === selectedUserId) ?? users[0];
+  const [progressFilter, setProgressFilter] = useState<'todos' | 'sem_progresso' | 'em_andamento' | 'concluido'>('todos');
+
+  const filteredUsers = useMemo(() => {
+    if (progressFilter === 'todos') return users;
+    return users.filter((user) => {
+      const userCourses = courses.filter((course) => course.company === user.company);
+      const userAttempts = attempts.filter((attempt) => attempt.user_id === user.id);
+      const userProgress = progress.filter((item) => item.user_id === user.id);
+      const percents = userCourses.map((course) => getCourseProgress(course, userProgress, quizzes, userAttempts));
+      const avg = percents.length ? Math.round(percents.reduce((sum, item) => sum + item, 0) / percents.length) : 0;
+      if (progressFilter === 'sem_progresso') return avg === 0;
+      if (progressFilter === 'em_andamento') return avg > 0 && avg < 100;
+      return avg >= 100;
+    });
+  }, [users, progressFilter, courses, progress, quizzes, attempts]);
+
+  const selectedUser = filteredUsers.find((user) => user.id === selectedUserId) ?? filteredUsers[0];
   const userCourses = selectedUser ? courses.filter((course) => course.company === selectedUser.company) : [];
   const userAttempts = selectedUser ? attempts.filter((attempt) => attempt.user_id === selectedUser.id) : [];
   const userFailures = selectedUser ? failures.filter((failure) => failure.user_id === selectedUser.id) : [];
@@ -2714,22 +2875,58 @@ function ProgressDashboard({
     if (!selectedUserId && users[0]) setSelectedUserId(users[0].id);
   }, [selectedUserId, users]);
 
+  useEffect(() => {
+    if (filteredUsers.length > 0 && !filteredUsers.find((user) => user.id === selectedUserId)) {
+      setSelectedUserId(filteredUsers[0].id);
+    }
+  }, [filteredUsers, selectedUserId]);
+
+  const progressFilterOptions: Array<{ id: typeof progressFilter; label: string }> = [
+    { id: 'todos', label: 'Todos' },
+    { id: 'sem_progresso', label: 'Sem progresso' },
+    { id: 'em_andamento', label: 'Em andamento' },
+    { id: 'concluido', label: 'Concluído' },
+  ];
+
   return (
     <div className="grid gap-5 min-[1366px]:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]">
       <Panel className="overflow-hidden">
         <header className="border-b border-[#ECECEF] p-5">
           <h2 className="font-semibold">Colaboradores</h2>
           <p className="mt-1 text-sm text-[#777780]">Selecione um perfil para acompanhar.</p>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {progressFilterOptions.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => setProgressFilter(option.id)}
+                className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
+                  progressFilter === option.id
+                    ? 'border-primary bg-primary text-white'
+                    : 'border-[#E6E6EA] bg-white text-[#666670] hover:border-primary/50 hover:text-primary'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </header>
         <div className="grid max-h-[70svh] overflow-auto">
-          {users.map((user) => (
+          {filteredUsers.length === 0 ? (
+            <p className="px-5 py-6 text-sm text-[#8A8A92]">Nenhum colaborador nesse filtro.</p>
+          ) : filteredUsers.map((user) => (
             <button
               key={user.id}
               type="button"
               onClick={() => setSelectedUserId(user.id)}
               className={`border-b border-[#F0F0F2] px-5 py-4 text-left text-sm transition ${selectedUser?.id === user.id ? 'bg-primary/10 text-primary' : 'hover:bg-[#FAFAFB]'}`}
             >
-              <span className="block font-semibold">{user.full_name || user.username}</span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="block font-semibold">{user.full_name || user.username}</span>
+                {user.status === 'inativo' && (
+                  <span className="shrink-0 rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">inativo</span>
+                )}
+              </div>
               <span className="mt-1 block text-xs text-[#8A8A92]">{user.company}</span>
             </button>
           ))}

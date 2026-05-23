@@ -12,7 +12,10 @@
       "Bash(npx tsc *)",
       "Bash(node scripts/download-fonts.mjs)",
       "Bash(node -e ' *)",
-      "PowerShell([Environment]::GetFolderPath\\('Desktop'\\))"
+      "PowerShell([Environment]::GetFolderPath\\('Desktop'\\))",
+      "Bash(Get-ChildItem *)",
+      "Bash(xargs grep -l \"admin\\\\|Admin\\\\|dashboard\\\\|Dashboard\")",
+      "Bash(npx eslint *)"
     ]
   }
 }
