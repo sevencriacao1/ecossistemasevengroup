@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
-import { readFileSync, existsSync, readdirSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
 import sharp from 'sharp';
 
@@ -13,26 +14,31 @@ const HEIGHT = 1240;
 const BLACK = '#1a1a1a';
 const GOLD = '#B8913F';
 const GOLD_LIGHT = '#D4A853';
-const OFF_WHITE = '#F9F7F3';
+const BG_TOP = '#FDFBF7';
+const BG_BOT = '#F4F0E8';
 
 // ── Font loading ───────────────────────────────────────────────────────────────
-function getFontFiles() {
-  if (!existsSync(FONTS_DIR)) return [];
-  return readdirSync(FONTS_DIR)
-    .filter(f => /\.(ttf|otf)$/i.test(f))
-    .map(f => join(FONTS_DIR, f));
+function buildSatoriFonts() {
+  const entries = [
+    { name: 'Playfair Display', weight: 400, file: 'playfair-400.ttf' },
+    { name: 'Playfair Display', weight: 500, file: 'playfair-500.ttf' },
+    { name: 'Playfair Display', weight: 700, file: 'playfair-700.ttf' },
+    { name: 'Space Grotesk',    weight: 300, file: 'space-grotesk-300.ttf' },
+    { name: 'Space Grotesk',    weight: 400, file: 'space-grotesk-400.ttf' },
+    { name: 'Space Grotesk',    weight: 500, file: 'space-grotesk-500.ttf' },
+    { name: 'Space Grotesk',    weight: 600, file: 'space-grotesk-600.ttf' },
+    { name: 'Space Grotesk',    weight: 700, file: 'space-grotesk-700.ttf' },
+  ];
+  return entries
+    .map(({ name, weight, file }) => {
+      const p = join(FONTS_DIR, file);
+      if (!existsSync(p)) return null;
+      return { name, weight, style: 'normal', data: readFileSync(p) };
+    })
+    .filter(Boolean);
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
-function escapeXml(value = '') {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
-
 function createValidationCode(userName, courseName, completedAt) {
   const source = `${userName}-${courseName}-${completedAt}`;
   let hash = 0;
@@ -40,14 +46,14 @@ function createValidationCode(userName, courseName, completedAt) {
   return `ARQO-${Math.abs(hash).toString(36).toUpperCase().padStart(8, '0').slice(0, 8)}`;
 }
 
-function splitText(value, maxLineLength, maxLines = 3) {
+function splitText(value, maxCharsPerLine, maxLines = 3) {
   const words = String(value || '').trim().split(/\s+/).filter(Boolean);
   const lines = [];
   for (const word of words) {
     const lastIdx = lines.length - 1;
     const current = lines[lastIdx] || '';
     const next = current ? `${current} ${word}` : word;
-    if (!current || next.length <= maxLineLength) {
+    if (!current || next.length <= maxCharsPerLine) {
       lines[lastIdx < 0 ? 0 : lastIdx] = next;
     } else if (lines.length < maxLines) {
       lines.push(word);
@@ -80,17 +86,33 @@ async function fetchAsset(url) {
     const buf = Buffer.from(await res.arrayBuffer());
     if (!buf.length) return null;
     if (ct.includes('svg') || url.toLowerCase().endsWith('.svg')) {
-      return { dataUri: `data:image/svg+xml;base64,${buf.toString('base64')}` };
+      return `data:image/svg+xml;base64,${buf.toString('base64')}`;
     }
     const png = await sharp(buf).png().toBuffer();
-    return { dataUri: `data:image/png;base64,${png.toString('base64')}` };
+    return `data:image/png;base64,${png.toString('base64')}`;
   } catch {
     return null;
   }
 }
 
-// ── SVG builder ───────────────────────────────────────────────────────────────
-async function buildCertificateSvg(values) {
+// ── Layout helpers ─────────────────────────────────────────────────────────────
+const h = (type, props, ...children) => ({
+  type,
+  props: { ...props, children: children.flat().filter(c => c != null && c !== false) },
+});
+
+// Satori requires display on all elements
+const abs = (style, ...children) =>
+  h('div', { style: { position: 'absolute', display: 'flex', ...style } }, ...children);
+
+const hGold = (top, left, width) =>
+  abs({
+    top, left, width, height: 2,
+    background: `linear-gradient(to right, transparent, ${GOLD}, transparent)`,
+  });
+
+// ── Build satori element tree ──────────────────────────────────────────────────
+async function buildCertificateElement(values) {
   const recipient = fitRecipientName(values.userName);
   const courseTitle = String(values.courseName || 'Curso').trim();
   const workload = String(values.workload || '').trim();
@@ -101,179 +123,151 @@ async function buildCertificateSvg(values) {
   );
 
   const statement = `por ter concluido com exito o curso ${courseTitle}, com carga horaria total de ${workload}, realizado em ${completionDate}, na cidade de ${city}.`;
-  const bodyLines = splitText(statement, 85, 3);
+  const bodyLines = splitText(statement, 82, 3);
 
-  const [logoAsset, signatureAsset] = await Promise.all([
+  const [logoUri, signatureUri] = await Promise.all([
     fetchAsset(values.logoUrl),
     fetchAsset(values.signatureUrl),
   ]);
 
-  const SERIF = 'Playfair Display, Georgia, serif';
-  const SANS = 'Space Grotesk, Arial, sans-serif';
+  const CX = WIDTH / 2;
 
-  // Vertical layout
-  const logoY = 100;
-  const rule1Y = 88;
-  const rule2Y = 230;
-  const certTitleY = 340;
-  const introY1 = 415;
-  const introY2 = 455;
-  const nameY = recipient.fontSize <= 68 ? 600 : 586;
-  const nameRuleY = 640;
-  const bodyY0 = 720;
-  const bodyLineH = 48;
-  const sigImgY = 820;
-  const footerLineY = 980;
-  const footerLabelY = 1010;
-  const validationY = 1130;
+  // Vertical positions
+  const nameTop = recipient.fontSize <= 68 ? 490 : 476;
 
-  const CX = WIDTH / 2; // 877
+  return h(
+    'div',
+    {
+      style: {
+        width: WIDTH,
+        height: HEIGHT,
+        position: 'relative',
+        background: `linear-gradient(to bottom, ${BG_TOP}, ${BG_BOT})`,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+      },
+    },
 
-  const logoSvg = logoAsset
-    ? `<image href="${logoAsset.dataUri}" x="${CX - 120}" y="${logoY}" width="240" height="100" preserveAspectRatio="xMidYMid meet" opacity="0.95" />`
-    : `<text x="${CX}" y="${logoY + 80}" text-anchor="middle" font-family="${SERIF}" font-size="72" font-weight="700" letter-spacing="16" fill="${BLACK}">ARQO</text>`;
+    // ── Borders ──────────────────────────────────────────────────────────────
+    abs({ top: 44, left: 44, right: 44, bottom: 44, border: `2px solid ${GOLD}` }),
+    abs({ top: 62, left: 62, right: 62, bottom: 62, border: `1px solid rgba(184,145,63,0.27)` }),
 
-  const signatureSvg = signatureAsset
-    ? `<image href="${signatureAsset.dataUri}" x="1180" y="${sigImgY}" width="340" height="140" preserveAspectRatio="xMidYMid meet" opacity="0.90" />`
-    : '';
+    // ── Corner ornaments ──────────────────────────────────────────────────────
+    abs({ top: 80, left: 80, width: 140, height: 140, borderTop: `1.5px solid ${GOLD}`, borderLeft: `1.5px solid ${GOLD}` }),
+    abs({ top: 80, right: 80, width: 140, height: 140, borderTop: `1.5px solid ${GOLD}`, borderRight: `1.5px solid ${GOLD}` }),
+    abs({ bottom: 80, left: 80, width: 140, height: 140, borderBottom: `1.5px solid ${GOLD}`, borderLeft: `1.5px solid ${GOLD}` }),
+    abs({ bottom: 80, right: 80, width: 140, height: 140, borderBottom: `1.5px solid ${GOLD}`, borderRight: `1.5px solid ${GOLD}` }),
 
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-  width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}">
-  <defs>
-    <linearGradient id="hGold" x1="0%" x2="100%" y1="0%" y2="0%">
-      <stop offset="0%"   stop-color="${GOLD}" stop-opacity="0" />
-      <stop offset="50%"  stop-color="${GOLD}" stop-opacity="1" />
-      <stop offset="100%" stop-color="${GOLD}" stop-opacity="0" />
-    </linearGradient>
-    <linearGradient id="hGoldSoft" x1="0%" x2="100%" y1="0%" y2="0%">
-      <stop offset="0%"   stop-color="${GOLD_LIGHT}" stop-opacity="0" />
-      <stop offset="50%"  stop-color="${GOLD_LIGHT}" stop-opacity="0.55" />
-      <stop offset="100%" stop-color="${GOLD_LIGHT}" stop-opacity="0" />
-    </linearGradient>
-    <linearGradient id="bgGrad" x1="0%" x2="0%" y1="0%" y2="100%">
-      <stop offset="0%"   stop-color="#FDFBF7" />
-      <stop offset="100%" stop-color="#F4F0E8" />
-    </linearGradient>
-    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
-      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="${GOLD}" flood-opacity="0.12" />
-    </filter>
-  </defs>
+    // ── Rules around logo ──────────────────────────────────────────────────────
+    hGold(88, 480, 794),
+    hGold(230, 480, 794),
 
-  <!-- Background -->
-  <rect width="${WIDTH}" height="${HEIGHT}" fill="url(#bgGrad)" />
+    // ── Logo ──────────────────────────────────────────────────────────────────
+    logoUri
+      ? abs(
+          { top: 104, left: CX - 120, width: 240, height: 100, alignItems: 'center', justifyContent: 'center' },
+          h('img', { src: logoUri, width: 240, height: 100, style: { objectFit: 'contain' } })
+        )
+      : abs(
+          { top: 140, left: 0, right: 0, justifyContent: 'center' },
+          h('span', { style: { fontFamily: 'Playfair Display', fontSize: 72, fontWeight: 700, letterSpacing: 16, color: BLACK } }, 'ARQO')
+        ),
 
-  <!-- Outer gold border -->
-  <rect x="44" y="44" width="${WIDTH - 88}" height="${HEIGHT - 88}" fill="none" stroke="${GOLD}" stroke-width="2" />
-  <!-- Inner soft border -->
-  <rect x="62" y="62" width="${WIDTH - 124}" height="${HEIGHT - 124}" fill="none" stroke="${GOLD}" stroke-opacity="0.28" stroke-width="1" />
+    // ── "Certificado" title ────────────────────────────────────────────────────
+    abs(
+      { top: 268, left: 0, right: 0, justifyContent: 'center' },
+      h('span', { style: { fontFamily: 'Playfair Display', fontSize: 88, fontWeight: 400, color: BLACK, letterSpacing: 6 } }, 'Certificado')
+    ),
 
-  <!-- Corner ornaments TL -->
-  <path d="M80 220 V80 H220"  fill="none" stroke="${GOLD}" stroke-width="1.5" opacity="0.85" />
-  <!-- Corner ornaments TR -->
-  <path d="M${WIDTH - 80} 220 V80 H${WIDTH - 220}" fill="none" stroke="${GOLD}" stroke-width="1.5" opacity="0.85" />
-  <!-- Corner ornaments BL -->
-  <path d="M80 ${HEIGHT - 220} V${HEIGHT - 80} H220" fill="none" stroke="${GOLD}" stroke-width="1.5" opacity="0.85" />
-  <!-- Corner ornaments BR -->
-  <path d="M${WIDTH - 80} ${HEIGHT - 220} V${HEIGHT - 80} H${WIDTH - 220}" fill="none" stroke="${GOLD}" stroke-width="1.5" opacity="0.85" />
+    // Gold underline for title
+    abs({ top: 360, left: CX - 180, width: 360, height: 2, background: `linear-gradient(to right, transparent, ${GOLD_LIGHT}, transparent)` }),
 
-  <!-- Corner dots -->
-  <circle cx="120" cy="120" r="3" fill="${GOLD}" opacity="0.5" />
-  <circle cx="${WIDTH - 120}" cy="120" r="3" fill="${GOLD}" opacity="0.5" />
-  <circle cx="120" cy="${HEIGHT - 120}" r="3" fill="${GOLD}" opacity="0.5" />
-  <circle cx="${WIDTH - 120}" cy="${HEIGHT - 120}" r="3" fill="${GOLD}" opacity="0.5" />
+    // ── Intro text ─────────────────────────────────────────────────────────────
+    abs(
+      { top: 394, left: 0, right: 0, justifyContent: 'center' },
+      h('span', { style: { fontFamily: 'Space Grotesk', fontSize: 21, fontWeight: 300, color: 'rgba(26,26,26,0.60)' } },
+        'O Founder e CEO da ARQO, Gilson Nogueira, no uso de suas atribuicoes,')
+    ),
+    abs(
+      { top: 430, left: 0, right: 0, justifyContent: 'center' },
+      h('span', { style: { fontFamily: 'Space Grotesk', fontSize: 21, fontWeight: 300, color: 'rgba(26,26,26,0.60)' } },
+        'confere o presente certificado a')
+    ),
 
-  <!-- Rules around logo area -->
-  <rect x="480" y="${rule1Y}" width="794" height="1.2" fill="url(#hGold)" />
-  <rect x="480" y="${rule2Y}" width="794" height="1.2" fill="url(#hGold)" />
+    // Small gold divider
+    abs({ top: 458, left: CX - 36, width: 72, height: 1, background: GOLD, opacity: 0.7 }),
 
-  <!-- Logo -->
-  ${logoSvg}
+    // ── Recipient name ─────────────────────────────────────────────────────────
+    abs(
+      { top: nameTop, left: 0, right: 0, justifyContent: 'center' },
+      h('span', { style: { fontFamily: 'Playfair Display', fontSize: recipient.fontSize, fontWeight: 500, color: BLACK } },
+        recipient.text)
+    ),
 
-  <!-- "CERTIFICADO" title -->
-  <text x="${CX}" y="${certTitleY}" text-anchor="middle"
-    font-family="${SERIF}" font-size="88" font-weight="400"
-    fill="${BLACK}" letter-spacing="6">Certificado</text>
+    // Rule under name
+    hGold(630, 420, WIDTH - 840),
 
-  <!-- Gold underline for title -->
-  <rect x="${CX - 180}" y="${certTitleY + 14}" width="360" height="2" fill="url(#hGoldSoft)" />
+    // ── Body statement ─────────────────────────────────────────────────────────
+    ...bodyLines.map((line, i) =>
+      abs(
+        { top: 688 + i * 50, left: 0, right: 0, justifyContent: 'center' },
+        h('span', { style: { fontFamily: 'Space Grotesk', fontSize: 22, fontWeight: 300, color: 'rgba(26,26,26,0.68)' } }, line)
+      )
+    ),
 
-  <!-- Intro lines -->
-  <text x="${CX}" y="${introY1}" text-anchor="middle"
-    font-family="${SANS}" font-size="21" font-weight="300"
-    fill="rgba(26,26,26,0.60)" letter-spacing="0.4">O Founder e CEO da ARQO, Gilson Nogueira, no uso de suas atribuicoes,</text>
-  <text x="${CX}" y="${introY2}" text-anchor="middle"
-    font-family="${SANS}" font-size="21" font-weight="300"
-    fill="rgba(26,26,26,0.60)" letter-spacing="0.4">confere o presente certificado a</text>
+    // ── Signature image ────────────────────────────────────────────────────────
+    signatureUri
+      ? abs(
+          { top: 820, left: 1190, width: 330, height: 130, alignItems: 'center', justifyContent: 'center' },
+          h('img', { src: signatureUri, width: 330, height: 130, style: { objectFit: 'contain' } })
+        )
+      : null,
 
-  <!-- Ornamental small divider -->
-  <rect x="${CX - 40}" y="${introY2 + 20}" width="80" height="1" fill="${GOLD}" opacity="0.6" />
+    // ── Footer separator ───────────────────────────────────────────────────────
+    abs({ top: 920, left: 120, width: WIDTH - 240, height: 1, background: `linear-gradient(to right, transparent, rgba(212,168,83,0.53), transparent)` }),
 
-  <!-- Recipient name -->
-  <text x="${CX}" y="${nameY}" text-anchor="middle"
-    font-family="${SERIF}" font-size="${recipient.fontSize}" font-weight="500"
-    fill="${BLACK}" letter-spacing="1">${escapeXml(recipient.text)}</text>
+    // Date column
+    abs({ top: 950, left: 160, width: 340, flexDirection: 'column', alignItems: 'center' },
+      h('span', { style: { fontFamily: 'Space Grotesk', fontSize: 20, fontWeight: 400, color: BLACK } }, completionDate),
+      abs({ top: 32, left: 0, right: 0, height: 1, background: `linear-gradient(to right, transparent, ${GOLD}, transparent)` }),
+      abs({ top: 48, left: 0, right: 0, justifyContent: 'center' },
+        h('span', { style: { fontFamily: 'Space Grotesk', fontSize: 14, fontWeight: 300, color: 'rgba(26,26,26,0.50)', letterSpacing: 2 } }, 'DATA')
+      )
+    ),
 
-  <!-- Rule under name -->
-  <rect x="420" y="${nameRuleY}" width="${CX * 2 - 840}" height="1.5" fill="url(#hGold)" />
+    // Student signature line
+    abs({ top: 982, left: 620, width: 450, height: 1, background: 'rgba(26,26,26,0.22)' }),
+    abs(
+      { top: 998, left: 620, width: 450, justifyContent: 'center' },
+      h('span', { style: { fontFamily: 'Space Grotesk', fontSize: 14, fontWeight: 300, color: 'rgba(26,26,26,0.50)', letterSpacing: 2 } }, 'ASSINATURA DO ALUNO')
+    ),
 
-  <!-- Body statement -->
-  ${bodyLines.map((line, i) => `<text x="${CX}" y="${bodyY0 + i * bodyLineH}" text-anchor="middle"
-    font-family="${SANS}" font-size="22" font-weight="300"
-    fill="rgba(26,26,26,0.68)" letter-spacing="0.3">${escapeXml(line)}</text>`).join('\n  ')}
+    // CEO signature line
+    abs({ top: 982, left: 1140, width: 454, height: 1, background: 'rgba(26,26,26,0.22)' }),
+    abs(
+      { top: 998, left: 1140, width: 454, justifyContent: 'center' },
+      h('span', { style: { fontFamily: 'Space Grotesk', fontSize: 14, fontWeight: 300, color: 'rgba(26,26,26,0.50)', letterSpacing: 2 } }, 'GILSON NOGUEIRA - CEO & FOUNDER')
+    ),
 
-  <!-- Signature image -->
-  ${signatureSvg}
-
-  <!-- Footer horizontal rule (full width faded) -->
-  <rect x="120" y="${footerLineY - 60}" width="${WIDTH - 240}" height="1" fill="url(#hGoldSoft)" />
-
-  <!-- Date column -->
-  <text x="330" y="${footerLineY - 20}" text-anchor="middle"
-    font-family="${SANS}" font-size="20" font-weight="400"
-    fill="${BLACK}">${escapeXml(completionDate)}</text>
-  <line x1="160" y1="${footerLineY}" x2="500" y2="${footerLineY}" stroke="${GOLD}" stroke-width="1.2" />
-  <text x="330" y="${footerLabelY}" text-anchor="middle"
-    font-family="${SANS}" font-size="15" font-weight="300"
-    fill="rgba(26,26,26,0.50)" letter-spacing="1.5">DATA</text>
-
-  <!-- Student signature line -->
-  <line x1="620" y1="${footerLineY}" x2="1070" y2="${footerLineY}" stroke="rgba(26,26,26,0.22)" stroke-width="1" />
-  <text x="845" y="${footerLabelY}" text-anchor="middle"
-    font-family="${SANS}" font-size="15" font-weight="300"
-    fill="rgba(26,26,26,0.50)" letter-spacing="1.5">ASSINATURA DO ALUNO</text>
-
-  <!-- CEO signature line -->
-  <line x1="1140" y1="${footerLineY}" x2="1594" y2="${footerLineY}" stroke="rgba(26,26,26,0.22)" stroke-width="1" />
-  <text x="1367" y="${footerLabelY}" text-anchor="middle"
-    font-family="${SANS}" font-size="15" font-weight="300"
-    fill="rgba(26,26,26,0.50)" letter-spacing="1.5">GILSON NOGUEIRA - CEO &amp; FOUNDER</text>
-
-  <!-- Validation code -->
-  <text x="${CX}" y="${validationY}" text-anchor="middle"
-    font-family="${SANS}" font-size="12" font-weight="300"
-    fill="rgba(26,26,26,0.35)" letter-spacing="1.5">CODIGO DE VALIDACAO: ${escapeXml(validationCode)}</text>
-</svg>`;
+    // ── Validation code ────────────────────────────────────────────────────────
+    abs(
+      { bottom: 60, left: 0, right: 0, justifyContent: 'center' },
+      h('span', { style: { fontFamily: 'Space Grotesk', fontSize: 12, fontWeight: 300, color: 'rgba(26,26,26,0.35)', letterSpacing: 2 } },
+        `CODIGO DE VALIDACAO: ${validationCode}`)
+    ),
+  );
 }
 
 // ── PNG renderer ──────────────────────────────────────────────────────────────
 async function renderCertificatePng(values) {
-  const svg = await buildCertificateSvg(values);
-  const fontFiles = getFontFiles();
+  const fonts = buildSatoriFonts();
+  const element = await buildCertificateElement(values);
 
-  console.log('[cert] font files loaded:', fontFiles.length);
+  const svg = await satori(element, { width: WIDTH, height: HEIGHT, fonts });
 
-  const resvg = new Resvg(svg, {
-    fitTo: { mode: 'width', value: WIDTH },
-    font: {
-      loadSystemFonts: true,
-      fontFiles,
-      fontDirs: [FONTS_DIR],
-    },
-  });
-
-  const rendered = resvg.render();
-  return rendered.asPng();
+  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: WIDTH } });
+  return resvg.render().asPng();
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
