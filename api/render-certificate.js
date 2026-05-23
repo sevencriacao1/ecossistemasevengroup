@@ -29,13 +29,21 @@ function buildSatoriFonts() {
     { name: 'Space Grotesk',    weight: 600, file: 'space-grotesk-600.ttf' },
     { name: 'Space Grotesk',    weight: 700, file: 'space-grotesk-700.ttf' },
   ];
-  return entries
+  console.log('[cert] FONTS_DIR:', FONTS_DIR, '| exists:', existsSync(FONTS_DIR));
+  const fonts = entries
     .map(({ name, weight, file }) => {
       const p = join(FONTS_DIR, file);
-      if (!existsSync(p)) return null;
-      return { name, weight, style: 'normal', data: readFileSync(p) };
+      const found = existsSync(p);
+      console.log('[cert] font', file, found ? 'OK' : 'MISSING');
+      if (!found) return null;
+      const data = readFileSync(p);
+      const sig = data.slice(0, 4).toString('hex');
+      console.log('[cert] font', file, 'sig:', sig, 'size:', data.length);
+      return { name, weight, style: 'normal', data };
     })
     .filter(Boolean);
+  console.log('[cert] fonts loaded:', fonts.length);
+  return fonts;
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
@@ -262,12 +270,20 @@ async function buildCertificateElement(values) {
 // ── PNG renderer ──────────────────────────────────────────────────────────────
 async function renderCertificatePng(values) {
   const fonts = buildSatoriFonts();
+  if (fonts.length === 0) {
+    throw new Error(`No fonts loaded from ${FONTS_DIR}`);
+  }
+
   const element = await buildCertificateElement(values);
+  console.log('[cert] calling satori with', fonts.length, 'fonts');
 
   const svg = await satori(element, { width: WIDTH, height: HEIGHT, fonts });
+  console.log('[cert] satori SVG length:', svg.length);
 
   const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: WIDTH } });
-  return resvg.render().asPng();
+  const png = resvg.render().asPng();
+  console.log('[cert] PNG size:', png.length);
+  return png;
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
