@@ -2,7 +2,7 @@
   "functions": {
     "api/render-certificate.js": {
       "maxDuration": 60,
-      "includeFiles": "fonts/**"
+      "includeFiles": "fonts/**,node_modules/@resvg/**"
     }
   },
   "rewrites": [

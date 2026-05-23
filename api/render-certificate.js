@@ -1,57 +1,26 @@
 import { createClient } from '@supabase/supabase-js';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { Resvg } from '@resvg/resvg-js';
 import sharp from 'sharp';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FONTS_DIR = join(__dirname, 'fonts');
 
-const WIDTH = 1600;
-const HEIGHT = 1130;
-const BLACK = '#111111';
-const GOLD = '#C8A46B';
-const OFF_WHITE = '#F8F6F2';
+const WIDTH = 1754;
+const HEIGHT = 1240;
+const BLACK = '#1a1a1a';
+const GOLD = '#B8913F';
+const GOLD_LIGHT = '#D4A853';
+const OFF_WHITE = '#F9F7F3';
 
-// ── Font loading from disk ────────────────────────────────────────────────────
-function loadFontDataUri(fileName) {
-  const path = join(FONTS_DIR, fileName);
-  if (!existsSync(path)) return null;
-  const buf = readFileSync(path);
-  return `data:font/truetype;base64,${buf.toString('base64')}`;
-}
-
-function buildFontFaces() {
-  console.log('[cert] fonts dir:', FONTS_DIR, '| exists:', existsSync(FONTS_DIR));
-  const rules = [];
-
-  const playfairWeights = [
-    { weight: '400', file: 'playfair-400.ttf' },
-    { weight: '500', file: 'playfair-500.ttf' },
-    { weight: '700', file: 'playfair-700.ttf' },
-  ];
-  const spaceGroteskWeights = [
-    { weight: '300', file: 'space-grotesk-300.ttf' },
-    { weight: '400', file: 'space-grotesk-400.ttf' },
-    { weight: '500', file: 'space-grotesk-500.ttf' },
-    { weight: '600', file: 'space-grotesk-600.ttf' },
-    { weight: '700', file: 'space-grotesk-700.ttf' },
-  ];
-
-  for (const { weight, file } of playfairWeights) {
-    const uri = loadFontDataUri(file);
-    if (uri) {
-      rules.push(`@font-face { font-family: 'Playfair Display'; src: url(${uri}) format('truetype'); font-weight: ${weight}; font-style: normal; }`);
-    }
-  }
-  for (const { weight, file } of spaceGroteskWeights) {
-    const uri = loadFontDataUri(file);
-    if (uri) {
-      rules.push(`@font-face { font-family: 'Space Grotesk'; src: url(${uri}) format('truetype'); font-weight: ${weight}; font-style: normal; }`);
-    }
-  }
-
-  return rules.join('\n    ');
+// ── Font loading ───────────────────────────────────────────────────────────────
+function getFontFiles() {
+  if (!existsSync(FONTS_DIR)) return [];
+  return readdirSync(FONTS_DIR)
+    .filter(f => /\.(ttf|otf)$/i.test(f))
+    .map(f => join(FONTS_DIR, f));
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
@@ -75,14 +44,15 @@ function splitText(value, maxLineLength, maxLines = 3) {
   const words = String(value || '').trim().split(/\s+/).filter(Boolean);
   const lines = [];
   for (const word of words) {
-    const current = lines[lines.length - 1] || '';
+    const lastIdx = lines.length - 1;
+    const current = lines[lastIdx] || '';
     const next = current ? `${current} ${word}` : word;
-    if (next.length <= maxLineLength || lines.length === 0) {
-      lines[lines.length - 1] = next;
+    if (!current || next.length <= maxLineLength) {
+      lines[lastIdx < 0 ? 0 : lastIdx] = next;
     } else if (lines.length < maxLines) {
       lines.push(word);
     } else {
-      lines[lines.length - 1] = `${lines[lines.length - 1]} ${word}`;
+      lines[lastIdx] = `${lines[lastIdx]} ${word}`;
     }
   }
   return lines.length ? lines.slice(0, maxLines) : [''];
@@ -90,11 +60,11 @@ function splitText(value, maxLineLength, maxLines = 3) {
 
 function fitRecipientName(name) {
   const n = String(name || '').trim() || 'Aluno';
-  if (n.length <= 22) return { text: n, fontSize: 120 };
-  if (n.length <= 30) return { text: n, fontSize: 100 };
-  if (n.length <= 40) return { text: n, fontSize: 84 };
-  if (n.length <= 52) return { text: n, fontSize: 70 };
-  return { text: `${n.slice(0, 52).trim()}...`, fontSize: 62 };
+  if (n.length <= 20) return { text: n, fontSize: 96 };
+  if (n.length <= 28) return { text: n, fontSize: 80 };
+  if (n.length <= 36) return { text: n, fontSize: 68 };
+  if (n.length <= 48) return { text: n, fontSize: 56 };
+  return { text: `${n.slice(0, 48).trim()}...`, fontSize: 48 };
 }
 
 function mimeFromContentType(ct = '') {
@@ -131,131 +101,179 @@ async function buildCertificateSvg(values) {
   );
 
   const statement = `por ter concluido com exito o curso ${courseTitle}, com carga horaria total de ${workload}, realizado em ${completionDate}, na cidade de ${city}.`;
-  const bodyLines = splitText(statement, 90, 3);
+  const bodyLines = splitText(statement, 85, 3);
 
   const [logoAsset, signatureAsset] = await Promise.all([
     fetchAsset(values.logoUrl),
     fetchAsset(values.signatureUrl),
   ]);
 
-  const fontFaces = buildFontFaces();
-  const SERIF = "Playfair Display, Georgia, 'Times New Roman', serif";
-  const SANS = "'Space Grotesk', Arial, Helvetica, sans-serif";
+  const SERIF = 'Playfair Display, Georgia, serif';
+  const SANS = 'Space Grotesk, Arial, sans-serif';
 
-  const bodyY0 = 742;
-  const bodyLineH = 44;
-  const nameY = recipient.fontSize <= 84 ? 624 : 612;
+  // Vertical layout
+  const logoY = 100;
+  const rule1Y = 88;
+  const rule2Y = 230;
+  const certTitleY = 340;
+  const introY1 = 415;
+  const introY2 = 455;
+  const nameY = recipient.fontSize <= 68 ? 600 : 586;
+  const nameRuleY = 640;
+  const bodyY0 = 720;
+  const bodyLineH = 48;
+  const sigImgY = 820;
+  const footerLineY = 980;
+  const footerLabelY = 1010;
+  const validationY = 1130;
+
+  const CX = WIDTH / 2; // 877
 
   const logoSvg = logoAsset
-    ? `<image href="${logoAsset.dataUri}" x="680" y="148" width="240" height="96" preserveAspectRatio="xMidYMid meet" opacity="0.95" />`
-    : `<text x="800" y="232" text-anchor="middle" font-family="${SERIF}" font-size="64" font-weight="700" letter-spacing="14" fill="${BLACK}">ARQO</text>`;
+    ? `<image href="${logoAsset.dataUri}" x="${CX - 120}" y="${logoY}" width="240" height="100" preserveAspectRatio="xMidYMid meet" opacity="0.95" />`
+    : `<text x="${CX}" y="${logoY + 80}" text-anchor="middle" font-family="${SERIF}" font-size="72" font-weight="700" letter-spacing="16" fill="${BLACK}">ARQO</text>`;
 
   const signatureSvg = signatureAsset
-    ? `<image href="${signatureAsset.dataUri}" x="1100" y="804" width="320" height="130" preserveAspectRatio="xMidYMid meet" opacity="0.92" />`
+    ? `<image href="${signatureAsset.dataUri}" x="1180" y="${sigImgY}" width="340" height="140" preserveAspectRatio="xMidYMid meet" opacity="0.90" />`
     : '';
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
   width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}">
   <defs>
-    <style>
-    ${fontFaces}
-    </style>
-    <pattern id="grain" patternUnits="userSpaceOnUse" width="44" height="44" patternTransform="rotate(45)">
-      <rect width="11" height="44" fill="rgba(200,164,107,0.016)" />
-    </pattern>
     <linearGradient id="hGold" x1="0%" x2="100%" y1="0%" y2="0%">
       <stop offset="0%"   stop-color="${GOLD}" stop-opacity="0" />
       <stop offset="50%"  stop-color="${GOLD}" stop-opacity="1" />
       <stop offset="100%" stop-color="${GOLD}" stop-opacity="0" />
     </linearGradient>
     <linearGradient id="hGoldSoft" x1="0%" x2="100%" y1="0%" y2="0%">
-      <stop offset="0%"   stop-color="${GOLD}" stop-opacity="0" />
-      <stop offset="50%"  stop-color="${GOLD}" stop-opacity="0.6" />
-      <stop offset="100%" stop-color="${GOLD}" stop-opacity="0" />
+      <stop offset="0%"   stop-color="${GOLD_LIGHT}" stop-opacity="0" />
+      <stop offset="50%"  stop-color="${GOLD_LIGHT}" stop-opacity="0.55" />
+      <stop offset="100%" stop-color="${GOLD_LIGHT}" stop-opacity="0" />
     </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" x2="0%" y1="0%" y2="100%">
+      <stop offset="0%"   stop-color="#FDFBF7" />
+      <stop offset="100%" stop-color="#F4F0E8" />
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="${GOLD}" flood-opacity="0.12" />
+    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="${WIDTH}" height="${HEIGHT}" fill="${OFF_WHITE}" />
-  <rect width="${WIDTH}" height="${HEIGHT}" fill="url(#grain)" opacity="0.6" />
+  <rect width="${WIDTH}" height="${HEIGHT}" fill="url(#bgGrad)" />
 
-  <!-- Borders -->
-  <rect x="52" y="52" width="1496" height="1026" fill="none" stroke="${GOLD}" stroke-width="1.6" />
-  <rect x="74" y="74" width="1452" height="982" fill="none" stroke="${GOLD}" stroke-opacity="0.30" stroke-width="1" />
+  <!-- Outer gold border -->
+  <rect x="44" y="44" width="${WIDTH - 88}" height="${HEIGHT - 88}" fill="none" stroke="${GOLD}" stroke-width="2" />
+  <!-- Inner soft border -->
+  <rect x="62" y="62" width="${WIDTH - 124}" height="${HEIGHT - 124}" fill="none" stroke="${GOLD}" stroke-opacity="0.28" stroke-width="1" />
 
-  <!-- Corner ornaments -->
-  <path d="M90 210 V90 H210"    fill="none" stroke="${GOLD}" stroke-width="1.2" opacity="0.8" />
-  <path d="M1510 210 V90 H1390" fill="none" stroke="${GOLD}" stroke-width="1.2" opacity="0.8" />
-  <path d="M90 918 V1040 H210"  fill="none" stroke="${GOLD}" stroke-width="1.2" opacity="0.8" />
-  <path d="M1510 918 V1040 H1390" fill="none" stroke="${GOLD}" stroke-width="1.2" opacity="0.8" />
+  <!-- Corner ornaments TL -->
+  <path d="M80 220 V80 H220"  fill="none" stroke="${GOLD}" stroke-width="1.5" opacity="0.85" />
+  <!-- Corner ornaments TR -->
+  <path d="M${WIDTH - 80} 220 V80 H${WIDTH - 220}" fill="none" stroke="${GOLD}" stroke-width="1.5" opacity="0.85" />
+  <!-- Corner ornaments BL -->
+  <path d="M80 ${HEIGHT - 220} V${HEIGHT - 80} H220" fill="none" stroke="${GOLD}" stroke-width="1.5" opacity="0.85" />
+  <!-- Corner ornaments BR -->
+  <path d="M${WIDTH - 80} ${HEIGHT - 220} V${HEIGHT - 80} H${WIDTH - 220}" fill="none" stroke="${GOLD}" stroke-width="1.5" opacity="0.85" />
 
-  <!-- Rules around logo -->
-  <rect x="440" y="130" width="720" height="1" fill="url(#hGold)" />
-  <rect x="440" y="270" width="720" height="1" fill="url(#hGold)" />
+  <!-- Corner dots -->
+  <circle cx="120" cy="120" r="3" fill="${GOLD}" opacity="0.5" />
+  <circle cx="${WIDTH - 120}" cy="120" r="3" fill="${GOLD}" opacity="0.5" />
+  <circle cx="120" cy="${HEIGHT - 120}" r="3" fill="${GOLD}" opacity="0.5" />
+  <circle cx="${WIDTH - 120}" cy="${HEIGHT - 120}" r="3" fill="${GOLD}" opacity="0.5" />
+
+  <!-- Rules around logo area -->
+  <rect x="480" y="${rule1Y}" width="794" height="1.2" fill="url(#hGold)" />
+  <rect x="480" y="${rule2Y}" width="794" height="1.2" fill="url(#hGold)" />
 
   <!-- Logo -->
   ${logoSvg}
 
-  <!-- Title -->
-  <text x="800" y="380" text-anchor="middle"
-    font-family="${SERIF}" font-size="112" font-weight="400"
-    fill="${BLACK}" letter-spacing="2">Certificado</text>
+  <!-- "CERTIFICADO" title -->
+  <text x="${CX}" y="${certTitleY}" text-anchor="middle"
+    font-family="${SERIF}" font-size="88" font-weight="400"
+    fill="${BLACK}" letter-spacing="6">Certificado</text>
 
-  <!-- Intro -->
-  <text x="800" y="454" text-anchor="middle"
-    font-family="${SANS}" font-size="22" font-weight="300"
-    fill="rgba(17,17,17,0.62)" letter-spacing="0.5">O Founder e CEO da ARQO, Gilson Nogueira, no uso de suas atribuicoes,</text>
-  <text x="800" y="490" text-anchor="middle"
-    font-family="${SANS}" font-size="22" font-weight="300"
-    fill="rgba(17,17,17,0.62)" letter-spacing="0.5">confere o presente certificado a</text>
+  <!-- Gold underline for title -->
+  <rect x="${CX - 180}" y="${certTitleY + 14}" width="360" height="2" fill="url(#hGoldSoft)" />
+
+  <!-- Intro lines -->
+  <text x="${CX}" y="${introY1}" text-anchor="middle"
+    font-family="${SANS}" font-size="21" font-weight="300"
+    fill="rgba(26,26,26,0.60)" letter-spacing="0.4">O Founder e CEO da ARQO, Gilson Nogueira, no uso de suas atribuicoes,</text>
+  <text x="${CX}" y="${introY2}" text-anchor="middle"
+    font-family="${SANS}" font-size="21" font-weight="300"
+    fill="rgba(26,26,26,0.60)" letter-spacing="0.4">confere o presente certificado a</text>
+
+  <!-- Ornamental small divider -->
+  <rect x="${CX - 40}" y="${introY2 + 20}" width="80" height="1" fill="${GOLD}" opacity="0.6" />
 
   <!-- Recipient name -->
-  <text x="800" y="${nameY}" text-anchor="middle"
+  <text x="${CX}" y="${nameY}" text-anchor="middle"
     font-family="${SERIF}" font-size="${recipient.fontSize}" font-weight="500"
-    fill="${BLACK}">${escapeXml(recipient.text)}</text>
+    fill="${BLACK}" letter-spacing="1">${escapeXml(recipient.text)}</text>
 
   <!-- Rule under name -->
-  <rect x="360" y="662" width="880" height="1.5" fill="url(#hGold)" />
+  <rect x="420" y="${nameRuleY}" width="${CX * 2 - 840}" height="1.5" fill="url(#hGold)" />
 
   <!-- Body statement -->
-  ${bodyLines.map((line, i) => `<text x="800" y="${bodyY0 + i * bodyLineH}" text-anchor="middle"
-    font-family="${SANS}" font-size="24" font-weight="300"
-    fill="rgba(17,17,17,0.70)" letter-spacing="0.3">${escapeXml(line)}</text>`).join('\n  ')}
+  ${bodyLines.map((line, i) => `<text x="${CX}" y="${bodyY0 + i * bodyLineH}" text-anchor="middle"
+    font-family="${SANS}" font-size="22" font-weight="300"
+    fill="rgba(26,26,26,0.68)" letter-spacing="0.3">${escapeXml(line)}</text>`).join('\n  ')}
 
-  <!-- Signature -->
+  <!-- Signature image -->
   ${signatureSvg}
 
-  <!-- Footer -->
-  <text x="355" y="893" text-anchor="middle"
-    font-family="${SANS}" font-size="22" font-weight="400"
+  <!-- Footer horizontal rule (full width faded) -->
+  <rect x="120" y="${footerLineY - 60}" width="${WIDTH - 240}" height="1" fill="url(#hGoldSoft)" />
+
+  <!-- Date column -->
+  <text x="330" y="${footerLineY - 20}" text-anchor="middle"
+    font-family="${SANS}" font-size="20" font-weight="400"
     fill="${BLACK}">${escapeXml(completionDate)}</text>
-  <line x1="200" y1="912" x2="510" y2="912" stroke="${GOLD}" stroke-width="1.2" />
-  <text x="355" y="940" text-anchor="middle"
-    font-family="${SANS}" font-size="17" font-weight="300"
-    fill="rgba(17,17,17,0.58)" letter-spacing="1">Data</text>
+  <line x1="160" y1="${footerLineY}" x2="500" y2="${footerLineY}" stroke="${GOLD}" stroke-width="1.2" />
+  <text x="330" y="${footerLabelY}" text-anchor="middle"
+    font-family="${SANS}" font-size="15" font-weight="300"
+    fill="rgba(26,26,26,0.50)" letter-spacing="1.5">DATA</text>
 
-  <line x1="600" y1="912" x2="1000" y2="912" stroke="rgba(17,17,17,0.25)" stroke-width="1" />
-  <text x="800" y="940" text-anchor="middle"
-    font-family="${SANS}" font-size="17" font-weight="300"
-    fill="rgba(17,17,17,0.58)" letter-spacing="1">Assinatura do aluno</text>
+  <!-- Student signature line -->
+  <line x1="620" y1="${footerLineY}" x2="1070" y2="${footerLineY}" stroke="rgba(26,26,26,0.22)" stroke-width="1" />
+  <text x="845" y="${footerLabelY}" text-anchor="middle"
+    font-family="${SANS}" font-size="15" font-weight="300"
+    fill="rgba(26,26,26,0.50)" letter-spacing="1.5">ASSINATURA DO ALUNO</text>
 
-  <line x1="1090" y1="912" x2="1490" y2="912" stroke="rgba(17,17,17,0.25)" stroke-width="1" />
-  <text x="1290" y="940" text-anchor="middle"
-    font-family="${SANS}" font-size="17" font-weight="300"
-    fill="rgba(17,17,17,0.58)" letter-spacing="1">Gilson Nogueira - CEO &amp; Founder</text>
+  <!-- CEO signature line -->
+  <line x1="1140" y1="${footerLineY}" x2="1594" y2="${footerLineY}" stroke="rgba(26,26,26,0.22)" stroke-width="1" />
+  <text x="1367" y="${footerLabelY}" text-anchor="middle"
+    font-family="${SANS}" font-size="15" font-weight="300"
+    fill="rgba(26,26,26,0.50)" letter-spacing="1.5">GILSON NOGUEIRA - CEO &amp; FOUNDER</text>
 
-  <!-- Validation -->
-  <text x="800" y="1022" text-anchor="middle"
-    font-family="${SANS}" font-size="13" font-weight="300"
-    fill="rgba(17,17,17,0.38)" letter-spacing="1">Codigo de validacao: ${escapeXml(validationCode)}</text>
+  <!-- Validation code -->
+  <text x="${CX}" y="${validationY}" text-anchor="middle"
+    font-family="${SANS}" font-size="12" font-weight="300"
+    fill="rgba(26,26,26,0.35)" letter-spacing="1.5">CODIGO DE VALIDACAO: ${escapeXml(validationCode)}</text>
 </svg>`;
 }
 
 // ── PNG renderer ──────────────────────────────────────────────────────────────
 async function renderCertificatePng(values) {
   const svg = await buildCertificateSvg(values);
-  return sharp(Buffer.from(svg)).png({ compressionLevel: 8 }).toBuffer();
+  const fontFiles = getFontFiles();
+
+  console.log('[cert] font files loaded:', fontFiles.length);
+
+  const resvg = new Resvg(svg, {
+    fitTo: { mode: 'width', value: WIDTH },
+    font: {
+      loadSystemFonts: true,
+      fontFiles,
+      fontDirs: [FONTS_DIR],
+    },
+  });
+
+  const rendered = resvg.render();
+  return rendered.asPng();
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
