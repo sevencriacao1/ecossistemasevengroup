@@ -1151,6 +1151,17 @@ export async function uploadCertificatePng(file: Blob, context: { company: Compa
   return data.path;
 }
 
+export async function uploadCertificatePdf(file: Blob, context: { company: Company; courseTitle: string; userName: string; userId: string }) {
+  const issuedAt = new Date().toISOString().replace(/[:.]/g, '-');
+  const path = `${companyLabel(context.company)}/${compactLabel(context.courseTitle, 'Curso')}/${context.userId}/${compactLabel(context.userName, 'Colaborador')} - ${issuedAt}.pdf`;
+  const { data, error } = await supabase.storage
+    .from('certificates')
+    .upload(path, file, { contentType: 'application/pdf', upsert: false });
+
+  if (error) throw error;
+  return data.path;
+}
+
 export async function upsertCertificate(values: {
   userId: string;
   courseId: string;

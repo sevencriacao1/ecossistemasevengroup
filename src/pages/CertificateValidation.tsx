@@ -152,7 +152,11 @@ export function CertificateValidation() {
 
                 <div className="mt-5 overflow-hidden rounded-[22px] border border-[#C8A46B]/20 bg-[#F8F6F2] lg:rounded-lg">
                   {certificateUrl ? (
-                    <img src={certificateUrl} alt={`Certificado de ${result.student_name}`} className="w-full object-contain" />
+                    result.certificate_url?.toLowerCase().endsWith('.pdf') ? (
+                      <iframe src={certificateUrl} title={`Certificado de ${result.student_name}`} className="w-full border-0" style={{ height: '480px' }} />
+                    ) : (
+                      <img src={certificateUrl} alt={`Certificado de ${result.student_name}`} className="w-full object-contain" />
+                    )
                   ) : (
                     <div className="flex aspect-video items-center justify-center px-5 text-center text-sm text-[#5C5C5C]">
                       Certificado validado, mas a imagem não está disponível para visualização.

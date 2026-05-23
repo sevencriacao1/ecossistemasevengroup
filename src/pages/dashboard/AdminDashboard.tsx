@@ -65,7 +65,7 @@ import {
   markAdminAuditLogReverted,
   removeStorageObject,
   saveModuleQuiz,
-  uploadCertificatePng,
+  uploadCertificatePdf,
   uploadCourseCover,
   uploadLessonAttachment,
   uploadLessonVideo,
@@ -1671,7 +1671,7 @@ export function AdminDashboard() {
         startedAt,
         completedAt,
       });
-      const certificatePath = await uploadCertificatePng(blob, {
+      const certificatePath = await uploadCertificatePdf(blob, {
         company: user.company,
         courseTitle: course.title,
         userName: user.full_name || user.username,

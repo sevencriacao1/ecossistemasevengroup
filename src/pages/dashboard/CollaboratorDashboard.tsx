@@ -305,7 +305,8 @@ export function CollaboratorDashboard() {
     const objectUrl = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = objectUrl;
-    link.download = `certificado-${certificate.course_id}.png`;
+    const isPdf = certificate.certificate_url?.toLowerCase().endsWith('.pdf') ?? false;
+    link.download = isPdf ? `certificado-${certificate.course_id}.pdf` : `certificado-${certificate.course_id}.png`;
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -553,7 +554,11 @@ export function CollaboratorDashboard() {
               <h1 className="mt-2 text-[2rem] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-3xl">{certificateCourse.title}</h1>
               <div className="mt-6 overflow-hidden rounded-[24px] border border-[#ECECEF] bg-[#FAFAFB] lg:rounded-lg">
                 {certificateUrls[activeCertificate.id] ? (
-                  <img src={certificateUrls[activeCertificate.id]} alt={`Certificado ${certificateCourse.title}`} className="w-full object-contain" />
+                  activeCertificate.certificate_url?.toLowerCase().endsWith('.pdf') ? (
+                    <iframe src={certificateUrls[activeCertificate.id]} title={`Certificado ${certificateCourse.title}`} className="w-full border-0" style={{ height: '520px' }} />
+                  ) : (
+                    <img src={certificateUrls[activeCertificate.id]} alt={`Certificado ${certificateCourse.title}`} className="w-full object-contain" />
+                  )
                 ) : (
                   <div className="flex aspect-video items-center justify-center text-sm text-[#8A8A92]">Carregando certificado...</div>
                 )}
@@ -835,8 +840,14 @@ export function CollaboratorDashboard() {
                 <X className="h-4 w-4" />
               </button>
             </header>
-            <div className="min-h-0 flex-1 overflow-auto bg-[#F4F4F6] p-3 sm:p-5">
-              <img src={certificateUrls[previewCertificate.id]} alt="Certificado" className="mx-auto max-h-[76svh] max-w-full rounded-lg object-contain shadow-[0_18px_46px_rgba(17,17,20,0.16)]" />
+            <div className="min-h-0 flex-1 overflow-hidden bg-[#F4F4F6]">
+              {previewCertificate.certificate_url?.toLowerCase().endsWith('.pdf') ? (
+                <iframe src={certificateUrls[previewCertificate.id]} title="Certificado" className="h-full w-full border-0" style={{ minHeight: '72svh' }} />
+              ) : (
+                <div className="overflow-auto p-3 sm:p-5">
+                  <img src={certificateUrls[previewCertificate.id]} alt="Certificado" className="mx-auto max-h-[76svh] max-w-full rounded-lg object-contain shadow-[0_18px_46px_rgba(17,17,20,0.16)]" />
+                </div>
+              )}
             </div>
           </section>
         </div>
