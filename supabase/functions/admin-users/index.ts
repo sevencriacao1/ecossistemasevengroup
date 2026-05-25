@@ -52,7 +52,7 @@ async function insertAuditLog(
   },
 ) {
   const { error } = await adminClient
-    .from('admin_audit_logs')
+    .from('eco_sevarq_admin_audit_logs')
     .insert({
       actor_id: values.actorId,
       actor_name: values.actorName,
@@ -129,7 +129,7 @@ Deno.serve(async (request) => {
     }
 
     const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
+      .from('eco_sevarq_profiles')
       .select('role, status, full_name, username, email')
       .eq('id', requesterData.user.id)
       .single();
@@ -158,7 +158,7 @@ Deno.serve(async (request) => {
       if (listError) throw listError;
 
       const { data: profiles, error: profilesError } = await adminClient
-        .from('profiles')
+        .from('eco_sevarq_profiles')
         .select('id, email, full_name, role, company, status, avatar_url');
       if (profilesError) throw profilesError;
 
@@ -196,7 +196,7 @@ Deno.serve(async (request) => {
 
       const syncedProfile = profileFromAuthUser(userData.user);
       const { error: syncError } = await adminClient
-        .from('profiles')
+        .from('eco_sevarq_profiles')
         .upsert(syncedProfile);
 
       if (syncError) throw syncError;
@@ -236,7 +236,7 @@ Deno.serve(async (request) => {
       }
 
       const { data: deletedProfile } = await adminClient
-        .from('profiles')
+        .from('eco_sevarq_profiles')
         .select('id, email, username, full_name, role, company, status, avatar_url')
         .eq('id', payload.id)
         .maybeSingle();
@@ -248,7 +248,7 @@ Deno.serve(async (request) => {
       if (deleteUserError) throw deleteUserError;
 
       const { error: deleteProfileError } = await adminClient
-        .from('profiles')
+        .from('eco_sevarq_profiles')
         .delete()
         .eq('id', payload.id);
       if (deleteProfileError) throw deleteProfileError;
@@ -277,7 +277,7 @@ Deno.serve(async (request) => {
 
     if (payload.action === 'update' && payload.id) {
       const { data } = await adminClient
-        .from('profiles')
+        .from('eco_sevarq_profiles')
         .select('id, email, username, full_name, role, company, status, avatar_url')
         .eq('id', payload.id)
         .maybeSingle();
@@ -348,7 +348,7 @@ Deno.serve(async (request) => {
     }
 
     const { error: profileUpsertError } = await adminClient
-      .from('profiles')
+      .from('eco_sevarq_profiles')
       .upsert({
         id: payload.id,
         email: payload.email.trim().toLowerCase(),

@@ -293,7 +293,7 @@ export function buildHealthIssues(courses: CourseTree[], users: UserProfile[]): 
 
 export async function fetchUsers() {
   const { data, error } = await supabase
-    .from('profiles')
+    .from('eco_sevarq_profiles')
     .select('*')
     .order('username', { ascending: true });
 
@@ -303,7 +303,7 @@ export async function fetchUsers() {
 
 export async function fetchAdminAuditLogs() {
   const { data, error } = await supabase
-    .from('admin_audit_logs')
+    .from('eco_sevarq_admin_audit_logs')
     .select('*')
     .order('created_at', { ascending: false })
     .limit(500);
@@ -329,7 +329,7 @@ export async function createAdminAuditLog(values: {
   metadata?: Record<string, unknown>;
 }) {
   const { data, error } = await supabase
-    .from('admin_audit_logs')
+    .from('eco_sevarq_admin_audit_logs')
     .insert({
       actor_id: values.actorId ?? null,
       actor_name: values.actorName,
@@ -358,7 +358,7 @@ export async function markAdminAuditLogReverted(id: string, values: {
   revertLogId?: string | null;
 }) {
   const { error } = await supabase
-    .from('admin_audit_logs')
+    .from('eco_sevarq_admin_audit_logs')
     .update({
       reverted_at: new Date().toISOString(),
       reverted_by: values.revertedBy ?? null,
@@ -377,7 +377,7 @@ export async function updateUserProfile(
   values: Partial<Pick<UserProfile, 'email' | 'username' | 'full_name' | 'role' | 'company' | 'status'>>
 ) {
   const { error } = await supabase
-    .from('profiles')
+    .from('eco_sevarq_profiles')
     .update(values)
     .eq('id', id);
 
@@ -594,7 +594,7 @@ async function assertImageSize(file: File, maxWidth: number, maxHeight: number) 
 
 export async function fetchLearningTree() {
   const modulesResponse = await supabase
-    .from('modules')
+    .from('eco_sevarq_modules')
     .select('*')
     .order('order_index', { ascending: true });
 
@@ -614,7 +614,7 @@ export async function fetchLearningTree() {
   }));
 
   const coursesResponse = await supabase
-    .from('courses')
+    .from('eco_sevarq_courses')
     .select('*')
     .order('company')
     .order('created_at', { ascending: true });
@@ -631,7 +631,7 @@ export async function fetchLearningTree() {
   }
 
   const lessonsResponse = await supabase
-    .from('lessons')
+    .from('eco_sevarq_lessons')
     .select('*')
     .order('order_index', { ascending: true });
 
@@ -664,7 +664,7 @@ function normalizeLegacyProgress(data: Array<Record<string, unknown>>): LessonPr
 export async function fetchProgress(userId: string, preferModernSchema = false) {
   if (preferModernSchema) {
     const lessonProgressResponse = await supabase
-      .from('lesson_progress')
+      .from('eco_sevarq_lesson_progress')
       .select('*')
       .eq('user_id', userId);
 
@@ -675,7 +675,7 @@ export async function fetchProgress(userId: string, preferModernSchema = false) 
   }
 
   const legacyProgressResponse = await supabase
-    .from('user_progress')
+    .from('eco_sevarq_user_progress')
     .select('*')
     .eq('user_id', userId);
 
@@ -703,7 +703,7 @@ export async function createCourse(values: {
   cover_url?: string;
 }) {
   const { data, error } = await supabase
-    .from('courses')
+    .from('eco_sevarq_courses')
     .insert({
       company: values.company,
       title: values.title,
@@ -719,7 +719,7 @@ export async function createCourse(values: {
 
 export async function updateCourse(id: string, values: Partial<Course>) {
   const { error } = await supabase
-    .from('courses')
+    .from('eco_sevarq_courses')
     .update({ ...values, updated_at: new Date().toISOString() })
     .eq('id', id);
 
@@ -728,7 +728,7 @@ export async function updateCourse(id: string, values: Partial<Course>) {
 
 export async function deleteCourse(id: string) {
   const { error } = await supabase
-    .from('courses')
+    .from('eco_sevarq_courses')
     .delete()
     .eq('id', id);
 
@@ -737,7 +737,7 @@ export async function deleteCourse(id: string) {
 
 export async function updateModule(id: string, values: Partial<LearningModule>) {
   const { error } = await supabase
-    .from('modules')
+    .from('eco_sevarq_modules')
     .update({ ...values, updated_at: new Date().toISOString() })
     .eq('id', id);
 
@@ -746,7 +746,7 @@ export async function updateModule(id: string, values: Partial<LearningModule>) 
 
 export async function deleteModule(id: string) {
   const { error } = await supabase
-    .from('modules')
+    .from('eco_sevarq_modules')
     .delete()
     .eq('id', id);
 
@@ -762,7 +762,7 @@ export async function createModule(values: {
   has_quiz?: boolean;
 }) {
   const { data, error } = await supabase
-    .from('modules')
+    .from('eco_sevarq_modules')
     .insert(values)
     .select('*')
     .single();
@@ -782,7 +782,7 @@ export async function createLesson(values: {
   video_duration_seconds?: number | null;
 }) {
   const { data, error } = await supabase
-    .from('lessons')
+    .from('eco_sevarq_lessons')
     .insert(values)
     .select('*')
     .single();
@@ -793,7 +793,7 @@ export async function createLesson(values: {
 
 export async function updateLesson(id: string, values: Partial<Lesson>) {
   const { error } = await supabase
-    .from('lessons')
+    .from('eco_sevarq_lessons')
     .update({ ...values, updated_at: new Date().toISOString() })
     .eq('id', id);
 
@@ -802,7 +802,7 @@ export async function updateLesson(id: string, values: Partial<Lesson>) {
 
 export async function deleteLesson(id: string) {
   const { error } = await supabase
-    .from('lessons')
+    .from('eco_sevarq_lessons')
     .delete()
     .eq('id', id);
 
@@ -872,8 +872,8 @@ export async function getLessonAttachmentUrl(attachmentPath: string) {
 
 export async function fetchQuizzes(moduleIds?: string[]) {
   let query = supabase
-    .from('quizzes')
-    .select('*, quiz_questions(*)')
+    .from('eco_sevarq_quizzes')
+    .select('*, eco_sevarq_quiz_questions(*)')
     .order('created_at', { ascending: true });
 
   if (moduleIds?.length) {
@@ -892,7 +892,7 @@ export async function fetchQuizzes(moduleIds?: string[]) {
     time_per_question_minutes: Number(quiz.time_per_question_minutes ?? 2),
     is_active: quiz.is_active === true,
     created_at: asString(quiz.created_at, new Date().toISOString()),
-    questions: ((quiz.quiz_questions ?? []) as QuizQuestionRow[])
+    questions: ((quiz.eco_sevarq_quiz_questions ?? []) as QuizQuestionRow[])
       .map((question) => normalizeQuizQuestion(question))
       .sort((a, b) => a.order_index - b.order_index),
   }));
@@ -930,17 +930,17 @@ export async function saveModuleQuiz(values: {
   };
 
   const { data: quiz, error } = existingQuiz
-    ? await supabase.from('quizzes').update(quizPayload).eq('id', existingQuiz.id).select('*').single()
-    : await supabase.from('quizzes').insert(quizPayload).select('*').single();
+    ? await supabase.from('eco_sevarq_quizzes').update(quizPayload).eq('id', existingQuiz.id).select('*').single()
+    : await supabase.from('eco_sevarq_quizzes').insert(quizPayload).select('*').single();
 
   if (error) throw error;
 
   const quizId = asString(quiz.id);
-  const deleteResponse = await supabase.from('quiz_questions').delete().eq('quiz_id', quizId);
+  const deleteResponse = await supabase.from('eco_sevarq_quiz_questions').delete().eq('quiz_id', quizId);
   if (deleteResponse.error) throw deleteResponse.error;
 
   if (values.questions.length > 0) {
-    const insertResponse = await supabase.from('quiz_questions').insert(values.questions.map((question, index) => ({
+    const insertResponse = await supabase.from('eco_sevarq_quiz_questions').insert(values.questions.map((question, index) => ({
       quiz_id: quizId,
       question: question.question,
       type: question.type,
@@ -958,7 +958,7 @@ export async function saveModuleQuiz(values: {
 }
 
 export async function fetchQuizAttempts(userId?: string) {
-  let query = supabase.from('quiz_attempts').select('*').order('completed_at', { ascending: false });
+  let query = supabase.from('eco_sevarq_quiz_attempts').select('*').order('completed_at', { ascending: false });
   if (userId) query = query.eq('user_id', userId);
 
   const { data, error } = await query;
@@ -969,7 +969,7 @@ export async function fetchQuizAttempts(userId?: string) {
 }
 
 export async function fetchCourseFailures(userId?: string) {
-  let query = supabase.from('course_failures').select('*');
+  let query = supabase.from('eco_sevarq_course_failures').select('*');
   if (userId) query = query.eq('user_id', userId);
 
   const { data, error } = await query;
@@ -980,7 +980,7 @@ export async function fetchCourseFailures(userId?: string) {
 }
 
 export async function fetchCertificates(userId?: string) {
-  let query = supabase.from('certificates').select('*').order('issued_at', { ascending: false });
+  let query = supabase.from('eco_sevarq_certificates').select('*').order('issued_at', { ascending: false });
   if (userId) query = query.eq('user_id', userId);
 
   const { data, error } = await query;
@@ -1018,7 +1018,7 @@ export async function resetCourseProgress(userId: string, course: CourseTree) {
   if (lessonIds.length === 0) return;
 
   const { error } = await supabase
-    .from('lesson_progress')
+    .from('eco_sevarq_lesson_progress')
     .delete()
     .eq('user_id', userId)
     .in('lesson_id', lessonIds);
@@ -1032,7 +1032,7 @@ export async function registerCourseFailure(userId: string, courseId: string) {
   const failureCount = (existing?.failure_count ?? 0) + 1;
 
   const { error } = await supabase
-    .from('course_failures')
+    .from('eco_sevarq_course_failures')
     .upsert({
       user_id: userId,
       course_id: courseId,
@@ -1187,7 +1187,7 @@ export async function upsertCertificate(values: {
 
 export async function deleteCertificate(certificateId: string) {
   const { error } = await supabase
-    .from('certificates')
+    .from('eco_sevarq_certificates')
     .delete()
     .eq('id', certificateId);
 
@@ -1223,14 +1223,14 @@ export function buildAdminMetrics(
 
 export async function fetchAllProgress(preferModernSchema = false) {
   if (preferModernSchema) {
-    const lessonProgressResponse = await supabase.from('lesson_progress').select('*');
+    const lessonProgressResponse = await supabase.from('eco_sevarq_lesson_progress').select('*');
     if (!isMissingRestResource(lessonProgressResponse.error)) {
       if (lessonProgressResponse.error) throw lessonProgressResponse.error;
       return (lessonProgressResponse.data ?? []) as LessonProgress[];
     }
   }
 
-  const legacyProgressResponse = await supabase.from('user_progress').select('*');
+  const legacyProgressResponse = await supabase.from('eco_sevarq_user_progress').select('*');
   if (isMissingRestResource(legacyProgressResponse.error)) return [];
   if (legacyProgressResponse.error) throw legacyProgressResponse.error;
 

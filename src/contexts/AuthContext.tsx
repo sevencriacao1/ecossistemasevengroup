@@ -62,7 +62,7 @@ async function loadProfile(userId: string): Promise<UserProfile | null> {
 
   const request = Promise.resolve(
     supabase
-      .from('profiles')
+      .from('eco_sevarq_profiles')
       .select('*')
       .eq('id', userId)
       .single()
